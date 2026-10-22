@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "Si usas TurbuLENS, por favor cítalo así. / If you use TurbuLENS, please cite it as below."
+title: "TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística"
+type: software
+authors:
+  - family-names: "Cagua Lozada"
+    given-names: "Diego Fernando"
+    affiliation: "Observatorio Astronómico Nacional, Universidad Nacional de Colombia"
+version: "1.1.0"
+date-released: "2026-10-22"
+license: LicenseRef-PolyForm-Noncommercial-1.0.0
+license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"
+repository-code: "https://github.com/DiegoCagua/TurbuLENS"
+url: "https://github.com/DiegoCagua/TurbuLENS"
+keywords: [seeing, DIMM, astronomía, estadística, educación, turbulencia atmosférica]
+references:
+  - type: article
+    title: "From Differential Image Motion to Seeing"
+    authors:
+      - family-names: Tokovinin
+        given-names: Andrei
+    journal: "Publications of the Astronomical Society of the Pacific"
+    volume: 114
+    start: 1156
+    year: 2002

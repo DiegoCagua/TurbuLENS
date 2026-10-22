@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Gráficas dibujadas con QPainter.
 
 La misma descripción (``ChartSpec``) se dibuja en pantalla (``ChartWidget``)
@@ -379,7 +381,8 @@ def render_png(spec: ChartSpec, path: str, w: int = 1600, h: int = 900, pal: dic
     img = QImage(w, h, QImage.Format_ARGB32)
     img.fill(QColor(pal["bg"]))
     p = QPainter(img)
-    draw_chart(p, QRectF(20, 20, w - 40, h - 40), spec, pal, scale=w / 800)
+    draw_chart(p, QRectF(20, 20, w - 40, h - 60), spec, pal, scale=w / 800)
+    _credit(p, QRectF(20, h - 38, w - 40, 30), w / 800, pal)
     p.end()
     img.save(path)
 
@@ -395,8 +398,17 @@ def render_svg(spec: ChartSpec, path: str, w: int = 900, h: int = 520, pal: dict
     gen.setTitle(spec.title or "TurbuLENS")
     p = QPainter(gen)
     p.fillRect(QRectF(0, 0, w, h), QColor(pal["bg"]))
-    draw_chart(p, QRectF(12, 12, w - 24, h - 24), spec, pal, scale=1.0)
+    draw_chart(p, QRectF(12, 12, w - 24, h - 40), spec, pal, scale=1.0)
+    _credit(p, QRectF(12, h - 26, w - 24, 20), 1.0, pal)
     p.end()
+
+
+def _credit(p, rect, scale, pal):
+    f = QFont(p.font())
+    f.setPointSizeF(7.5 * scale)
+    p.setFont(f)
+    p.setPen(_col(pal, "muted"))
+    p.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, "TurbuLENS · D. F. Cagua Lozada · github.com/DiegoCagua/TurbuLENS")
 
 
 # ------------------------------------------------------------ constructores

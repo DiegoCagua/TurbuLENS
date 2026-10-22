@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Estado de trabajo de cada modo (análisis y educativo, totalmente separados)."""
 
 from __future__ import annotations
@@ -151,6 +153,12 @@ class Session(QObject):
             "roi": list(res.options.roi), "out_dir": res.out_dir,
         }
         arrays = {k: v for k, v in d.arrays.items()}
+        if res.preview_frames is not None:
+            # Hasta 300 recortes para poder ver la animación desde el historial.
+            k = res.preview_frames.shape[0]
+            sel = np.linspace(0, k - 1, min(k, 300)).astype(int)
+            arrays["preview_frames"] = res.preview_frames[sel]
+            arrays["preview_rows"] = res.preview_rows[sel]
         rid = self.history.add(rec, meas=res.meas, arrays=arrays)
         self.saved_id = rid
         self.history_changed.emit()

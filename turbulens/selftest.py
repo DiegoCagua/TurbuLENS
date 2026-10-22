@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Autoprueba sin ventana: ``TurbuLENS --autoprueba [video] [carpeta]``.
 
 Comprueba que el ejecutable empaquetado puede leer video (FFmpeg), procesar,
@@ -60,3 +62,31 @@ def run(argv: list[str]) -> int:
     ok = d.n_detected > 0.9 * res.meas.size and len(files) >= 10
     print("AUTOPRUEBA OK" if ok else "AUTOPRUEBA FALLÓ")
     return 0 if ok else 1
+
+
+def window_test(seconds: float = 3.0) -> int:
+    """Abre la ventana real con la plataforma gráfica del sistema y la cierra (``--prueba-ventana``)."""
+    from PySide6.QtCore import QTimer
+    from PySide6.QtGui import QGuiApplication
+    from PySide6.QtWidgets import QApplication
+
+    from .gui.app import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    w = MainWindow(data_root=tempfile.mkdtemp(prefix="turbulens_ventana_"))
+    w.show()
+    w.set_mode("analisis")
+    w.go("resultados")
+    w.set_mode("educativo")
+    w.go("l5")
+    ok = {"v": False}
+
+    def done():
+        ok["v"] = w.isVisible()
+        print(json.dumps({"plataforma": QGuiApplication.platformName(), "ventana_visible": ok["v"]}))
+        app.quit()
+
+    QTimer.singleShot(int(seconds * 1000), done)
+    app.exec()
+    print("VENTANA OK" if ok["v"] else "VENTANA FALLÓ")
+    return 0 if ok["v"] else 1

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Procesamiento completo de un video: separar en imágenes y medir.
 
 Recorre el tramo elegido una sola vez:
@@ -67,6 +69,9 @@ class ProcessResult:
     detect_cfg: dict
     track_lost: int = 0
     notes: list = field(default_factory=list)
+    # Muestra de recortes para la animación de centroides (k, alto, ancho) y su fila en ``meas``.
+    preview_frames: Optional[np.ndarray] = None
+    preview_rows: Optional[np.ndarray] = None
 
 
 def find_star(frame: np.ndarray, near: Optional[tuple] = None, radius: Optional[int] = None) -> tuple[float, float]:
@@ -144,6 +149,11 @@ def run(reader: VideoReader, opts: ProcessOptions,
     cfg: Optional[DetectConfig] = None
     buf = np.empty((opts.chunk, rh, rw), dtype=dtype)
     buf_meta = []  # (fila, cuadro, t, rx, ry)
+    # Muestra para la animación: hasta ~900 recortes y como máximo ~48 MB.
+    prev_max = int(max(60, min(900, 48e6 / max(1, rw * rh * np.dtype(dtype).itemsize))))
+    prev_step = max(1, int(np.ceil(total / prev_max)))
+    prev_frames: list = []
+    prev_rows: list = []
     n = 0
     n_saved = 0
     lost_chunks = 0
@@ -206,6 +216,9 @@ def run(reader: VideoReader, opts: ProcessOptions,
             meas = np.concatenate([meas, np.zeros(1024, dtype=MEAS_DTYPE)])
         buf[len(buf_meta)] = crop
         buf_meta.append((n, idx, idx / info.fps, x0, y0))
+        if (idx - start) % prev_step == 0 and len(prev_frames) < prev_max:
+            prev_frames.append(crop.copy())
+            prev_rows.append(n)
         if sink is not None and (idx - start) % every == 0:
             sink.write(idx, crop)
             n_saved += 1
@@ -225,6 +238,8 @@ def run(reader: VideoReader, opts: ProcessOptions,
         meas=meas, options=opts, video=info.to_dict(), n_saved=n_saved,
         elapsed_s=time.time() - t0, cancelled=cancelled, out_dir=opts.out_dir,
         detect_cfg=asdict(cfg) if cfg else {}, track_lost=lost_chunks, notes=notes,
+        preview_frames=np.stack(prev_frames) if prev_frames else None,
+        preview_rows=np.array(prev_rows, dtype=np.int32) if prev_rows else None,
     )
 
 

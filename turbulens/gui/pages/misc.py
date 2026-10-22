@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Pantalla de inicio y «Acerca de»."""
 
 from __future__ import annotations
@@ -5,7 +7,8 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
 
-from ... import APP_NAME, AUTHOR, AUTHOR_ROLE, INSTITUTION, LICENSE_NAME, REPO_URL, __version__
+from ... import (APP_NAME, AUTHOR, AUTHOR_ROLE, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
+                 citation_apa, citation_bibtex)
 from ..theme import theme
 from ..widgets import Card, app_icon, button, hbox, label, sun_moon_icon
 from .base import Page
@@ -85,7 +88,7 @@ class StartPage(QWidget):
         self.about_lbl = label("", "small")
         self.about_lbl.setAlignment(Qt.AlignCenter)
         self.about_lbl.setVisible(False)
-        foot = hbox("stretch", label(f"Código abierto · versión {__version__}", "small"),
+        foot = hbox("stretch", label(f"Uso no comercial · versión {__version__}", "small"),
                     button("Acerca de", slot=self._about), "stretch")
         lay.addLayout(foot)
         lay.addWidget(self.about_lbl)
@@ -94,7 +97,7 @@ class StartPage(QWidget):
 
     def _about(self):
         self.about_lbl.setText(f"<b>{AUTHOR}</b> · {AUTHOR_ROLE} · autor de {APP_NAME}<br>"
-                               f"Licencia {LICENSE_NAME} · <a href='{REPO_URL}'>{REPO_URL}</a>")
+                               f"Licencia {LICENSE_NAME} (uso no comercial, con crédito al autor) · <a href='{REPO_URL}'>{REPO_URL}</a>")
         self.about_lbl.setTextFormat(Qt.RichText)
         self.about_lbl.setOpenExternalLinks(True)
         self.about_lbl.setVisible(not self.about_lbl.isVisible())
@@ -117,8 +120,7 @@ class AboutPage(Page):
                  "modo educativo para aprender estadística."),
             ("Autor", f"<b>{AUTHOR}</b><br>{AUTHOR_ROLE}"),
             ("Institución", INSTITUTION),
-            ("Código abierto", f"Licencia {LICENSE_NAME}: cualquier persona puede usarla, estudiarla, mejorarla y compartirla."
-                               f"<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
+            ("Licencia", f"<b>{LICENSE_NAME}</b>. {LICENSE_SUMMARY}<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
             ("Referencias", "<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion "
                             "to seeing. PASP 114, 1156</a><br>Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)"),
             ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl"),
@@ -132,6 +134,27 @@ class AboutPage(Page):
                 g.addWidget(label(k, "muted"), r, 0, Qt.AlignTop)
             lv = label(v, wrap=True, rich=True)
             g.addWidget(lv, r, 1 if k else 0, 1, 1 if k else 2)
+        g.setColumnStretch(1, 1)
         c.add(g)
         self.lay.addWidget(c)
+        cite = Card("Cómo citar TurbuLENS")
+        cite.add(label("Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito al autor con esta referencia:",
+                       "muted", wrap=True))
+        apa = label(citation_apa(), wrap=True)
+        apa.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        bib = label(citation_bibtex().replace("\n", "<br>").replace("  ", "&nbsp;&nbsp;"), "mono", wrap=True, rich=True)
+        bib.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        box = Card(kind="panel2", margins=(12, 10, 12, 10))
+        box.add(bib)
+        self.copied = label("", "small")
+        cite.add(label("APA", "small"), apa, label("BibTeX", "small"), box,
+                 hbox(button("Copiar cita APA", slot=lambda: self._copy(citation_apa())),
+                      button("Copiar BibTeX", slot=lambda: self._copy(citation_bibtex())), self.copied, "stretch"))
+        self.lay.addWidget(cite)
         self.lay.addStretch(1)
+
+    def _copy(self, text):
+        from PySide6.QtWidgets import QApplication
+
+        QApplication.clipboard().setText(text)
+        self.copied.setText("Copiado ✓")

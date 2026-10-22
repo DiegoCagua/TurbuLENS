@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Modo educativo: aprender estadística a partir de un ejemplo astronómico.
 
 La estadística es el eje: diez lecciones interactivas con datos reales (la

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Detección de la imagen doble de la estrella (los dos «spots» del DIMM).
 
 Todo está vectorizado con NumPy: se procesa un bloque de cuadros a la vez,

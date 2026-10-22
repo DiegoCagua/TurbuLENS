@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "turbulens"
-version = "1.0.0"
+version = "1.1.0"
 description = "Separa videos de un DIMM en imágenes, mide el seeing y enseña estadística con astronomía."
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "LicenseRef-PolyForm-Noncommercial-1.0.0"}
 authors = [{name = "Diego Fernando Cagua Lozada"}]
 requires-python = ">=3.10"
 dependencies = ["numpy>=1.26", "PySide6-Essentials>=6.6", "av>=12", "Pillow>=10", "openpyxl>=3.1"]

@@ -46,10 +46,15 @@ jobs:
         with: { python-version: "3.12" }
       - name: Bibliotecas del sistema (Linux)
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libegl1 libxkbcommon0 libgl1 libfontconfig1 libdbus-1-3
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libxkbcommon0 libgl1 libfontconfig1 libdbus-1-3 xvfb \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xkb1 \
+            libxkbcommon-x11-0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0
       - name: Dependencias
         run: pip install -r requirements.txt pyinstaller
       - name: Compilar con PyInstaller
+        env: { TURBULENS_REQUIRE_XCB: "1" }
         run: pyinstaller --noconfirm packaging/turbulens.spec
       - name: Autoprueba del ejecutable
         shell: bash
@@ -59,11 +64,25 @@ jobs:
           elif [ "$RUNNER_OS" = "macOS" ]; then BIN=dist/TurbuLENS.app/Contents/MacOS/TurbuLENS;
           else BIN=dist/TurbuLENS; fi
           "$BIN" --autoprueba
+      - name: Prueba con ventana real (Windows y macOS)
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then BIN=dist/TurbuLENS.exe; else BIN=dist/TurbuLENS.app/Contents/MacOS/TurbuLENS; fi
+          "$BIN" --prueba-ventana
+      - name: Prueba con ventana real en un Linux sin libxcb-cursor0 (como el de un usuario)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get remove -y libxcb-cursor0
+          ! ldconfig -p | grep -q libxcb-cursor.so.0
+          xvfb-run -a dist/TurbuLENS --prueba-ventana
       - name: Empaquetar
         shell: bash
         run: |
           mkdir -p paquete
-          cp packaging/LEEME.txt paquete/ 2>/dev/null || true
+          cp packaging/LEEME.txt paquete/
+          cp LICENSE paquete/LICENSE.txt
+          cp THIRD_PARTY_NOTICES.md paquete/
           N="TurbuLENS-${GITHUB_REF_NAME//\//-}-${{ matrix.nombre }}"
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp dist/TurbuLENS.exe paquete/
@@ -128,10 +147,13 @@ jobs:
       - name: Autoprueba
         env: { QT_QPA_PLATFORM: offscreen }
         run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --autoprueba
+      - name: Prueba con ventana real
+        run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --prueba-ventana
       - name: Subir al lanzamiento
         env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.lanzamiento.outputs.tag }}" }
         run: |
-          mkdir paquete && cp packaging/LEEME.txt paquete/ && cp -R dist/TurbuLENS.app paquete/
+          mkdir paquete && cp packaging/LEEME.txt paquete/ && cp LICENSE paquete/LICENSE.txt && cp THIRD_PARTY_NOTICES.md paquete/
+          cp -R dist/TurbuLENS.app paquete/
           N="TurbuLENS-$TAG-macOS-Intel.zip"
           ditto -c -k --keepParent paquete "$N"
           gh release upload "$TAG" "$N" -R "$GITHUB_REPOSITORY" --clobber

@@ -50,6 +50,8 @@ Ve a **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases/latest)** y b
 
 Cada lección tiene controles interactivos, una explicación corta, una pregunta para comprobar y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica se explica en tres pantallas muy sencillas (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). Las mediciones del modo educativo se guardan **aparte** de las científicas.
 
+En **Resultados**, una **animación de los centroides** muestra cuadro a cuadro dónde ubicó TurbuLENS cada punto (cruces, distancia medida y rastro de las posiciones anteriores).
+
 Ambos modos tienen tema **claro y oscuro** (sol / luna) y botones **!** que explican cada control al hacer clic.
 
 <p align="center">
@@ -106,6 +108,31 @@ Basado en el protocolo *Determina la nitidez del cielo nocturno en tu lugar de o
 
 Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow y openpyxl.
 
+## Cómo citar
+
+Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito al autor:
+
+> Cagua Lozada, D. F. (2026). *TurbuLENS* (versión 1.1.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+
+```bibtex
+@software{cagua_lozada_turbulens_2026,
+  author    = {Cagua Lozada, Diego Fernando},
+  title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
+  year      = {2026},
+  version   = {1.1.0},
+  publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
+  url       = {https://github.com/DiegoCagua/TurbuLENS}
+}
+```
+
+GitHub también ofrece el botón *Cite this repository* a partir de [`CITATION.cff`](CITATION.cff). La app muestra estas citas en *Acerca de*, con botones para copiarlas, y cada informe, gráfica o exportación lleva una línea de crédito.
+
 ## Licencia
 
-[MIT](LICENSE): puedes usar, estudiar, modificar y compartir TurbuLENS libremente.
+TurbuLENS se distribuye bajo la licencia **[PolyForm Noncommercial 1.0.0](LICENSE)**:
+
+- ✅ Puedes usarlo, estudiarlo, modificarlo y compartirlo para **fines no comerciales**: estudio personal, investigación, enseñanza, colegios, universidades, organizaciones sin ánimo de lucro y entidades públicas.
+- ✅ Toda copia o versión modificada debe incluir la licencia y las líneas **`Required Notice`** que dan crédito al autor.
+- ❌ **No se permite el uso comercial** (venderlo, cobrar por usarlo o usarlo para obtener ganancias) sin permiso escrito del autor.
+
+Por no permitir el uso comercial, TurbuLENS es software de **código fuente disponible**, no «código abierto» en el sentido de la OSI. Las versiones hasta la 1.0.0 se publicaron con licencia MIT; desde la 1.1.0 rige PolyForm Noncommercial. Los componentes de terceros conservan sus licencias: ver [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

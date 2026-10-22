@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Recorre la interfaz y guarda capturas de cada pantalla (prueba de humo).
 
 Uso:  python scripts/capturas.py [video] [carpeta_salida]

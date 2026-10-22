@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Gráficas e informes de un análisis o del historial (PNG, SVG, PDF)."""
 
 from __future__ import annotations
@@ -10,7 +12,7 @@ import numpy as np
 from PySide6.QtCore import QMarginsF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QPageLayout, QPageSize, QPainter, QPdfWriter
 
-from . import APP_NAME, INSTITUTION, __version__
+from . import APP_NAME, INSTITUTION, __version__, citation_apa
 from .charts import PRINT_PALETTE, ChartSpec, Series, draw_chart, histogram_spec, render_png, render_svg
 from .core import stats
 from .core.dimm import DimmResult, quality_label
@@ -75,13 +77,28 @@ def _pdf(path: str) -> QPdfWriter:
     return w
 
 
+def _footer(p: QPainter, writer: QPdfWriter) -> None:
+    page = writer.pageLayout().paintRectPixels(writer.resolution())
+    f = QFont()
+    f.setPointSizeF(7.5)
+    p.save()
+    p.setFont(f)
+    p.setPen(QColor(PRINT_PALETTE["muted"]))
+    p.drawText(QRectF(0, page.height() - 46, page.width(), 44), Qt.AlignLeft | Qt.AlignBottom | Qt.TextWordWrap,
+               "Generado con TurbuLENS · " + citation_apa())
+    p.restore()
+
+
 def _charts_pages(p: QPainter, writer: QPdfWriter, specs: list[ChartSpec], first_new_page: bool) -> None:
     page = writer.pageLayout().paintRectPixels(writer.resolution())
-    W, H = page.width(), page.height()
+    W, H = page.width(), page.height() - 50
     per = 2
     for i, spec in enumerate(specs):
         if i % per == 0 and (i > 0 or first_new_page):
             writer.newPage()
+            _footer(p, writer)
+        elif i == 0:
+            _footer(p, writer)
         slot = i % per
         r = QRectF(0, slot * H / per + 10, W, H / per - 30)
         draw_chart(p, r, spec, PRINT_PALETTE, scale=W / 1000)
@@ -110,6 +127,7 @@ def write_report_pdf(path: str, title: str, rows: list[tuple[str, str]], specs: 
     p.setFont(f)
     p.setPen(QColor(PRINT_PALETTE["muted"]))
     p.drawText(QRectF(0, 60, W, 30), Qt.AlignLeft | Qt.AlignVCenter, f"{APP_NAME} {__version__} · {INSTITUTION}")
+    _footer(p, w)
     y = 110
     rh = 34
     for i, (k, v) in enumerate(rows):

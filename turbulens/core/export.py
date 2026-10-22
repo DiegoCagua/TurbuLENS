@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Exportación de resultados: CSV, Excel, JSON, NumPy y FITS.
 
 Las gráficas (PNG, SVG, PDF) se dibujan con Qt en ``turbulens.charts`` y se
@@ -51,6 +53,8 @@ SUMMARY_LABELS = [
     ("lambda_nm", "Longitud de onda (nm)"),
     ("scale_arcsec_px", "Escala de placa (″/px)"),
     ("altitude_deg", "Altura de la estrella (°)"),
+    ("software", "Software"),
+    ("como_citar", "Cómo citar"),
 ]
 
 
@@ -77,6 +81,10 @@ def summary_record(res, dimm: DimmResult, params: DimmParams) -> dict:
     d["opciones"] = res.options.to_dict()
     d["info_video"] = {k: _clean(v) for k, v in (res.video or {}).items()}
     d["notas"] = list(res.notes)
+    from .. import __version__, citation_apa
+
+    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada · https://github.com/DiegoCagua/TurbuLENS"
+    d["como_citar"] = citation_apa()
     return d
 
 
@@ -232,6 +240,10 @@ def export_history_table(records: list[dict], formats: Iterable[str], folder: st
             w = csv.writer(f)
             w.writerow(header)
             w.writerows([["" if v is None else v for v in r] for r in rows])
+            from .. import citation_apa
+
+            w.writerow([])
+            w.writerow(["Generado con TurbuLENS · " + citation_apa()])
         out.append(p)
     if "xlsx" in formats:
         p = os.path.join(folder, f"{base}.xlsx")

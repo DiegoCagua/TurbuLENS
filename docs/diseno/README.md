@@ -30,3 +30,7 @@ Las versiones 0.1 y 0.2 evolucionaron dentro del mismo archivo, así que aquí s
 ## 3. Versión 1.0 (la aplicación)
 
 Cambios de la versión 1.0 respecto a la 0.3: el modo educativo gira alrededor de la estrella pero enseña **estadística**, en 9 lecciones y una prueba; la astronomía se explica en tres pantallas sencillas; `<<` y `>>` son más rápidos (2× a 32×); los controles de recorte y tramo ocupan menos espacio; y las explicaciones de cada control quedan en botones **!**. Las capturas están en [../capturas](../capturas).
+
+## 4. Versión 1.1
+
+Animación de los centroides en Resultados, corrección del arranque en Linux y licencia PolyForm Noncommercial con crédito obligatorio al autor.

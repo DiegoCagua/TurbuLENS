@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
+# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Páginas del flujo de análisis (compartidas por los dos modos)."""
 
 from __future__ import annotations
@@ -1080,20 +1082,44 @@ class ResultsPage(Page):
         for i, w in enumerate((self.k_eps, self.k_l, self.k_t, self.k_r0, self.k_sep, self.k_sd, self.k_n, self.k_z)):
             k.addWidget(w, i // 4, i % 4)
         b.addLayout(k)
-        self.c_hist = charts.ChartWidget(min_h=260)
-        self.c_sc = charts.ChartWidget(min_h=260)
-        self.c_t = charts.ChartWidget(min_h=220)
+        self.c_hist = charts.ChartWidget(min_h=300)
+        self.c_sc = charts.ChartWidget(min_h=240)
+        self.c_t = charts.ChartWidget(min_h=240)
         r1 = QHBoxLayout()
         r1.setSpacing(12)
-        for w, st in ((self.c_hist, 3), (self.c_sc, 2)):
-            c = Card(margins=(8, 8, 8, 8))
-            c.add(w)
-            r1.addWidget(c, st)
+        ca = Card("Centroides cuadro a cuadro", margins=(12, 10, 12, 10), help_text=(
+            "<b>¿Qué es el centroide?</b><br>Cada punto de la imagen doble ocupa varios píxeles. El <b>centroide</b> es su "
+            "«centro de masa de la luz»: el promedio de las posiciones de los píxeles, pesado por su brillo. Por eso puede caer "
+            "<b>entre</b> píxeles y medir movimientos de centésimas de píxel.<br><br>"
+            "La animación muestra una muestra de los cuadros procesados: las cruces son los centroides que encontró "
+            "TurbuLENS y la línea punteada es la distancia que se mide en cada cuadro. Con <b>Rastro</b> se ven las posiciones "
+            "anteriores: así se ve cómo la turbulencia mueve cada punto.<ul style='margin-left:-16px'>"
+            "<li><b>▶</b> reproduce o pausa; <b>&lt;</b> y <b>&gt;</b> avanzan un cuadro de la muestra.</li>"
+            "<li>La barra permite ir a cualquier cuadro y la lista cambia la velocidad.</li></ul>"))
+        from ..centroids import CentroidPlayer
+
+        self.player = CentroidPlayer()
+        self.player.setMinimumHeight(380)
+        ca.add(self.player)
+        ch = Card(margins=(8, 8, 8, 8))
+        ch.add(self.c_hist)
+        r1.addWidget(ca, 2)
+        r1.addWidget(ch, 3)
         b.addLayout(r1)
+        r2 = QHBoxLayout()
+        r2.setSpacing(12)
         ct = Card(margins=(8, 8, 8, 8))
         ct.add(self.c_t, hbox(label("Una subida aislada de σ suele ser un golpe al telescopio o una ráfaga de viento.", "small"),
                               "stretch", button("Ajustar el tramo y procesar de nuevo", slot=lambda: self.main.go("region"))))
-        b.addWidget(ct)
+        cs = Card(margins=(8, 8, 8, 8))
+        cs.add(self.c_sc)
+        r2.addWidget(ct, 3)
+        r2.addWidget(cs, 2)
+        b.addLayout(r2)
+        self.lay_edu_centroid = self.edu_tip(
+            "<b>Mira la animación:</b> TurbuLENS no adivina dónde están los puntos; los calcula en cada cuadro como el centro "
+            "de masa de la luz. Fíjate en que los dos puntos no se mueven igual: esa diferencia es lo que mide la turbulencia.")
+        b.addWidget(self.lay_edu_centroid)
         self.edu = self.edu_tip(
             "<b>Lee la gráfica:</b> el histograma muestra cuántos cuadros tuvieron cada distancia. Tiene forma de campana: casi "
             "todas las medidas están cerca de la media y pocas lejos. Qué tan <b>ancha</b> es la campana (σ) dice cuánta "
@@ -1147,6 +1173,9 @@ class ResultsPage(Page):
         self.note.setVisible(bool(notes))
         self.note_lbl.setText("<br>".join(notes))
         self.specs = reports.analysis_charts(d, r.meas["t"], fps)
+        if getattr(self, "_player_src", None) is not r:
+            self._player_src = r
+            self.player.set_data(r.preview_frames, r.preview_rows, r.meas, d.arrays.get("used"), fps)
         self.c_hist.set_spec(self.specs[0])
         if len(self.specs) > 2:
             self.c_t.set_spec(self.specs[1])
@@ -1317,6 +1346,9 @@ class HistoryPage(Page):
 
         s.params = DimmParams(D_cm=r.get("D_cm") or 2.5, B_cm=r.get("B_cm") or 14, lambda_nm=r.get("lambda_nm") or 550,
                               scale_arcsec_px=r.get("scale"), altitude_deg=r.get("altitude"))
+        if "preview_frames" in arrs and "preview_rows" in arrs:
+            res.preview_frames = arrs["preview_frames"]
+            res.preview_rows = arrs["preview_rows"]
         s.result = res
         s.reanalyze()
         s.saved_id = r["id"]
