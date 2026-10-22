@@ -14,16 +14,20 @@ TurbuLENS reemplaza dos scripts de Python usados en la práctica del DIMM: `open
 
 ## `Imagen_v5.py`
 
-1. **FloodFill incorrecto.** Al recorrer hacia el oeste y el este usa `(x, y−c)` con la semilla original en lugar del nodo actual, y ni la semilla ni los píxeles agregados por norte/sur se guardan en `D`. En un cuadro de prueba contó 3 de 7 píxeles y el centroide quedó desplazado 0,29 px, cuando toda la señal del DIMM es una variación de ~0,7 px.
-2. **Copiar y pegar:** revisa `ne` cuatro veces y nunca `se`, `nw` ni `sw`.
-3. **Bordes:** índices negativos dan la vuelta a la imagen; en el borde derecho o inferior falla con `IndexError`.
-4. **Lento:** recorre los ~2 millones de píxeles en Python: 0,87 s por cuadro (≈2 h para el video). TurbuLENS procesa el video completo en ~20 s.
-5. **Se cae:** usa `re.sub` sin `import re` (las versiones actuales de `pylab` no lo exportan).
-6. **Archivos intermedios:** `test.dat` se abre en modo agregar y se relee completo en cada cuadro (costo cuadrático), nunca se cierra, y hay que borrar los `.dat` a mano antes de cada ejecución.
-7. **Emparejamiento a ciegas:** supone exactamente dos objetos por cuadro. En este video 68 cuadros tienen un solo objeto con el umbral fijo de 128; se emparejan con el cuadro siguiente y producen distancias falsas cercanas a 0 px que **casi duplican σ** (0,74 → ~1,3 px). Esa historia es la lección 7 del modo educativo.
-8. **Umbral fijo de 128 y solo el canal rojo:** el resultado depende del brillo y del color de la estrella.
-9. **Histograma y curva en escalas distintas:** el histograma está normalizado a fracciones y la curva normal es una densidad.
-10. **Física incompleta:** la media y la desviación de la distancia no son el seeing; `ESCALAPLACA = 1.0` era un valor de relleno.
+| Problema | Efecto | En TurbuLENS |
+|---|---|---|
+| FloodFill recorre oeste/este con `(x, y−c)` de la semilla original y no guarda en `D` la semilla ni los píxeles de norte/sur | En un cuadro de prueba contó 3 de 7 píxeles: centroide desplazado 0,29 px, cuando la señal del DIMM es ~0,7 px | Centroide ponderado por intensidad en toda la ventana del spot, en dos pasadas (error típico 0,02–0,05 px) |
+| Copiar y pegar: revisa `ne` cuatro veces y nunca `se`, `nw` ni `sw` | Partes del spot quedan sin recorrer | No hay relleno por vecinos: operaciones de NumPy sobre el bloque completo |
+| Bordes sin control | Índices negativos dan la vuelta a la imagen; en el borde derecho o inferior falla con `IndexError` | Recorte limitado a la imagen y cuadros con spots en el borde marcados como no válidos |
+| Recorre los ~2 millones de píxeles en Python | 0,87 s por cuadro: ≈2 h para el video de prueba | Bloques vectorizados de cuadros `(n, alto, ancho)`: video completo en ~20 s |
+| Usa `re.sub` sin `import re` | Se cae con las versiones actuales de `pylab` | Sin texto intermedio que procesar |
+| `test.dat` en modo agregar, releído completo en cada cuadro y nunca cerrado | Costo cuadrático y hay que borrar los `.dat` a mano antes de cada ejecución | Mediciones en un arreglo estructurado de NumPy reservado de antemano; `mediciones.csv` y `resumen.json` al final |
+| Empareja los spots suponiendo exactamente dos objetos por cuadro | 68 cuadros con un solo objeto (umbral 128) producen distancias falsas cercanas a 0 px que casi duplican σ (0,74 → ~1,3 px) | Cada cuadro se valida (señal/ruido, segundo spot real) y se descartan atípicos a más de 5 σ robustas; es la lección 7 del modo educativo |
+| Descarta los objetos 3 y 4 pero conserva el 5 en adelante | Ruido o reflejos se cuelan en el análisis | Solo se usan los dos picos de la imagen doble dentro de la región |
+| Umbral fijo de 128 y solo el canal rojo | El resultado depende del brillo y del color de la estrella | Umbral relativo al fondo y al pico; imagen en escala de grises (8 o 16 bits) |
+| `glob` sin ordenar | Se pierde el orden temporal de los cuadros | Índice y tiempo reales de cada cuadro |
+| Histograma normalizado a fracciones con una curva normal en densidad | Barras y curva en escalas distintas | Histograma y curva normal en la misma escala |
+| Media y desviación de la distancia reportadas como resultado; `ESCALAPLACA = 1.0` de relleno; título fijo `MVI1346.MOV` | No es el seeing y no sirve para otro video ni equipo | Seeing longitudinal y transversal con el modelo de Tokovinin (2002), r₀ y corrección al cenit, con los parámetros del usuario |
 
 ## Qué cambió en TurbuLENS
 
