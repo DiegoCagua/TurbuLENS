@@ -54,4 +54,4 @@ else:
         app = BUNDLE(coll, name="TurbuLENS.app", icon=os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")
                      if os.path.exists(os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")) else None,
                      bundle_identifier="co.edu.unal.oan.turbulens",
-                     info_plist={"NSHighResolutionCapable": True, "CFBundleShortVersionString": "1.1.1"})
+                     info_plist={"NSHighResolutionCapable": True, "CFBundleShortVersionString": "1.1.2"})

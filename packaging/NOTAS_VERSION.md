@@ -1,19 +1,18 @@
-## TurbuLENS 1.1.1
+## TurbuLENS 1.1.2
 
 Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: no hay que instalar nada más.
 
 | Sistema | Archivo |
 |---|---|
-| Windows 10/11 (64 bits) | `TurbuLENS-v1.1.1-Windows-x64.zip` |
-| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.1.1-macOS-AppleSilicon.zip` |
-| Mac con Intel | `TurbuLENS-v1.1.1-macOS-Intel.zip` |
-| Linux (64 bits) | `TurbuLENS-v1.1.1-Linux-x64.tar.gz` |
+| Windows 10/11 (64 bits) | `TurbuLENS-v1.1.2-Windows-x64.zip` |
+| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.1.2-macOS-AppleSilicon.zip` |
+| Mac con Intel | `TurbuLENS-v1.1.2-macOS-Intel.zip` |
+| Linux (64 bits) | `TurbuLENS-v1.1.2-Linux-x64.tar.gz` |
 
-**Correcciones**
-- Los botones «Entrar al modo análisis» y «Entrar al modo educativo» de la pantalla de inicio dejaban la aplicación en un estado inválido: no se podía entrar bien al modo educativo ni cargar videos. Corregido, con pruebas automáticas que hacen clic en cada botón.
-- En Linux, los selectores de archivos y carpetas usan el diálogo propio de Qt, que no depende de GTK ni de los portales del escritorio.
+**Cambios**
+- **Fredy Esteban Cruz Ospina** se suma como coautor: aparece en *Acerca de*, en la pantalla de inicio, en la licencia (líneas `Required Notice`), en la cita APA y BibTeX, en `CITATION.cff` y en el pie de informes, gráficas y exportaciones.
+- La prueba interna sin ventana (`--autoprueba`) ya funciona en equipos Linux sin escritorio.
 
-**Mejoras**
-- La ventana se abre ocupando toda la pantalla. Botón ⛶ o tecla **F11** para pantalla completa sin bordes; **Esc** para salir.
+Cómo citar: Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.1.2) [Software]. https://github.com/DiegoCagua/TurbuLENS
 
-Novedades de la 1.1: animación de los centroides en Resultados, arreglo del arranque en Linux y licencia PolyForm Noncommercial con crédito obligatorio al autor.
+Novedades de la 1.1.1: corrección de la entrada a los modos y de la carga de videos; la ventana abre ocupando toda la pantalla (F11 para pantalla completa).

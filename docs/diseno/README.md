@@ -33,4 +33,8 @@ Cambios de la versión 1.0 respecto a la 0.3: el modo educativo gira alrededor d
 
 ## 4. Versión 1.1
 
-Animación de los centroides en Resultados, corrección del arranque en Linux y licencia PolyForm Noncommercial con crédito obligatorio al autor.
+Animación de los centroides en Resultados, corrección del arranque en Linux y licencia PolyForm Noncommercial con crédito obligatorio a los autores.
+
+## 5. Versión 1.1.2
+
+Fredy Esteban Cruz Ospina se suma como coautor en la aplicación, la licencia, la cita y la documentación.

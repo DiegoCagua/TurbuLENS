@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
-# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
+# Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Gráficas dibujadas con QPainter.
 
 La misma descripción (``ChartSpec``) se dibuja en pantalla (``ChartWidget``)
@@ -408,7 +408,7 @@ def _credit(p, rect, scale, pal):
     f.setPointSizeF(7.5 * scale)
     p.setFont(f)
     p.setPen(_col(pal, "muted"))
-    p.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, "TurbuLENS · D. F. Cagua Lozada · github.com/DiegoCagua/TurbuLENS")
+    p.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, "TurbuLENS · D. F. Cagua Lozada y F. E. Cruz Ospina · github.com/DiegoCagua/TurbuLENS")
 
 
 # ------------------------------------------------------------ constructores

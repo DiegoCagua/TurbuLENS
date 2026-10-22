@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
-# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
+# Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Del movimiento diferencial de la imagen al seeing.
 
 Modelo de Tokovinin (2002, PASP 114, 1156; arXiv:astro-ph/0111022) para el

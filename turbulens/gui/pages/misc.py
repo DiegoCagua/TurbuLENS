@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
-# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
+# Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Pantalla de inicio y «Acerca de»."""
 
 from __future__ import annotations
@@ -7,7 +7,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
 
-from ... import (APP_NAME, AUTHOR, AUTHOR_ROLE, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
+from ... import (APP_NAME, AUTHOR, AUTHOR_ROLE, AUTHORS, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
                  citation_apa, citation_bibtex)
 from ..theme import theme
 from ..widgets import Card, app_icon, button, hbox, label, sun_moon_icon
@@ -96,8 +96,9 @@ class StartPage(QWidget):
         self.on_theme(theme.pal)
 
     def _about(self):
-        self.about_lbl.setText(f"<b>{AUTHOR}</b> · {AUTHOR_ROLE} · autor de {APP_NAME}<br>"
-                               f"Licencia {LICENSE_NAME} (uso no comercial, con crédito al autor) · <a href='{REPO_URL}'>{REPO_URL}</a>")
+        autores = "<br>".join(f"<b>{n}</b>" + (f" · {r}" if r else "") for n, r in AUTHORS)
+        self.about_lbl.setText(f"{autores}<br>Autores de {APP_NAME}<br>"
+                               f"Licencia {LICENSE_NAME} (uso no comercial, con crédito a los autores) · <a href='{REPO_URL}'>{REPO_URL}</a>")
         self.about_lbl.setTextFormat(Qt.RichText)
         self.about_lbl.setOpenExternalLinks(True)
         self.about_lbl.setVisible(not self.about_lbl.isVisible())
@@ -118,7 +119,7 @@ class AboutPage(Page):
             ("", f"{APP_NAME} separa videos de un DIMM (monitor de movimiento diferencial de imagen) en imágenes, mide la "
                  "imagen doble de una estrella y estima el seeing del lugar de observación. Tiene un modo científico y un "
                  "modo educativo para aprender estadística."),
-            ("Autor", f"<b>{AUTHOR}</b><br>{AUTHOR_ROLE}"),
+            ("Autores", "<br><br>".join(f"<b>{n}</b>" + (f"<br>{r}" if r else "") for n, r in AUTHORS)),
             ("Institución", INSTITUTION),
             ("Licencia", f"<b>{LICENSE_NAME}</b>. {LICENSE_SUMMARY}<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
             ("Referencias", "<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion "
@@ -138,7 +139,7 @@ class AboutPage(Page):
         c.add(g)
         self.lay.addWidget(c)
         cite = Card("Cómo citar TurbuLENS")
-        cite.add(label("Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito al autor con esta referencia:",
+        cite.add(label("Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores con esta referencia:",
                        "muted", wrap=True))
         apa = label(citation_apa(), wrap=True)
         apa.setTextInteractionFlags(Qt.TextSelectableByMouse)

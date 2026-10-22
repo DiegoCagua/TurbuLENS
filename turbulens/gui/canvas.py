@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
-# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
+# Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Lienzo de la región (como en Paint) y línea de tiempo del tramo."""
 
 from __future__ import annotations

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
-# Copyright (c) 2026 Diego Fernando Cagua Lozada — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
+# Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Exportación de resultados: CSV, Excel, JSON, NumPy y FITS.
 
 Las gráficas (PNG, SVG, PDF) se dibujan con Qt en ``turbulens.charts`` y se
@@ -83,7 +83,7 @@ def summary_record(res, dimm: DimmResult, params: DimmParams) -> dict:
     d["notas"] = list(res.notes)
     from .. import __version__, citation_apa
 
-    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada · https://github.com/DiegoCagua/TurbuLENS"
+    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina · https://github.com/DiegoCagua/TurbuLENS"
     d["como_citar"] = citation_apa()
     return d
 

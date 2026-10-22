@@ -6,7 +6,9 @@ authors:
   - family-names: "Cagua Lozada"
     given-names: "Diego Fernando"
     affiliation: "Observatorio Astronómico Nacional, Universidad Nacional de Colombia"
-version: "1.1.1"
+  - family-names: "Cruz Ospina"
+    given-names: "Fredy Esteban"
+version: "1.1.2"
 date-released: "2026-10-22"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"
