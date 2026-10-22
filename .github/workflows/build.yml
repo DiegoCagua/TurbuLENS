@@ -95,6 +95,7 @@ jobs:
       - name: Publicar lanzamiento
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
+          gh release delete dev-wheelhouse -y --cleanup-tag -R "$GITHUB_REPOSITORY" || true
           ls -la artefactos
           gh release create "$GITHUB_REF_NAME" artefactos/* -R "$GITHUB_REPOSITORY" \
             --title "TurbuLENS $GITHUB_REF_NAME" --notes-file packaging/NOTAS_VERSION.md

@@ -4,6 +4,6 @@ build/
 dist/
 *.egg-info/
 .pytest_cache/
-capturas/
+/capturas/
 *_TurbuLENS/
 .venv/
