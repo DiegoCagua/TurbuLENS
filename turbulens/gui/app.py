@@ -17,7 +17,7 @@ from .. import APP_NAME, INSTITUTION, __version__
 from .pages import analysis, edu, misc
 from .session import Session, resource_path
 from .theme import qss, theme
-from .widgets import app_icon, button, label, sun_moon_icon
+from .widgets import app_icon, button, fullscreen_icon, label, sun_moon_icon
 
 NAV_ANALISIS = [
     ("FLUJO DE ANÁLISIS", [("video", "Video"), ("region", "Recorte y tramo"), ("parametros", "Parámetros"),
@@ -98,6 +98,10 @@ class MainWindow(QMainWindow):
         for s in self.sessions.values():
             s.result_changed.connect(self._on_result)
 
+        from PySide6.QtGui import QKeySequence, QShortcut
+
+        QShortcut(QKeySequence(Qt.Key_F11), self, activated=self.toggle_fullscreen)
+        QShortcut(QKeySequence(Qt.Key_Escape), self, activated=lambda: self.isFullScreen() and self.toggle_fullscreen())
         theme.changed.connect(self.apply_theme)
         dark = self.settings.value("dark", True, type=bool)
         theme.set_dark(dark)
@@ -121,12 +125,30 @@ class MainWindow(QMainWindow):
         self.mode_chip = label("", "chip")
         lay.addWidget(self.mode_chip)
         lay.addWidget(button("Cambiar de modo", slot=self.go_start))
+        self.full_b = QToolButton()
+        self.full_b.setProperty("kind", "theme")
+        self.full_b.setCursor(Qt.PointingHandCursor)
+        self.full_b.setToolTip("Pantalla completa (F11)")
+        self.full_b.clicked.connect(self.toggle_fullscreen)
+        lay.addWidget(self.full_b)
         self.theme_b = QToolButton()
         self.theme_b.setProperty("kind", "theme")
         self.theme_b.setCursor(Qt.PointingHandCursor)
         self.theme_b.clicked.connect(theme.toggle)
         lay.addWidget(self.theme_b)
         return h
+
+    def toggle_fullscreen(self):
+        if self.isFullScreen():
+            self.showMaximized()
+        else:
+            self.showFullScreen()
+        self._full_icon()
+
+    def _full_icon(self):
+        fs = self.isFullScreen()
+        self.full_b.setIcon(fullscreen_icon(theme.pal["text"], exit_=fs))
+        self.full_b.setToolTip("Salir de pantalla completa (F11 o Esc)" if fs else "Pantalla completa (F11)")
 
     def _add_page(self, key, page):
         self.page_by_key[key] = page
@@ -165,6 +187,8 @@ class MainWindow(QMainWindow):
         return self.sessions[self.mode]
 
     def set_mode(self, mode: str):
+        if mode not in self.sessions:  # protección: nunca quedar en un modo inválido
+            return
         self.mode = mode
         self.mode_chip.setText("Modo educativo" if mode == "educativo" else "Modo análisis")
         self._build_nav()
@@ -215,6 +239,7 @@ class MainWindow(QMainWindow):
         self.logo.setPixmap(app_icon(34))
         self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
         self.theme_b.setToolTip("Cambiar a tema claro" if theme.dark else "Cambiar a tema oscuro")
+        self._full_icon()
         self.settings.setValue("dark", theme.dark)
         for p in self.page_by_key.values():
             p.on_theme(pal)
@@ -245,7 +270,7 @@ def main(argv=None) -> int:
     f.setPointSizeF(10)
     app.setFont(f)
     w = MainWindow()
-    w.show()
+    w.showMaximized()  # abre ocupando toda la pantalla
     if len(argv) > 1 and os.path.isfile(argv[1]):
         w.set_mode("analisis")
         w.page_by_key["video"].open(argv[1])

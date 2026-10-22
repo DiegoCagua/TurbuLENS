@@ -332,3 +332,35 @@ class FlowLayout(QLayout):
             x = nx
             line_h = max(line_h, hint.height())
         return y + line_h - rect.y()
+
+
+def dialog_options():
+    """En Linux se usa el selector de archivos de Qt: no depende de GTK ni de los portales del escritorio."""
+    import sys
+
+    from PySide6.QtWidgets import QFileDialog
+
+    if sys.platform.startswith("linux"):
+        return QFileDialog.Option.DontUseNativeDialog
+    return QFileDialog.Option(0)
+
+
+def fullscreen_icon(color: str, exit_: bool = False, size: int = 20) -> QIcon:
+    """Cuatro esquinas: hacia afuera (entrar a pantalla completa) o hacia adentro (salir)."""
+    pm = QPixmap(size * 2, size * 2)
+    pm.fill(Qt.transparent)
+    p = QPainter(pm)
+    p.setRenderHint(QPainter.Antialiasing)
+    p.scale(2, 2)
+    p.setPen(QPen(QColor(color), 1.9, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+    a, b, L = 3.5, size - 3.5, 5.0
+    for cx, cy, dx, dy in ((a, a, 1, 1), (b, a, -1, 1), (a, b, 1, -1), (b, b, -1, -1)):
+        if exit_:
+            ox, oy = cx + dx * L, cy + dy * L
+            p.drawLine(int(ox - dx * L), int(oy), int(ox), int(oy))
+            p.drawLine(int(ox), int(oy - dy * L), int(ox), int(oy))
+        else:
+            p.drawLine(int(cx), int(cy), int(cx + dx * L), int(cy))
+            p.drawLine(int(cx), int(cy), int(cx), int(cy + dy * L))
+    p.end()
+    return QIcon(pm)

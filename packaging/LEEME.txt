@@ -1,4 +1,4 @@
-TurbuLENS 1.1.0
+TurbuLENS 1.1.1
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia
 
 No hay que instalar nada: abre el programa y listo.
@@ -26,5 +26,5 @@ Autor: Diego Fernando Cagua Lozada
 LICENCIA: PolyForm Noncommercial 1.0.0 (ver LICENSE.txt). Uso libre SIN fines
 comerciales. Toda copia o versión modificada debe conservar el crédito al autor.
 Si usas TurbuLENS en un trabajo o publicación, cítalo:
-  Cagua Lozada, D. F. (2026). TurbuLENS (versión 1.1.0) [Software].
+  Cagua Lozada, D. F. (2026). TurbuLENS (versión 1.1.1) [Software].
   https://github.com/DiegoCagua/TurbuLENS

@@ -31,7 +31,7 @@ class ModeCard(QFrame):
         lay.addWidget(t)
         lay.addWidget(d)
         lay.addStretch(1)
-        b = button(cta, "primary", cb)
+        b = button(cta, "primary", lambda *_: cb())  # clicked envía «checked»: no pasarlo a cb
         b.setMinimumHeight(42)
         lay.addLayout(hbox(b, "stretch"))
 
@@ -77,7 +77,7 @@ class StartPage(QWidget):
             ("Modo educativo", "Aprende estadística con un experimento astronómico real: histogramas, media, desviación "
              "estándar, la campana de Gauss y más. Para colegios y cursos.", "Entrar al modo educativo  →", "educativo"),
         ):
-            c = ModeCard(title, text, cta, lambda m=mode: self.main.set_mode(m))
+            c = ModeCard(title, text, cta, lambda *_, m=mode: self.main.set_mode(m))
             cards.addWidget(c, 1)
         cards.addStretch(1)
         lay.addLayout(cards)

@@ -1,18 +1,19 @@
-## TurbuLENS 1.1.0
+## TurbuLENS 1.1.1
 
 Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: no hay que instalar nada más.
 
 | Sistema | Archivo |
 |---|---|
-| Windows 10/11 (64 bits) | `TurbuLENS-v1.1.0-Windows-x64.zip` |
-| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.1.0-macOS-AppleSilicon.zip` |
-| Mac con Intel | `TurbuLENS-v1.1.0-macOS-Intel.zip` |
-| Linux (64 bits) | `TurbuLENS-v1.1.0-Linux-x64.tar.gz` |
+| Windows 10/11 (64 bits) | `TurbuLENS-v1.1.1-Windows-x64.zip` |
+| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.1.1-macOS-AppleSilicon.zip` |
+| Mac con Intel | `TurbuLENS-v1.1.1-macOS-Intel.zip` |
+| Linux (64 bits) | `TurbuLENS-v1.1.1-Linux-x64.tar.gz` |
 
-**Novedades**
-- **Animación de los centroides** en Resultados: cuadro a cuadro se ve dónde ubicó TurbuLENS cada punto, la distancia medida y el rastro de las posiciones anteriores. También se guarda en el historial.
-- **Linux corregido:** el programa ya no se cierra con el error «xcb-cursor0 or libxcb-cursor0 is needed»; las bibliotecas necesarias vienen dentro del ejecutable. Si no hay X11, intenta con Wayland.
-- Cada ejecutable se prueba en GitHub abriendo la **ventana real** en Windows, macOS y en un Linux sin esas bibliotecas.
-- **Nueva licencia: PolyForm Noncommercial 1.0.0.** Uso libre sin fines comerciales; toda copia o versión modificada debe conservar el crédito al autor. La cita (APA y BibTeX) está en *Acerca de*, en `CITATION.cff` y en el pie de informes y gráficas.
+**Correcciones**
+- Los botones «Entrar al modo análisis» y «Entrar al modo educativo» de la pantalla de inicio dejaban la aplicación en un estado inválido: no se podía entrar bien al modo educativo ni cargar videos. Corregido, con pruebas automáticas que hacen clic en cada botón.
+- En Linux, los selectores de archivos y carpetas usan el diálogo propio de Qt, que no depende de GTK ni de los portales del escritorio.
 
-El programa no está firmado digitalmente: la primera vez Windows o macOS pedirán confirmación (ver LEEME.txt).
+**Mejoras**
+- La ventana se abre ocupando toda la pantalla. Botón ⛶ o tecla **F11** para pantalla completa sin bordes; **Esc** para salir.
+
+Novedades de la 1.1: animación de los centroides en Resultados, arreglo del arranque en Linux y licencia PolyForm Noncommercial con crédito obligatorio al autor.

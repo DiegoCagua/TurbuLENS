@@ -74,7 +74,7 @@ def window_test(seconds: float = 3.0) -> int:
 
     app = QApplication.instance() or QApplication([])
     w = MainWindow(data_root=tempfile.mkdtemp(prefix="turbulens_ventana_"))
-    w.show()
+    w.showMaximized()
     w.set_mode("analisis")
     w.go("resultados")
     w.set_mode("educativo")

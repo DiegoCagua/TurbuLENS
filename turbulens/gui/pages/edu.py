@@ -26,7 +26,7 @@ from ...core import stats
 from ...core.dimm import DimmParams, k_coefficients, r0_from_variance, seeing_from_r0
 from ..session import resource_path
 from ..theme import theme
-from ..widgets import Card, ChipGroup, HelpButton, button, hbox, label, vbox
+from ..widgets import dialog_options, Card, ChipGroup, HelpButton, button, hbox, label, vbox
 from .base import Page
 
 
@@ -605,7 +605,7 @@ class L9Laboratorio(LessonPage):
 
     def _csv(self):
         x, t = self._x()
-        p, _ = QFileDialog.getSaveFileName(self, "Guardar datos", "datos_turbulens.csv", "CSV (*.csv)")
+        p, _ = QFileDialog.getSaveFileName(self, "Guardar datos", "datos_turbulens.csv", "CSV (*.csv)", options=dialog_options())
         if not p:
             return
         with open(p, "w", encoding="utf-8") as fh:

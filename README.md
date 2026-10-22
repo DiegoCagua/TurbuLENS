@@ -52,7 +52,7 @@ Cada lección tiene controles interactivos, una explicación corta, una pregunta
 
 En **Resultados**, una **animación de los centroides** muestra cuadro a cuadro dónde ubicó TurbuLENS cada punto (cruces, distancia medida y rastro de las posiciones anteriores).
 
-Ambos modos tienen tema **claro y oscuro** (sol / luna) y botones **!** que explican cada control al hacer clic.
+La ventana se abre ocupando toda la pantalla (⛶ o F11 para pantalla completa sin bordes, Esc para salir). Ambos modos tienen tema **claro y oscuro** (sol / luna) y botones **!** que explican cada control al hacer clic.
 
 <p align="center">
 <img src="docs/capturas/01_analisis_region_oscuro.png" width="420" alt="Recorte y tramo">
@@ -112,14 +112,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow y openpyxl.
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito al autor:
 
-> Cagua Lozada, D. F. (2026). *TurbuLENS* (versión 1.1.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F. (2026). *TurbuLENS* (versión 1.1.1) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
   author    = {Cagua Lozada, Diego Fernando},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.1.0},
+  version   = {1.1.1},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

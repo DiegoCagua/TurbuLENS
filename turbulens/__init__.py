@@ -6,7 +6,7 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia.
 Autor: Diego Fernando Cagua Lozada, estudiante del pregrado de Física.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 APP_NAME = "TurbuLENS"
 AUTHOR = "Diego Fernando Cagua Lozada"

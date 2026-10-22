@@ -29,7 +29,7 @@ from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
 from ..session import example_video
 from ..theme import theme
-from ..widgets import Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
+from ..widgets import dialog_options, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
 
 
@@ -115,7 +115,7 @@ class VideoPage(Page):
             self.open(urls[0].toLocalFile())
 
     def pick(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Elegir video", "", file_dialog_filter())
+        path, _ = QFileDialog.getOpenFileName(self, "Elegir video", "", file_dialog_filter(), options=dialog_options())
         if path:
             self.open(path)
 
@@ -756,7 +756,7 @@ class ParamsPage(Page):
         self.scale.setText("1,0")
 
     def _pick_out(self):
-        d = QFileDialog.getExistingDirectory(self, "Carpeta de salida", self.out.text() or "")
+        d = QFileDialog.getExistingDirectory(self, "Carpeta de salida", self.out.text() or "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
         if d:
             self.out.setText(d)
 
@@ -1202,7 +1202,7 @@ class ResultsPage(Page):
             msg.setText("Elige al menos un formato.")
             return
         start = s.result.out_dir or os.path.dirname(s.info.path) if s.info else ""
-        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", start)
+        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", start, options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
         if not folder:
             return
         base = os.path.splitext(s.result.video.get("name", "turbulens"))[0][:40].replace(" ", "_")
@@ -1385,7 +1385,7 @@ class HistoryPage(Page):
         if not formats:
             msg.setText("Elige al menos un formato.")
             return
-        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", "")
+        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
         if not folder:
             return
         QApplication.setOverrideCursor(Qt.WaitCursor)
