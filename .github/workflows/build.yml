@@ -38,7 +38,6 @@ jobs:
         include:
           - { os: windows-latest, nombre: Windows-x64 }
           - { os: macos-latest, nombre: macOS-AppleSilicon }
-          - { os: macos-13, nombre: macOS-Intel }
           - { os: ubuntu-22.04, nombre: Linux-x64 }
     runs-on: ${{ matrix.os }}
     steps:
@@ -99,3 +98,26 @@ jobs:
           ls -la artefactos
           gh release create "$GITHUB_REF_NAME" artefactos/* -R "$GITHUB_REPOSITORY" \
             --title "TurbuLENS $GITHUB_REF_NAME" --notes-file packaging/NOTAS_VERSION.md
+
+  # Mac con Intel: trabajo aparte para no bloquear el lanzamiento si no hay equipos Intel disponibles.
+  mac-intel:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: lanzamiento
+    runs-on: macos-15-intel
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install -r requirements.txt pyinstaller
+      - run: pyinstaller --noconfirm packaging/turbulens.spec
+      - name: Autoprueba
+        env: { QT_QPA_PLATFORM: offscreen }
+        run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --autoprueba
+      - name: Subir al lanzamiento
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          mkdir paquete && cp packaging/LEEME.txt paquete/ && cp -R dist/TurbuLENS.app paquete/
+          N="TurbuLENS-${GITHUB_REF_NAME}-macOS-Intel.zip"
+          ditto -c -k --keepParent paquete "$N"
+          gh release upload "$GITHUB_REF_NAME" "$N" -R "$GITHUB_REPOSITORY" --clobber
