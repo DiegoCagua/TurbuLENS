@@ -84,25 +84,39 @@ jobs:
             TurbuLENS-*.tar.gz
 
   lanzamiento:
-    if: startsWith(github.ref, 'refs/tags/v')
+    # Publica la versión de turbulens/__init__.py cuando llega a main y todo pasó (si aún no existe).
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: ejecutable
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.v.outputs.tag }}
+      nueva: ${{ steps.v.outputs.nueva }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with: { path: artefactos, pattern: "TurbuLENS-*", merge-multiple: true }
-      - name: Publicar lanzamiento
+      - id: v
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
+          V=$(python3 -c "import re;print(re.search(r'__version__ = \"(.+?)\"', open('turbulens/__init__.py').read()).group(1))")
+          echo "tag=v$V" >> "$GITHUB_OUTPUT"
+          if gh release view "v$V" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then echo "nueva=no" >> "$GITHUB_OUTPUT"; else echo "nueva=si" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/download-artifact@v4
+        if: steps.v.outputs.nueva == 'si'
+        with: { path: artefactos, pattern: "TurbuLENS-*", merge-multiple: true }
+      - name: Publicar lanzamiento
+        if: steps.v.outputs.nueva == 'si'
+        env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ steps.v.outputs.tag }}" }
+        run: |
           gh release delete dev-wheelhouse -y --cleanup-tag -R "$GITHUB_REPOSITORY" || true
-          ls -la artefactos
-          gh release create "$GITHUB_REF_NAME" artefactos/* -R "$GITHUB_REPOSITORY" \
-            --title "TurbuLENS $GITHUB_REF_NAME" --notes-file packaging/NOTAS_VERSION.md
+          cd artefactos
+          for f in TurbuLENS-main-*; do mv "$f" "${f/TurbuLENS-main-/TurbuLENS-$TAG-}"; done
+          ls -la
+          gh release create "$TAG" * -R "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "TurbuLENS $TAG" --notes-file ../packaging/NOTAS_VERSION.md
 
   # Mac con Intel: trabajo aparte para no bloquear el lanzamiento si no hay equipos Intel disponibles.
   mac-intel:
-    if: startsWith(github.ref, 'refs/tags/v')
     needs: lanzamiento
+    if: needs.lanzamiento.outputs.nueva == 'si'
     runs-on: macos-15-intel
     timeout-minutes: 60
     steps:
@@ -115,9 +129,9 @@ jobs:
         env: { QT_QPA_PLATFORM: offscreen }
         run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --autoprueba
       - name: Subir al lanzamiento
-        env: { GH_TOKEN: "${{ github.token }}" }
+        env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.lanzamiento.outputs.tag }}" }
         run: |
           mkdir paquete && cp packaging/LEEME.txt paquete/ && cp -R dist/TurbuLENS.app paquete/
-          N="TurbuLENS-${GITHUB_REF_NAME}-macOS-Intel.zip"
+          N="TurbuLENS-$TAG-macOS-Intel.zip"
           ditto -c -k --keepParent paquete "$N"
-          gh release upload "$GITHUB_REF_NAME" "$N" -R "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$TAG" "$N" -R "$GITHUB_REPOSITORY" --clobber
