@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "turbulens"
+version = "1.0.0"
+description = "Separa videos de un DIMM en imágenes, mide el seeing y enseña estadística con astronomía."
+readme = "README.md"
+license = {text = "MIT"}
+authors = [{name = "Diego Fernando Cagua Lozada"}]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.26", "PySide6-Essentials>=6.6", "av>=12", "Pillow>=10", "openpyxl>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pyinstaller>=6"]
+
+[project.scripts]
+turbulens = "turbulens.gui.app:main"
+
+[tool.setuptools.packages.find]
+include = ["turbulens*"]
+
+[tool.setuptools.package-data]
+turbulens = ["assets/*", "data/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

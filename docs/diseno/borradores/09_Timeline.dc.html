@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Línea de tiempo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1C1D21}
+a{color:#FFB366}a:hover{color:#FFD0A1}
+</style>
+</helmet>
+<div style="font-family: 'Sora', system-ui, sans-serif; color: #ECEDEF; background: #1C1D21; min-height: 820px; display: flex; flex-direction: column">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 10px 18px; background: #232429; border-bottom: 1px solid #34363D">
+    <strong style="font-size: 15px; font-weight: 600">DIMM Seeing</strong>
+    <span style="font-size: 12px; color: #A5A8B1">Diego Fernando Cagua Lozada</span>
+    <div style="flex: 1"></div>
+    <button type="button" style="font: inherit; font-size: 13px; min-height: 38px; padding: 0 14px; background: #2D2F35; color: #ECEDEF; border: 1px solid #44464E; border-radius: 6px">Abrir</button>
+    <button type="button" style="font: inherit; font-size: 13px; font-weight: 600; min-height: 38px; padding: 0 16px; background: {{accent}}; color: #1C1D21; border: none; border-radius: 6px">Exportar selección</button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap; min-height: 0">
+    <main style="flex: 999 1 640px; min-width: 0; display: flex; flex-direction: column; gap: 10px; padding: 14px 18px">
+      <div style="position: relative; background: #000000; border-radius: 6px; height: 340px; overflow: hidden">
+        <div style="position: absolute; left: 50%; top: 42%; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 12px 4px rgba(255,255,255,0.4)"></div>
+        <div style="position: absolute; left: 48.4%; top: 53%; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 12px 4px rgba(255,255,255,0.4)"></div>
+        <span style="position: absolute; right: 12px; bottom: 10px; font-family: 'Roboto Mono', monospace; font-size: 13px; color: #D8DAE0">00:30.36 · cuadro 1820</span>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap">
+        <sc-for list="{{transport}}" as="t" hint-placeholder-count="5">
+          <button type="button" aria-label="{{t.aria}}" style="font: inherit; font-size: 15px; min-width: 48px; min-height: 44px; background: #2D2F35; color: #ECEDEF; border: 1px solid #44464E; border-radius: 6px">{{t.label}}</button>
+        </sc-for>
+      </div>
+
+      <div style="background: #232429; border: 1px solid #34363D; border-radius: 6px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; font-family: 'Roboto Mono', monospace; font-size: 12px; color: #A5A8B1"><span>00:00</span><span>00:35</span><span>01:10</span><span>01:46</span><span>02:21</span></div>
+        <div style="position: relative; height: 46px; background: #2D2F35; border-radius: 4px; overflow: hidden">
+          <div style="position: absolute; left: 4%; right: 12%; top: 0; bottom: 0; background: rgba(242,140,40,0.22); border-left: 3px solid {{accent}}; border-right: 3px solid {{accent}}"></div>
+          <div style="position: absolute; left: 21.5%; top: 0; bottom: 0; width: 2px; background: #FFFFFF"></div>
+          <span style="position: absolute; left: calc(4% + 8px); top: 14px; font-size: 12px; color: #FFD0A1">Entrada</span>
+          <span style="position: absolute; right: calc(12% + 8px); top: 14px; font-size: 12px; color: #FFD0A1">Salida</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px">
+          <span style="font-size: 12px; color: #A5A8B1; width: 110px; flex-shrink: 0">σ cada 2,4 s</span>
+          <div role="img" aria-label="Dispersión de la separación a lo largo del video, con un pico cerca del segundo 15" style="flex: 1; display: flex; align-items: flex-end; gap: 2px; height: 56px">
+            <sc-for list="{{track}}" as="b" hint-placeholder-count="60">
+              <div style="flex: 1; height: {{b.h}}; background: {{b.c}}; border-radius: 1px"></div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <aside style="flex: 1 1 280px; min-width: 0; background: #232429; border-left: 1px solid #34363D; padding: 16px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 14px; font-weight: 600; letter-spacing: 0.04em">INSPECTOR</h2>
+      <sc-for list="{{insp}}" as="r" hint-placeholder-count="5">
+        <div style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; border-bottom: 1px solid #34363D; padding-bottom: 8px"><span style="color: #A5A8B1">{{r.k}}</span><span style="font-family: 'Roboto Mono', monospace">{{r.v}}</span></div>
+      </sc-for>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #A5A8B1">Formato de salida<select style="font: inherit; font-size: 13px; min-height: 38px; background: #2D2F35; color: #ECEDEF; border: 1px solid #44464E; border-radius: 6px; padding: 0 8px"><option>PNG</option><option>TIFF 16 bits</option><option>JPG</option><option>NumPy</option><option>FITS</option></select></label>
+      <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; background: #2D2F35; color: #ECEDEF; border: 1px solid #44464E; border-radius: 6px">Descartar picos de σ</button>
+      <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; background: #2D2F35; color: #ECEDEF; border: 1px solid #44464E; border-radius: 6px">Ver histograma</button>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F28C28","options":["#F28C28","#4CC2FF","#C77DFF"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#F28C28';
+    const t = [37, 41, 36, 41, 38, 42, 100, 45, 41, 40, 44, 45, 57, 46, 42, 43, 39, 51, 38, 42, 37, 41, 45, 52, 46, 51, 46, 46, 50, 47, 44, 43, 42, 40, 45, 43, 46, 40, 50, 50, 47, 53, 50, 60, 38, 47, 47, 36, 38, 36, 45, 41, 56, 42, 45, 40, 41, 46, 39, 48];
+    return {
+      accent,
+      track: t.map((v, i) => ({ h: v + '%', c: (i >= 2 && i < 53) ? accent : '#5A5D66' })),
+      transport: [
+        { label: '⏮', aria: 'Ir al inicio' }, { label: '◀', aria: 'Cuadro anterior' }, { label: '▶', aria: 'Reproducir' },
+        { label: '▶|', aria: 'Cuadro siguiente' }, { label: '⏭', aria: 'Ir al final' }
+      ],
+      insp: [
+        { k: 'Selección', v: '00:05.6 – 02:04.5' },
+        { k: 'Cuadros', v: '[—]' },
+        { k: 'Sep. media', v: '13,16 px' },
+        { k: 'σ', v: '0,72 px' },
+        { k: 'Seeing', v: '[—] ″' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

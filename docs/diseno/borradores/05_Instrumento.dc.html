@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Panel de instrumento</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&amp;family=Archivo+Narrow:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#2A2C2E}
+a{color:#A8F5A8}a:hover{color:#D2FFD2}
+</style>
+</helmet>
+<div style="font-family: 'Archivo Narrow', system-ui, sans-serif; color: #E4E6E8; background: #2A2C2E; min-height: 820px; padding: 22px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 18px">
+  <header style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px; border-bottom: 2px solid #44474A; padding-bottom: 10px">
+    <strong style="font-size: 24px; font-weight: 700; letter-spacing: 0.14em">DIMM-1 · MONITOR DE SEEING</strong>
+    <span style="font-size: 14px; color: #B9BDC1; letter-spacing: 0.06em">DISEÑO: DIEGO FERNANDO CAGUA LOZADA</span>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 18px">
+    <div style="flex: 3 1 520px; min-width: 0; background: #0A120A; border: 6px solid #1A1C1D; border-radius: 10px; padding: 14px; display: flex; flex-wrap: wrap; gap: 14px; box-shadow: inset 0 0 30px rgba(0,0,0,0.8)">
+      <div style="flex: 1 1 220px; position: relative; height: 260px; border: 1px solid #1F3A1F; background-image: linear-gradient(#173017 1px, transparent 1px), linear-gradient(90deg, #173017 1px, transparent 1px); background-size: 26px 26px">
+        <div style="position: absolute; left: 50%; top: 40%; width: 9px; height: 9px; border-radius: 50%; background: {{phosphor}}; box-shadow: 0 0 10px 3px rgba(157,242,157,0.55)"></div>
+        <div style="position: absolute; left: 47%; top: 55%; width: 9px; height: 9px; border-radius: 50%; background: {{phosphor}}; box-shadow: 0 0 10px 3px rgba(157,242,157,0.55)"></div>
+        <span style="position: absolute; left: 8px; top: 6px; font-family: 'Share Tech Mono', monospace; font-size: 13px; color: {{phosphor}}">CH1 · IMAGEN</span>
+      </div>
+      <div style="flex: 1 1 220px; position: relative; height: 260px; border: 1px solid #1F3A1F; display: flex; align-items: flex-end; gap: 3px; padding: 28px 8px 8px; box-sizing: border-box">
+        <span style="position: absolute; left: 8px; top: 6px; font-family: 'Share Tech Mono', monospace; font-size: 13px; color: {{phosphor}}">CH2 · HISTOGRAMA px</span>
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="18">
+          <div style="flex: 1; height: {{b.h}}; border: 1px solid {{phosphor}}; border-bottom: none; background: rgba(157,242,157,0.15)"></div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="flex: 1 1 240px; min-width: 0; display: flex; flex-direction: column; gap: 10px">
+      <sc-for list="{{lcds}}" as="l" hint-placeholder-count="4">
+        <div style="background: #0A120A; border: 4px solid #1A1C1D; border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: baseline">
+          <span style="font-size: 13px; color: #B9BDC1; letter-spacing: 0.08em">{{l.k}}</span>
+          <span style="font-family: 'Share Tech Mono', monospace; font-size: 28px; color: {{phosphor}}">{{l.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 18px; align-items: flex-start">
+    <div style="flex: 2 1 420px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{keys}}" as="k" hint-placeholder-count="8">
+        <button type="button" style="font-family: 'Archivo Narrow', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.06em; min-height: 56px; background: {{k.bg}}; color: {{k.fg}}; border: none; border-radius: 6px; box-shadow: 0 3px 0 #141516">{{k.label}}</button>
+      </sc-for>
+    </div>
+    <div style="flex: 1 1 280px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <sc-for list="{{fields}}" as="f" hint-placeholder-count="4">
+        <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #B9BDC1; letter-spacing: 0.06em">{{f.k}}<input type="text" value="{{f.v}}" style="font-family: 'Share Tech Mono', monospace; font-size: 17px; min-height: 40px; background: #0A120A; color: #A8F5A8; border: 2px solid #1A1C1D; border-radius: 4px; padding: 0 10px"></label>
+      </sc-for>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"phosphor":{"editor":"color","default":"#9DF29D","options":["#9DF29D","#FFC861","#8FD3FF"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const phosphor = this.props.phosphor ?? '#9DF29D';
+    const hs = [3, 5, 11, 20, 32, 54, 75, 93, 97, 100, 79, 65, 42, 21, 11, 6, 2, 1];
+    const k = (label, kind) => ({ label, bg: kind === 'go' ? '#3E8E3E' : (kind === 'stop' ? '#A8382F' : '#4A4D51'), fg: '#FFFFFF' });
+    return {
+      phosphor,
+      bars: hs.map((h) => ({ h: Math.max(h, 2) + '%' })),
+      lcds: [
+        { k: 'SEP. MEDIA', v: '13.16' },
+        { k: 'SIGMA px', v: '0.72' },
+        { k: 'SEEING ″', v: '[—]' },
+        { k: 'CUADROS', v: '8484' }
+      ],
+      keys: [k('CARGAR'), k('ROI'), k('FORMATO'), k('CARPETA'), k('INICIAR', 'go'), k('DETENER', 'stop'), k('EXPORTAR'), k('INFORME')],
+      fields: [
+        { k: 'Ø ORIFICIO cm', v: '2.5' },
+        { k: 'SEPARACIÓN cm', v: '14.0' },
+        { k: 'λ nm', v: '550' },
+        { k: 'ESCALA ″/px', v: '[—]' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

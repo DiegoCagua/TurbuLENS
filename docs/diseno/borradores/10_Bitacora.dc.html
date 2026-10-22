@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Bitácora de observación</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF2F7}
+a{color:#22356F}a:hover{color:#111C40}
+</style>
+</helmet>
+<div style="font-family: 'Lexend', system-ui, sans-serif; color: #18203A; background: #EEF2F7; min-height: 820px; display: flex; flex-wrap: wrap">
+  <aside style="flex: 1 1 280px; max-width: 330px; min-width: 0; background: {{navy}}; color: #F2F5FB; padding: 22px 18px; display: flex; flex-direction: column; gap: 16px; box-sizing: border-box">
+    <div>
+      <strong style="font-size: 19px; font-weight: 600">Bitácora DIMM</strong>
+      <div style="font-size: 12px; color: #C9D3EA">Diego Fernando Cagua Lozada</div>
+    </div>
+    <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; min-height: 46px; border: none; border-radius: 10px; background: #FFFFFF; color: {{navy}}">+ Nueva observación</button>
+    <label style="display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #C9D3EA">Buscar<input type="text" value="" placeholder="Estrella, fecha o sitio" style="font: inherit; font-size: 14px; min-height: 40px; border: 1px solid #4A5B91; border-radius: 8px; padding: 0 10px; background: #2C3F7D; color: #FFFFFF"></label>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <sc-for list="{{sessions}}" as="s" hint-placeholder-count="3">
+        <button type="button" style="font: inherit; text-align: left; min-height: 64px; padding: 10px 12px; border-radius: 10px; border: 1px solid {{s.bd}}; background: {{s.bg}}; color: #F2F5FB; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 14px; font-weight: 500">{{s.star}}</span>
+          <span style="font-size: 12px; color: #C9D3EA">{{s.when}} · seeing {{s.seeing}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </aside>
+
+  <main style="flex: 999 1 640px; min-width: 0; padding: 26px 30px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+    <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px">
+      <div>
+        <span style="font-size: 13px; color: #4C5672">30 de agosto de 2024 · 21:38</span>
+        <h1 style="margin: 2px 0 0; font-size: 28px; font-weight: 500">Altair · máscara de Hartmann</h1>
+      </div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap">
+        <button type="button" style="font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid #B9C3D6; border-radius: 10px; background: #FFFFFF; color: #18203A">Reprocesar</button>
+        <button type="button" style="font: inherit; font-size: 14px; font-weight: 500; min-height: 44px; padding: 0 16px; border: none; border-radius: 10px; background: {{navy}}; color: #FFFFFF">Exportar informe PDF</button>
+      </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px">
+      <sc-for list="{{meta}}" as="m" hint-placeholder-count="6">
+        <div style="background: #FFFFFF; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 2px">
+          <span style="font-size: 12px; color: #4C5672">{{m.k}}</span>
+          <span style="font-size: 16px; font-weight: 500">{{m.v}}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 16px">
+      <section style="flex: 1 1 340px; background: #FFFFFF; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 500">Resultado</h2>
+        <div style="display: flex; align-items: baseline; gap: 10px"><span style="font-size: 44px; font-weight: 300">[—]″</span><span style="font-size: 14px; color: #4C5672">seeing estimado</span></div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <div style="display: flex; height: 12px; border-radius: 6px; overflow: hidden"><div style="flex: 1; background: #2E7D5B"></div><div style="flex: 2; background: #D9A93A"></div><div style="flex: 2; background: #C2553A"></div></div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: #4C5672"><span>≈1″ excelente</span><span>2–3″ aceptable</span><span>&gt;3″ turbulento</span></div>
+        </div>
+        <span style="font-size: 13px; color: #4C5672">Separación media 13,16 px · σ 0,72 px · 8.484 cuadros</span>
+      </section>
+      <section style="flex: 1 1 340px; background: #FFFFFF; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 16px; font-weight: 500">Notas de la noche</h2>
+        <label for="b-notas" style="font-size: 12px; color: #4C5672">Condiciones, viento, nubes, equipo usado</label>
+        <textarea id="b-notas" rows="6" style="font: inherit; font-size: 14px; border: 1px solid #B9C3D6; border-radius: 10px; padding: 10px; resize: vertical">[Escribe aquí tus observaciones]</textarea>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 14px; border: 1px solid #B9C3D6; border-radius: 10px; background: #FFFFFF; color: #18203A">Ver cuadros extraídos</button>
+          <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 14px; border: 1px solid #B9C3D6; border-radius: 10px; background: #FFFFFF; color: #18203A">Abrir carpeta</button>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"navy":{"editor":"color","default":"#22356F","options":["#22356F","#1E4D45","#4A2A6B"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const navy = this.props.navy ?? '#22356F';
+    const s = (star, when, seeing, on) => ({ star, when, seeing, bg: on ? '#3A4E8E' : 'transparent', bd: on ? '#6E80BE' : '#3A4C86' });
+    return {
+      navy,
+      sessions: [
+        s('Altair', '30/08/2024 · 21:38', '[—]″', true),
+        s('Aldebarán', '19/12/2024 · 19:09', '[—]″', false),
+        s('[Próxima observación]', '—', '—', false)
+      ],
+      meta: [
+        { k: 'Sitio', v: '[SITIO]' },
+        { k: 'Telescopio', v: '[APERTURA]' },
+        { k: 'Máscara', v: 'Ø 2,5 cm · 14 cm' },
+        { k: 'Altura de la estrella', v: '[—]°' },
+        { k: 'Temperatura', v: '[—] °C' },
+        { k: 'Humedad', v: '[—] %' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

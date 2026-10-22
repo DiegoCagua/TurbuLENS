@@ -1,0 +1,1253 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>TurbuLENS · versión preliminar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&amp;family=Roboto+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#1C1D21}
+input[type=range]{width:100%}
+</style>
+</helmet>
+<div style="font-family: 'Sora', system-ui, sans-serif; color: {{c.text}}; background: {{c.bg}}; min-height: 900px; display: flex; flex-direction: column">
+
+<!-- ===================== PANTALLA DE INICIO ===================== -->
+<sc-if value="{{noMode}}" hint-placeholder-val="{{ true }}">
+  <div style="flex: 1; display: flex; flex-direction: column; align-items: center; padding: 40px 20px 28px; gap: 30px; box-sizing: border-box">
+    <div style="width: 100%; max-width: 1060px; display: flex; justify-content: flex-end">
+      <button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid {{c.border2}}; border-radius: 50%; background: {{c.panel2}}; color: {{c.text}}">
+        <sc-if value="{{isDark}}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"></path></svg></sc-if>
+        <sc-if value="{{isLight}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+      </button>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center">
+      <svg width="64" height="64" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="{{c.accent}}" stroke-width="1.6"></circle><circle cx="13" cy="14" r="3" fill="{{c.accent}}"></circle><circle cx="21" cy="20" r="3" fill="{{c.accent}}"></circle></svg>
+      <h1 style="margin: 0; font-size: 46px; font-weight: 300; letter-spacing: 0.01em">TurbuLENS</h1>
+      <span style="font-size: 15px; color: {{c.muted}}">Observatorio Astronómico Nacional · Universidad Nacional de Colombia</span>
+      <span style="font-size: 15px; color: {{c.muted}}; max-width: 620px; line-height: 1.55">Separa videos de un DIMM en imágenes, mide la imagen doble de una estrella y calcula el seeing de tu cielo.</span>
+    </div>
+    <div style="width: 100%; max-width: 1060px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px">
+      <button type="button" onClick="{{toAnalisis}}" style="font: inherit; text-align: left; min-height: 280px; padding: 28px; border: 1px solid {{c.border2}}; border-radius: 22px; background: {{c.panel}}; color: {{c.text}}; display: flex; flex-direction: column; gap: 14px">
+        <span style="display: inline-flex; width: 52px; height: 52px; border-radius: 14px; align-items: center; justify-content: center; background: {{c.accentSoft}}; color: {{c.accent}}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"></path></svg></span>
+        <strong style="font-size: 24px; font-weight: 500">Análisis científico</strong>
+        <span style="font-size: 15px; line-height: 1.55; color: {{c.muted}}">Para mediciones reales de tu sitio de observación: extracción de cuadros, seeing, historial y exportación de datos.</span>
+        <span style="margin-top: auto; font-size: 14px; color: {{c.accent}}; font-weight: 500">Entrar al modo análisis →</span>
+      </button>
+      <button type="button" onClick="{{toEducativo}}" style="font: inherit; text-align: left; min-height: 280px; padding: 28px; border: 1px solid {{c.border2}}; border-radius: 22px; background: {{c.panel}}; color: {{c.text}}; display: flex; flex-direction: column; gap: 14px">
+        <span style="display: inline-flex; width: 52px; height: 52px; border-radius: 14px; align-items: center; justify-content: center; background: {{c.accentSoft}}; color: {{c.accent}}"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M2 8l10-5 10 5-10 5z"></path><path d="M6 10.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-5.5"></path></svg></span>
+        <strong style="font-size: 24px; font-weight: 500">Modo educativo</strong>
+        <span style="font-size: 15px; line-height: 1.55; color: {{c.muted}}">Para colegios y cursos: aprende qué es el seeing, analiza un video paso a paso y practica estadística con datos reales.</span>
+        <span style="margin-top: auto; font-size: 14px; color: {{c.accent}}; font-weight: 500">Entrar al modo educativo →</span>
+      </button>
+    </div>
+    <span style="font-size: 13px; color: {{c.muted}}; text-align: center">Cada modo guarda sus mediciones por separado: los datos de clase nunca se mezclan con los científicos.</span>
+    <div style="flex: 1"></div>
+    <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap; justify-content: center; font-size: 13px; color: {{c.muted}}">
+      <span>Código abierto · versión 0.3 preliminar</span>
+      <button type="button" onClick="{{toggleStartAbout}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border}}; border-radius: 9px; background: transparent; color: {{c.text}}">Acerca de</button>
+    </div>
+    <sc-if value="{{startAbout}}" hint-placeholder-val="{{ false }}">
+      <section style="width: 100%; max-width: 640px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55">
+        <strong style="font-weight: 500">Diego Fernando Cagua Lozada</strong>
+        <span style="color: {{c.muted}}">Estudiante del pregrado de Física · autor de TurbuLENS</span>
+        <span style="color: {{c.muted}}">Aplicación de código abierto · github.com/[usuario]/TurbuLENS</span>
+      </section>
+    </sc-if>
+  </div>
+</sc-if>
+
+<!-- ===================== APLICACIÓN ===================== -->
+<sc-if value="{{hasMode}}" hint-placeholder-val="{{ false }}">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; padding: 12px 22px; background: {{c.panel}}; border-bottom: 1px solid {{c.border}}">
+    <div style="display: flex; align-items: center; gap: 12px; min-width: 0">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="{{c.accent}}" stroke-width="2"></circle><circle cx="13" cy="14" r="3" fill="{{c.accent}}"></circle><circle cx="21" cy="20" r="3" fill="{{c.accent}}"></circle></svg>
+      <div style="display: flex; flex-direction: column; min-width: 0">
+        <strong style="font-size: 18px; font-weight: 600">TurbuLENS</strong>
+        <span style="font-size: 12px; color: {{c.muted}}">Observatorio Astronómico Nacional · Universidad Nacional de Colombia</span>
+      </div>
+    </div>
+    <div style="flex: 1"></div>
+    <span style="font-size: 13px; font-weight: 500; padding: 8px 14px; border-radius: 999px; background: {{c.accentSoft}}; color: {{c.accent}}">{{modeChip}}</span>
+    <button type="button" onClick="{{toStart}}" style="font: inherit; font-size: 13px; min-height: 44px; padding: 0 14px; border: 1px solid {{c.border2}}; border-radius: 10px; background: {{c.panel2}}; color: {{c.text}}">Cambiar de modo</button>
+    <button type="button" onClick="{{toggleTheme}}" aria-label="{{themeLabel}}" title="{{themeLabel}}" style="width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; padding: 0; border: 1px solid {{c.border2}}; border-radius: 50%; background: {{c.panel2}}; color: {{c.text}}">
+        <sc-if value="{{isDark}}" hint-placeholder-val="{{ true }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="4.2"></circle><path d="M12 2v2.2M12 19.8V22M4.9 4.9l1.6 1.6M17.5 17.5l1.6 1.6M2 12h2.2M19.8 12H22M4.9 19.1l1.6-1.6M17.5 6.5l1.6-1.6"></path></svg></sc-if>
+        <sc-if value="{{isLight}}" hint-placeholder-val="{{ false }}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"></path></svg></sc-if>
+      </button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap; min-height: 0">
+    <nav aria-label="Secciones" style="flex: 1 1 220px; max-width: 250px; min-width: 0; background: {{c.panel}}; border-right: 1px solid {{c.border}}; padding: 14px 12px; display: flex; flex-direction: column; gap: 4px; box-sizing: border-box">
+      <sc-for list="{{navGroups}}" as="g" hint-placeholder-count="2">
+        <span style="font-size: 11px; letter-spacing: 0.14em; color: {{c.muted}}; padding: 12px 8px 6px">{{g.title}}</span>
+        <sc-for list="{{g.items}}" as="n" hint-placeholder-count="3">
+          <button type="button" onClick="{{n.go}}" aria-current="{{n.cur}}" style="font: inherit; font-size: 14px; text-align: left; min-height: 42px; padding: 0 10px; display: flex; align-items: center; gap: 10px; border: 1px solid {{n.bd}}; border-radius: 9px; background: {{n.bg}}; color: {{c.text}}">
+            <span style="display: inline-flex; width: 24px; height: 24px; border-radius: 6px; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-size: 12px; background: {{n.badgeBg}}; color: {{n.badgeFg}}">{{n.n}}</span>
+            <span>{{n.label}}</span>
+          </button>
+        </sc-for>
+      </sc-for>
+      <div style="flex: 1; min-height: 16px"></div>
+      <button type="button" onClick="{{goAcerca}}" style="font: inherit; font-size: 13px; text-align: left; min-height: 40px; padding: 0 12px; border: 1px solid {{acercaBd}}; border-radius: 9px; background: transparent; color: {{c.muted}}">Acerca de</button>
+    </nav>
+
+    <main style="flex: 999 1 640px; min-width: 0; padding: 22px 26px; display: flex; flex-direction: column; gap: 18px; box-sizing: border-box">
+
+      <!-- ========== VIDEO ========== -->
+      <sc-if value="{{scr.video}}" hint-placeholder-val="{{ true }}">
+        <div style="display: flex; flex-direction: column; gap: 18px">
+          <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 500">Cargar video</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">MOV, AVI, MP4, MKV, WMV, MTS, WebM, SER, FITS y muchos más</span>
+          </div>
+          <sc-if value="{{isEdu}}" hint-placeholder-val="{{ false }}">
+            <div style="background: {{c.accentSoft}}; border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.6"><strong style="font-weight: 500">¿Qué vas a hacer?</strong> Un video es una serie de fotos muy rápidas. Este tiene 8.484 fotos («cuadros») en 2 minutos 21 segundos. La app mide cada cuadro por separado y luego usa estadística para resumir los miles de mediciones en un solo número: el seeing.</div>
+          </sc-if>
+          <sc-if value="{{notLoaded}}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 14px">
+              <button type="button" onClick="{{loadVideo}}" style="font: inherit; min-height: 260px; border: 2px dashed {{c.border2}}; border-radius: 22px; background: {{c.panel}}; color: {{c.text}}; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"></rect><path d="M10 9.5v5l4-2.5z"></path></svg>
+                <span style="font-size: 20px; font-weight: 500">Suelta tu video aquí</span>
+                <span style="font-size: 14px; color: {{c.muted}}">o haz clic para buscarlo en tu computador</span>
+              </button>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+                <button type="button" onClick="{{loadVideo}}" style="font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid {{c.border2}}; border-radius: 10px; background: {{c.panel2}}; color: {{c.text}}">Usar video de ejemplo (Altair)</button>
+                <span style="font-size: 13px; color: {{c.muted}}">El video no se copia: se lee directamente desde su carpeta.</span>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{d.loaded}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-wrap: wrap; gap: 18px">
+              <div style="flex: 2 1 420px; position: relative; background: {{c.preview}}; border-radius: 14px; aspect-ratio: 16 / 9; overflow: hidden">
+                <div style="position: absolute; left: 46.96%; top: 45.8%; width: 6px; height: 6px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 6px 2px rgba(255,255,255,0.5)"></div>
+                <div style="position: absolute; left: 46.65%; top: 47.1%; width: 6px; height: 6px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 6px 2px rgba(255,255,255,0.5)"></div>
+                <span style="position: absolute; left: 14px; bottom: 12px; font-family: 'Roboto Mono', monospace; font-size: 12px; color: #D8DAE0">Primer cuadro · 1920 × 1080</span>
+              </div>
+              <div style="flex: 1 1 280px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+                <span style="font-family: 'Roboto Mono', monospace; font-size: 12px; color: {{c.muted}}; word-break: break-all">G_3_Altair_300824_21_38_DSC0034_Mascara.MOV</span>
+                <sc-for list="{{videoInfo}}" as="r" hint-placeholder-count="6">
+                  <div style="display: flex; justify-content: space-between; gap: 10px; font-size: 14px; border-bottom: 1px solid {{c.border}}; padding-bottom: 7px"><span style="color: {{c.muted}}">{{r.k}}</span><span style="font-family: 'Roboto Mono', monospace">{{r.v}}</span></div>
+                </sc-for>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px">
+                  <button type="button" onClick="{{unloadVideo}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Cambiar video</button>
+                  <button type="button" onClick="{{goRegion}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 40px; padding: 0 16px; border: none; border-radius: 9px; background: {{c.accent}}; color: {{c.onAccent}}">Siguiente: recorte y tramo →</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ========== RECORTE Y TRAMO ========== -->
+      <sc-if value="{{scr.region}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 500">Recorte y tramo</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">Dos decisiones antes de procesar: <strong style="font-weight: 500; color: {{c.text}}">dónde</strong> mirar en cada cuadro y <strong style="font-weight: 500; color: {{c.text}}">qué parte</strong> del video usar</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px">
+            <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px">
+              <span style="flex-shrink: 0; display: inline-flex; width: 30px; height: 30px; border-radius: 8px; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; background: {{c.accentSoft}}; color: {{c.accent}}">1</span>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.55"><strong style="font-weight: 500">Recorte: la región de la estrella</strong><span style="color: {{c.muted}}">La estrella ocupa unos 20 × 20 píxeles de una imagen de 1920 × 1080. Guardar solo esa zona hace los archivos unas 100 veces más livianos y el análisis más rápido. Deja margen alrededor de los dos puntos: la turbulencia los mueve.</span></div>
+            </div>
+            <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px">
+              <span style="flex-shrink: 0; display: inline-flex; width: 30px; height: 30px; border-radius: 8px; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; background: {{c.accentSoft}}; color: {{c.accent}}">2</span>
+              <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; line-height: 1.55"><strong style="font-weight: 500">Tramo: la parte del video a usar</strong><span style="color: {{c.muted}}">Quita el inicio y el final si moviste el telescopio al grabar, y cualquier momento con nubes o golpes. El protocolo recomienda al menos 15 a 20 segundos de video estable.</span></div>
+            </div>
+          </div>
+
+          <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start">
+            <div style="flex: 3 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 8px">
+              <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between">
+                <div role="group" aria-label="Zoom" style="display: flex; gap: 4px; align-items: center">
+                  <span style="font-size: 12px; color: {{c.muted}}; margin-right: 4px">Zoom</span>
+                  <sc-for list="{{zoomChips}}" as="z" hint-placeholder-count="4">
+                    <button type="button" onClick="{{z.pick}}" aria-pressed="{{z.on}}" style="font-family: 'Roboto Mono', monospace; font-size: 13px; min-width: 44px; min-height: 36px; border: 1px solid {{z.bd}}; border-radius: 8px; background: {{z.bg}}; color: {{z.fg}}">{{z.label}}</button>
+                  </sc-for>
+                </div>
+                <button type="button" onClick="{{autoFit}}" style="font: inherit; font-size: 13px; font-weight: 500; min-height: 38px; padding: 0 14px; border: 1px solid {{c.accent}}; border-radius: 9px; background: {{c.accentSoft}}; color: {{c.text}}">◎ Ajustar a la estrella automáticamente</button>
+              </div>
+              <div style="position: relative; background: {{c.preview}}; border-radius: 12px; aspect-ratio: 16 / 9; overflow: hidden">
+                <sc-for list="{{canvasDots}}" as="z" hint-placeholder-count="2">
+                  <div style="position: absolute; left: {{z.left}}; top: {{z.top}}; width: {{z.size}}; height: {{z.size}}; margin-left: {{z.off}}; margin-top: {{z.off}}; border-radius: 50%; background: #FFFFFF; box-shadow: {{z.glow}}"></div>
+                </sc-for>
+                <div style="position: absolute; left: {{roiBox.left}}; top: {{roiBox.top}}; width: {{roiBox.w}}; height: {{roiBox.h}}; border: 2px dashed {{c.accent}}; background: {{c.accentSoft}}; box-sizing: border-box">
+                  <sc-for list="{{handles}}" as="h" hint-placeholder-count="8">
+                    <span style="position: absolute; left: {{h.left}}; top: {{h.top}}; width: 10px; height: 10px; margin: -6px 0 0 -6px; background: #FFFFFF; border: 2px solid {{c.accent}}; box-sizing: border-box"></span>
+                  </sc-for>
+                  <span style="position: absolute; left: 0; top: 100%; margin-top: 6px; white-space: nowrap; font-family: 'Roboto Mono', monospace; font-size: 11px; color: {{c.onAccent}}; background: {{c.accent}}; padding: 2px 6px; border-radius: 4px">{{roiWH}}</span>
+                </div>
+                <span style="position: absolute; left: 12px; top: 10px; font-family: 'Roboto Mono', monospace; font-size: 12px; color: #D8DAE0">{{viewLabel}}</span>
+                <button type="button" aria-label="Lienzo de la región. Arrastra para dibujar, mover o cambiar el tamaño. Con el teclado: flechas para mover, Mayús y flechas para cambiar el tamaño." onPointerDown="{{cvDown}}" onPointerMove="{{cvMove}}" onPointerUp="{{cvUp}}" onPointerCancel="{{cvUp}}" onKeyDown="{{cvKey}}" style="position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: transparent; padding: 0; cursor: {{cursor}}; touch-action: none"></button>
+              </div>
+              <span style="font-size: 12px; color: {{c.muted}}; line-height: 1.5">Como en Paint: <strong style="font-weight: 500; color: {{c.text}}">arrastra</strong> sobre la imagen para dibujar la región, arrástrala desde adentro para <strong style="font-weight: 500; color: {{c.text}}">moverla</strong> y tira de los <strong style="font-weight: 500; color: {{c.text}}">cuadritos blancos</strong> para cambiar su tamaño. Un clic la centra en ese punto.</span>
+            </div>
+
+            <aside style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; align-items: center">
+                <span style="align-self: stretch; font-size: 13px; font-weight: 500">Vista ampliada de la región</span>
+                <div style="position: relative; width: {{zoom.w}}; aspect-ratio: {{zoom.aspect}}; background: {{c.preview}}; border: 1px solid {{c.accent}}; overflow: hidden">
+                  <sc-for list="{{zoom.dots}}" as="z" hint-placeholder-count="2">
+                    <div style="position: absolute; left: {{z.left}}; top: {{z.top}}; width: {{z.size}}; height: {{z.size}}; margin-left: {{z.off}}; margin-top: {{z.off}}; border-radius: 50%; background: #FFFFFF; box-shadow: {{z.glow}}"></div>
+                  </sc-for>
+                </div>
+                <span style="align-self: stretch; font-size: 13px; font-weight: 500; color: {{roiStatus.color}}">{{roiStatus.text}}</span>
+              </div>
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 13px">
+                <span style="color: {{c.muted}}">Posición x, y</span><span style="font-family: 'Roboto Mono', monospace; text-align: right">{{roiXY}}</span>
+                <span style="color: {{c.muted}}">Tamaño</span><span style="font-family: 'Roboto Mono', monospace; text-align: right">{{roiWH}}</span>
+              </div>
+              <div role="group" aria-label="Tamaños rápidos" style="display: flex; flex-wrap: wrap; gap: 6px">
+                <sc-for list="{{roiPresets}}" as="o" hint-placeholder-count="4">
+                  <button type="button" onClick="{{o.pick}}" style="font: inherit; font-size: 12px; min-height: 36px; padding: 0 10px; border: 1px solid {{c.border2}}; border-radius: 18px; background: {{c.panel2}}; color: {{c.text}}">{{o.label}}</button>
+                </sc-for>
+              </div>
+            </aside>
+          </div>
+
+          <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline">
+              <span style="font-size: 15px; font-weight: 500">Tramo a usar</span>
+              <span style="font-family: 'Roboto Mono', monospace; font-size: 13px; color: {{c.muted}}">{{tinStr}} – {{toutStr}} · {{spanSecStr}} · {{nInStr}} cuadros</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <div style="position: relative; height: 56px; background: {{c.panel2}}; border: 1px solid {{c.border}}; border-radius: 8px; overflow: hidden">
+                <div style="position: absolute; left: {{tinPct}}; width: {{spanPct}}; top: 0; bottom: 0; background: {{c.accentSoft}}"></div>
+                <div style="position: absolute; left: {{tinPct}}; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: {{c.accent}}; border-radius: 3px"></div>
+                <div style="position: absolute; left: {{toutPct}}; top: 0; bottom: 0; width: 6px; margin-left: -3px; background: {{c.accent}}; border-radius: 3px"></div>
+                <div style="position: absolute; left: {{framePct}}; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: {{c.text}}"></div>
+                <span style="position: absolute; left: calc({{tinPct}} + 8px); top: 6px; font-size: 11px; color: {{c.text}}">Entrada</span>
+                <span style="position: absolute; right: calc(100% - {{toutPct}} + 8px); bottom: 6px; font-size: 11px; color: {{c.text}}">Salida</span>
+                <button type="button" aria-label="Línea de tiempo. Arrastra los extremos para elegir el tramo o haz clic para mover la vista previa. Flechas: un cuadro; Mayús y flechas: un segundo." onPointerDown="{{tlDown}}" onPointerMove="{{tlMove}}" onPointerUp="{{tlUp}}" onPointerCancel="{{tlUp}}" onKeyDown="{{tlKey}}" style="position: absolute; inset: 0; width: 100%; height: 100%; border: none; background: transparent; padding: 0; cursor: ew-resize; touch-action: none"></button>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-family: 'Roboto Mono', monospace; font-size: 11px; color: {{c.muted}}"><span>00:00</span><span>00:35</span><span>01:10</span><span>01:46</span><span>02:21</span></div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
+              <div style="display: flex; align-items: center; gap: 6px">
+                <button type="button" onClick="{{ctl.frame.rew}}" aria-pressed="{{ctl.frame.rewOn}}" aria-label="Retroceder continuamente" style="font-family: 'Roboto Mono', monospace; font-size: 13px; min-width: 46px; height: 44px; border: 1px solid {{ctl.frame.rewBd}}; border-radius: 9px; background: {{ctl.frame.rewBg}}; color: {{ctl.frame.rewFg}}">&lt;&lt;</button>
+                <button type="button" onClick="{{ctl.frame.prev}}" aria-label="Cuadro anterior" style="font-family: 'Roboto Mono', monospace; font-size: 13px; min-width: 44px; height: 44px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">&lt;</button>
+                <div style="min-width: 150px; text-align: center; display: flex; flex-direction: column; font-family: 'Roboto Mono', monospace"><span style="font-size: 15px">{{frameTime}}</span><span style="font-size: 11px; color: {{c.muted}}">cuadro {{d.frame}}</span></div>
+                <button type="button" onClick="{{ctl.frame.next}}" aria-label="Cuadro siguiente" style="font-family: 'Roboto Mono', monospace; font-size: 13px; min-width: 44px; height: 44px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">&gt;</button>
+                <button type="button" onClick="{{ctl.frame.ff}}" aria-pressed="{{ctl.frame.ffOn}}" aria-label="Avanzar continuamente" style="font-family: 'Roboto Mono', monospace; font-size: 13px; min-width: 46px; height: 44px; border: 1px solid {{ctl.frame.ffBd}}; border-radius: 9px; background: {{ctl.frame.ffBg}}; color: {{ctl.frame.ffFg}}">&gt;&gt;</button>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                <button type="button" onClick="{{markIn}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">[ Marcar entrada aquí</button>
+                <button type="button" onClick="{{markOut}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Marcar salida aquí ]</button>
+                <button type="button" onClick="{{useAll}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Usar todo</button>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+              <label style="display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: {{c.muted}}">Ir al cuadro (0–8483)
+                <span style="display: flex; gap: 6px"><input type="text" inputmode="numeric" value="{{gotoF}}" placeholder="{{d.frame}}" onChange="{{onGotoF}}" style="width: 96px; font-family: 'Roboto Mono', monospace; font-size: 13px; min-height: 36px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 8px; background: {{c.panel2}}; color: {{c.text}}"><button type="button" onClick="{{doGotoF}}" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel2}}; color: {{c.text}}">Ir</button></span>
+              </label>
+              <label style="display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: {{c.muted}}">Ir al minuto (mm:ss.s)
+                <span style="display: flex; gap: 6px"><input type="text" value="{{gotoT}}" placeholder="{{frameTime}}" onChange="{{onGotoT}}" style="width: 96px; font-family: 'Roboto Mono', monospace; font-size: 13px; min-height: 36px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 8px; background: {{c.panel2}}; color: {{c.text}}"><button type="button" onClick="{{doGotoT}}" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel2}}; color: {{c.text}}">Ir</button></span>
+              </label>
+              <span style="font-size: 12px; color: {{gotoMsg.color}}">{{gotoMsg.text}}</span>
+              <div style="flex: 1"></div>
+              <span style="font-size: 13px; font-weight: 500; color: {{spanWarn.color}}">{{spanWarn.text}}</span>
+            </div>
+            <span style="font-size: 12px; color: {{c.muted}}; line-height: 1.5">Arrastra las barras de <strong style="font-weight: 500; color: {{c.text}}">Entrada</strong> y <strong style="font-weight: 500; color: {{c.text}}">Salida</strong>, o reproduce con &lt;&lt; &gt;&gt; (velocidad constante; presiona de nuevo para detener) y marca dónde empieza y termina el tramo útil. &lt; y &gt; mueven exactamente un cuadro. Después de procesar, Resultados te muestra si hubo golpes o ráfagas para ajustar el tramo.</span>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap">
+            <button type="button" onClick="{{goVideo}}" style="font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid {{c.border2}}; border-radius: 10px; background: {{c.panel2}}; color: {{c.text}}">← Video</button>
+            <button type="button" onClick="{{goParametros}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">Siguiente: parámetros →</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== PARÁMETROS ========== -->
+      <sc-if value="{{scr.parametros}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px">
+            <div>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 500">Parámetros</h1>
+              <span style="font-size: 14px; color: {{c.muted}}">Datos de tu telescopio y de la máscara, y qué imágenes guardar</span>
+            </div>
+            <sc-if value="{{isEdu}}" hint-placeholder-val="{{ false }}">
+              <button type="button" onClick="{{useExample}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 14px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Usar valores de ejemplo de la clase</button>
+            </sc-if>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px">
+            <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 500">Telescopio y máscara</h2>
+              <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px">Diámetro de cada orificio (cm)<input type="text" inputmode="decimal" value="{{d.D}}" onChange="{{onD}}" style="width: 110px; font-family: 'Roboto Mono', monospace; font-size: 14px; min-height: 40px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}; text-align: right"></label>
+              <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px">Separación entre orificios (cm)<input type="text" inputmode="decimal" value="{{d.B}}" onChange="{{onB}}" style="width: 110px; font-family: 'Roboto Mono', monospace; font-size: 14px; min-height: 40px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}; text-align: right"></label>
+              <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px">Longitud de onda (nm)<input type="text" inputmode="decimal" value="{{d.lam}}" onChange="{{onLam}}" style="width: 110px; font-family: 'Roboto Mono', monospace; font-size: 14px; min-height: 40px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}; text-align: right"></label>
+              <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px">Escala de placa (″/px)<input type="text" inputmode="decimal" value="{{d.scale}}" placeholder="ej. 1,0" onChange="{{onScale}}" style="width: 110px; font-family: 'Roboto Mono', monospace; font-size: 14px; min-height: 40px; border: 1px solid {{scaleBorder}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}; text-align: right"></label>
+              <div style="background: {{c.panel2}}; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+                <span style="font-size: 13px; color: {{c.muted}}">¿No conoces la escala? 206,265 × píxel (µm) ÷ focal (mm)</span>
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end">
+                  <label style="display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: {{c.muted}}">Píxel (µm)<input type="text" inputmode="decimal" value="{{d.pix}}" onChange="{{onPix}}" style="width: 90px; font-family: 'Roboto Mono', monospace; font-size: 13px; min-height: 36px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 8px; background: {{c.panel}}; color: {{c.text}}"></label>
+                  <label style="display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: {{c.muted}}">Focal (mm)<input type="text" inputmode="decimal" value="{{d.focal}}" onChange="{{onFocal}}" style="width: 90px; font-family: 'Roboto Mono', monospace; font-size: 13px; min-height: 36px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 8px; background: {{c.panel}}; color: {{c.text}}"></label>
+                  <button type="button" onClick="{{calcScale}}" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel}}; color: {{c.text}}">Usar resultado</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid {{c.border}}; padding-top: 8px; font-size: 13px; line-height: 1.5">
+                  <span style="color: {{c.muted}}">Consulta la escala de tu equipo: depende de la focal del telescopio y del tamaño de píxel de la cámara.</span>
+                  <a href="https://astronomy.tools/calculators/ccd" target="_blank" rel="noopener" style="color: {{c.accent}}">Calculadora de escala de placa por telescopio y cámara (astronomy.tools) ↗</a>
+                  <a href="https://skiesandscopes.com/pixel-scale-calculator/" target="_blank" rel="noopener" style="color: {{c.accent}}">Cómo se calcula la escala de placa (Skies &amp; Scopes) ↗</a>
+                </div>
+              </div>
+              <sc-if value="{{isEdu}}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 13px; line-height: 1.55; color: {{c.muted}}">La escala de placa convierte píxeles en ángulo: dice cuántos segundos de arco del cielo caben en un píxel de la cámara.</span>
+              </sc-if>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Guardar perfil de equipo</button>
+                <button type="button" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Cargar perfil…</button>
+              </div>
+            </section>
+
+            <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+              <h2 style="margin: 0; font-size: 16px; font-weight: 500">Imágenes a guardar</h2>
+              <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{d.saveImgs}}" onChange="{{toggleSave}}" style="width: 18px; height: 18px; accent-color: {{c.accent}}"> Guardar los cuadros como imágenes</label>
+              <div role="group" aria-label="Formato de imagen" style="display: flex; flex-wrap: wrap; gap: 8px">
+                <sc-for list="{{fmts}}" as="f" hint-placeholder-count="5">
+                  <button type="button" onClick="{{f.pick}}" aria-pressed="{{f.on}}" style="font: inherit; font-size: 13px; font-weight: 500; min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid {{f.bd}}; background: {{f.bg}}; color: {{f.fg}}">{{f.label}}</button>
+                </sc-for>
+              </div>
+              <span style="font-size: 13px; color: {{c.muted}}">{{fmtHelp}}</span>
+              <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px">Guardar 1 de cada N cuadros<input type="text" inputmode="numeric" value="{{d.everyN}}" onChange="{{onEveryN}}" style="width: 90px; font-family: 'Roboto Mono', monospace; font-size: 14px; min-height: 40px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}; text-align: right"></label>
+              <div style="background: {{c.accentSoft}}; border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+                <span>Se guardarán <strong>{{savedFramesStr}}</strong> imágenes de {{roiWH}}</span>
+                <span>Espacio aproximado en disco: <strong>{{diskStr}}</strong></span>
+              </div>
+              <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: {{c.muted}}">Carpeta de salida<span style="display: flex; gap: 6px"><input type="text" value="Junto al video · Altair_cuadros" style="flex: 1; min-width: 0; font: inherit; font-size: 13px; min-height: 40px; border: 1px solid {{c.border2}}; border-radius: 8px; padding: 0 10px; background: {{c.panel2}}; color: {{c.text}}"><button type="button" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel2}}; color: {{c.text}}">Cambiar…</button></span></label>
+            </section>
+          </div>
+          <div style="display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap">
+            <button type="button" onClick="{{goRegion}}" style="font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid {{c.border2}}; border-radius: 10px; background: {{c.panel2}}; color: {{c.text}}">← Recorte y tramo</button>
+            <button type="button" onClick="{{goProcesar}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">Siguiente: procesar →</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== PROCESAR ========== -->
+      <sc-if value="{{scr.procesar}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 18px">
+          <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 500">Procesar</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">Separa el video en imágenes y mide la distancia entre los dos puntos en cada cuadro</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 18px">
+            <section style="flex: 2 1 420px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 16px">
+              <div style="display: flex; align-items: center; gap: 22px; flex-wrap: wrap">
+                <div role="img" aria-label="Progreso {{progressStr}}" style="width: 128px; height: 128px; border-radius: 50%; background: {{ring}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+                  <div style="width: 100px; height: 100px; border-radius: 50%; background: {{c.panel}}; display: flex; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-size: 22px">{{progressStr}}</div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px">
+                  <strong style="font-size: 17px; font-weight: 500">{{procStatus}}</strong>
+                  <span style="color: {{c.muted}}">{{procFramesStr}}</span>
+                  <span style="color: {{c.muted}}">{{procEta}}</span>
+                </div>
+              </div>
+              <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                <sc-if value="{{canStart}}" hint-placeholder-val="{{ true }}">
+                  <button type="button" onClick="{{startProc}}" style="font: inherit; font-size: 16px; font-weight: 600; min-height: 52px; padding: 0 26px; border: none; border-radius: 12px; background: {{c.accent}}; color: {{c.onAccent}}">▶ Iniciar</button>
+                </sc-if>
+                <sc-if value="{{d.running}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{cancelProc}}" style="font: inherit; font-size: 15px; min-height: 52px; padding: 0 22px; border: 1px solid {{c.border2}}; border-radius: 12px; background: {{c.panel2}}; color: {{c.text}}">■ Cancelar</button>
+                </sc-if>
+                <sc-if value="{{d.done}}" hint-placeholder-val="{{ false }}">
+                  <button type="button" onClick="{{goResultados}}" style="font: inherit; font-size: 16px; font-weight: 600; min-height: 52px; padding: 0 24px; border: none; border-radius: 12px; background: {{c.accent}}; color: {{c.onAccent}}">Ver resultados →</button>
+                  <button type="button" onClick="{{startProc}}" style="font: inherit; font-size: 14px; min-height: 52px; padding: 0 18px; border: 1px solid {{c.border2}}; border-radius: 12px; background: {{c.panel2}}; color: {{c.text}}">Procesar de nuevo</button>
+                </sc-if>
+              </div>
+              <sc-if value="{{isEdu}}" hint-placeholder-val="{{ false }}">
+                <div style="background: {{c.accentSoft}}; border-radius: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.6">En cada cuadro la app busca los dos puntos brillantes, calcula su centro (el «centroide», como un centro de masa de la luz) y mide la distancia entre ellos. Al final tendrás miles de distancias: una por cuadro.</div>
+              </sc-if>
+            </section>
+            <section style="flex: 1 1 260px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 9px">
+              <h2 style="margin: 0 0 4px; font-size: 15px; font-weight: 500">Resumen</h2>
+              <sc-for list="{{summary}}" as="r" hint-placeholder-count="6">
+                <div style="display: flex; justify-content: space-between; gap: 10px; font-size: 13px; border-bottom: 1px solid {{c.border}}; padding-bottom: 7px"><span style="color: {{c.muted}}">{{r.k}}</span><span style="font-family: 'Roboto Mono', monospace; text-align: right">{{r.v}}</span></div>
+              </sc-for>
+            </section>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== RESULTADOS ========== -->
+      <sc-if value="{{scr.resultados}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 10px">
+            <div>
+              <h1 style="margin: 0; font-size: 24px; font-weight: 500">Resultados</h1>
+              <span style="font-size: 14px; color: {{c.muted}}">Altair · 30/08/2024 21:38 · tramo {{tinStr}} – {{toutStr}} · {{nInStr}} cuadros</span>
+            </div>
+            <button type="button" onClick="{{saveHistory}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 16px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">{{saveLabel}}</button>
+          </div>
+          <sc-if value="{{notDone}}" hint-placeholder-val="{{ false }}">
+            <div style="background: {{c.accentSoft}}; border-radius: 12px; padding: 12px 16px; font-size: 14px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between">
+              <span>Vista previa con el video de ejemplo. Procesa tu video para ver tus propios datos.</span>
+              <button type="button" onClick="{{goProcesar}}" style="font: inherit; font-size: 13px; min-height: 38px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel}}; color: {{c.text}}">Ir a procesar</button>
+            </div>
+          </sc-if>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px">
+            <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 12px; color: {{c.muted}}">Seeing estimado</span>
+              <span style="font-family: 'Roboto Mono', monospace; font-size: 30px; color: {{c.accent}}">{{seeingStr}}</span>
+              <span style="font-size: 12px; color: {{quality.color}}; font-weight: 500">{{quality.label}}</span>
+            </div>
+            <sc-for list="{{resStats}}" as="s" hint-placeholder-count="3">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 12px; color: {{c.muted}}">{{s.k}}</span>
+                <span style="font-family: 'Roboto Mono', monospace; font-size: 26px">{{s.v}}</span>
+                <span style="font-size: 12px; color: {{c.muted}}">{{s.note}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <section style="flex: 3 1 420px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px"><span style="font-size: 14px; font-weight: 500">Histograma de la separación</span><span style="font-family: 'Roboto Mono', monospace; font-size: 12px; color: {{c.muted}}">11,0 – 15,5 px</span></div>
+              <div role="img" aria-label="Histograma de la separación entre los dos puntos" style="display: flex; align-items: flex-end; gap: 4px; height: 170px; border-bottom: 1px solid {{c.border2}}">
+                <sc-for list="{{resBars}}" as="b" hint-placeholder-count="18">
+                  <div style="flex: 1; height: {{b.h}}; background: {{c.accent}}; border-radius: 3px 3px 0 0"></div>
+                </sc-for>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-family: 'Roboto Mono', monospace; font-size: 11px; color: {{c.muted}}"><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span></div>
+            </section>
+            <section style="flex: 2 1 300px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+              <span style="font-size: 14px; font-weight: 500">σ a lo largo del video (cada 2,4 s)</span>
+              <div role="img" aria-label="Dispersión a lo largo del video; en color, el tramo usado" style="display: flex; align-items: flex-end; gap: 2px; height: 150px">
+                <sc-for list="{{track}}" as="b" hint-placeholder-count="60">
+                  <div style="flex: 1; height: {{b.h}}; background: {{b.c}}; border-radius: 1px"></div>
+                </sc-for>
+              </div>
+              <span style="font-size: 12px; color: {{c.muted}}">En color, el tramo usado; en gris, lo que quedó fuera. Una barra mucho más alta que las demás suele ser un golpe al telescopio o una ráfaga de viento.</span>
+              <button type="button" onClick="{{goRegion}}" style="align-self: flex-start; font: inherit; font-size: 13px; min-height: 38px; padding: 0 12px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Ajustar el tramo y procesar de nuevo</button>
+            </section>
+          </div>
+          <sc-if value="{{isEdu}}" hint-placeholder-val="{{ false }}">
+            <div style="background: {{c.accentSoft}}; border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.6; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between">
+              <span style="flex: 1 1 380px">El histograma muestra cuántos cuadros tuvieron cada distancia. Tiene forma de campana: casi todas las medidas están cerca de la media y pocas lejos. Qué tan ancha es la campana (σ) es lo que nos dice cuánta turbulencia hay.</span>
+              <button type="button" onClick="{{goLab}}" style="font: inherit; font-size: 13px; min-height: 40px; padding: 0 14px; border: none; border-radius: 9px; background: {{c.accent}}; color: {{c.onAccent}}">Explorar en el laboratorio →</button>
+            </div>
+          </sc-if>
+
+          <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+            <span style="font-size: 15px; font-weight: 500">Exportar</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 18px">
+              <sc-for list="{{expGroups}}" as="g" hint-placeholder-count="3">
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <span style="font-size: 12px; color: {{c.muted}}">{{g.title}}</span>
+                  <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                    <sc-for list="{{g.items}}" as="x" hint-placeholder-count="3">
+                      <button type="button" onClick="{{x.toggle}}" aria-pressed="{{x.on}}" style="font: inherit; font-size: 13px; min-height: 38px; padding: 0 12px; border-radius: 19px; border: 1px solid {{x.bd}}; background: {{x.bg}}; color: {{x.fg}}">{{x.label}}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+              <button type="button" onClick="{{exportNow}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">{{exportLabel}}</button>
+              <span style="font-size: 13px; color: {{c.muted}}">{{d.toast}}</span>
+            </div>
+          </section>
+          <span style="font-size: 12px; color: {{c.muted}}">Seeing calculado con el modelo de Tokovinin (2002) a partir de la varianza del movimiento diferencial. En este prototipo las cifras salen de una muestra de 303 cuadros reales del video de Altair; el cálculo está pendiente de validar con el equipo.</span>
+        </div>
+      </sc-if>
+
+      <!-- ========== HISTORIAL ========== -->
+      <sc-if value="{{scr.historial}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 500">{{histTitle}}</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">{{histSub}}</span>
+          </div>
+          <sc-if value="{{historyEmpty}}" hint-placeholder-val="{{ true }}">
+            <div style="border: 2px dashed {{c.border2}}; border-radius: 16px; padding: 40px 20px; text-align: center; display: flex; flex-direction: column; gap: 10px; align-items: center">
+              <span style="font-size: 16px">Aún no hay resultados guardados</span>
+              <span style="font-size: 13px; color: {{c.muted}}">En Resultados presiona «Guardar en historial». Prueba guardar varios tramos o escalas para compararlos.</span>
+              <button type="button" onClick="{{goResultados}}" style="font: inherit; font-size: 14px; min-height: 42px; padding: 0 16px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">Ir a resultados</button>
+            </div>
+          </sc-if>
+          <sc-if value="{{historyFull}}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-wrap: wrap; gap: 16px">
+              <div style="flex: 3 1 520px; min-width: 0; overflow-x: auto; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px">
+                <table style="width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px">
+                  <thead>
+                    <tr style="text-align: left; background: {{c.panel2}}">
+                      <th style="padding: 10px 12px; font-weight: 500"><label style="display: flex; gap: 6px; align-items: center"><input type="checkbox" checked="{{allSel}}" onChange="{{toggleAll}}" style="width: 16px; height: 16px; accent-color: {{c.accent}}"> Todo</label></th>
+                      <th style="padding: 10px 12px; font-weight: 500">Guardado</th>
+                      <th style="padding: 10px 12px; font-weight: 500">Tramo</th>
+                      <th style="padding: 10px 12px; font-weight: 500">Media</th>
+                      <th style="padding: 10px 12px; font-weight: 500">σ</th>
+                      <th style="padding: 10px 12px; font-weight: 500">Seeing</th>
+                      <th style="padding: 10px 12px; font-weight: 500">Escala</th>
+                      <th style="padding: 10px 12px; font-weight: 500">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <sc-for list="{{history}}" as="h" hint-placeholder-count="2">
+                      <tr style="border-top: 1px solid {{c.border}}">
+                        <td style="padding: 10px 12px"><input type="checkbox" aria-label="Seleccionar fila" checked="{{h.sel}}" onChange="{{h.toggle}}" style="width: 16px; height: 16px; accent-color: {{c.accent}}"></td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace">{{h.when}}</td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace">{{h.span}}</td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace">{{h.mean}}</td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace">{{h.sigma}}</td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace; color: {{c.accent}}">{{h.seeing}}</td>
+                        <td style="padding: 10px 12px; font-family: 'Roboto Mono', monospace; color: {{c.muted}}">{{h.scale}}</td>
+                        <td style="padding: 10px 12px"><button type="button" onClick="{{h.remove}}" style="font: inherit; font-size: 12px; min-height: 34px; padding: 0 10px; border: 1px solid {{c.border2}}; border-radius: 8px; background: {{c.panel2}}; color: {{c.text}}">Quitar</button></td>
+                      </tr>
+                    </sc-for>
+                  </tbody>
+                </table>
+              </div>
+              <section style="flex: 2 1 280px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+                <span style="font-size: 14px; font-weight: 500">{{histChartTitle}}</span>
+                <div role="img" aria-label="Comparación de los análisis guardados" style="display: flex; align-items: flex-end; gap: 8px; height: 160px; border-bottom: 1px solid {{c.border2}}">
+                  <sc-for list="{{histBars}}" as="b" hint-placeholder-count="2">
+                    <div style="flex: 1; max-width: 48px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%">
+                      <span style="font-family: 'Roboto Mono', monospace; font-size: 11px; color: {{c.muted}}">{{b.v}}</span>
+                      <div style="width: 100%; height: {{b.h}}; background: {{b.c}}; border-radius: 4px 4px 0 0"></div>
+                    </div>
+                  </sc-for>
+                </div>
+                <span style="font-size: 12px; color: {{c.muted}}">Barras más claras: filas no seleccionadas.</span>
+              </section>
+            </div>
+            <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+              <span style="font-size: 15px; font-weight: 500">Exportar {{selCountStr}}</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 18px">
+                <sc-for list="{{expGroups}}" as="g" hint-placeholder-count="3">
+                  <div style="display: flex; flex-direction: column; gap: 6px">
+                    <span style="font-size: 12px; color: {{c.muted}}">{{g.title}}</span>
+                    <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                      <sc-for list="{{g.items}}" as="x" hint-placeholder-count="3">
+                        <button type="button" onClick="{{x.toggle}}" aria-pressed="{{x.on}}" style="font: inherit; font-size: 13px; min-height: 38px; padding: 0 12px; border-radius: 19px; border: 1px solid {{x.bd}}; background: {{x.bg}}; color: {{x.fg}}">{{x.label}}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+                <button type="button" onClick="{{exportHist}}" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: {{c.accent}}; color: {{c.onAccent}}">Exportar selección</button>
+                <button type="button" onClick="{{exportHistCharts}}" style="font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid {{c.border2}}; border-radius: 10px; background: {{c.panel2}}; color: {{c.text}}">Solo gráficas (PDF)</button>
+                <span style="font-size: 13px; color: {{c.muted}}">{{d.toast}}</span>
+              </div>
+            </section>
+          </sc-if>
+        </div>
+      </sc-if>
+
+      <!-- ========== EDU · CONCEPTO ========== -->
+      <sc-if value="{{scr.concepto}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 500">¿Qué es el seeing?</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">La nitidez del cielo nocturno en tu lugar de observación</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <section style="flex: 3 1 420px; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.65">
+              <p style="margin: 0">Cuando miras una estrella, su luz atraviesa kilómetros de aire en movimiento. Las burbujas de aire caliente y frío se comportan como lentes que cambian todo el tiempo: por eso las estrellas titilan.</p>
+              <p style="margin: 0">El <strong style="font-weight: 500">seeing</strong> mide qué tan borrosa se ve una estrella por esa turbulencia. Se mide en <strong style="font-weight: 500">segundos de arco (″)</strong>: entre más pequeño el número, más nítido el cielo. Un segundo de arco es el tamaño de una moneda vista a 4 km.</p>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <div style="display: flex; height: 14px; border-radius: 7px; overflow: hidden"><div style="flex: 1; background: {{c.good}}"></div><div style="flex: 2; background: {{c.warn}}"></div><div style="flex: 2; background: {{c.bad}}"></div></div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: {{c.muted}}"><span>≈ 1″ excelente</span><span>2–3″ aceptable</span><span>&gt; 3″ muy turbulento</span></div>
+              </div>
+            </section>
+            <aside style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 12px">
+              <div style="background: {{c.accentSoft}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55">
+                <strong style="font-weight: 500">¿Y la estadística?</strong>
+                <span>La turbulencia es aleatoria: una sola foto no basta. Medimos miles de cuadros y usamos la media y la desviación estándar para obtener un resultado confiable.</span>
+              </div>
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55">
+                <strong style="font-weight: 500">¿Sabías que…?</strong>
+                <span>Las celdas de turbulencia cambian en milisegundos. Por eso se graba a 30 cuadros por segundo o más.</span>
+              </div>
+              <button type="button" onClick="{{goArma}}" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; border: none; border-radius: 12px; background: {{c.accent}}; color: {{c.onAccent}}">Siguiente: arma tu DIMM →</button>
+            </aside>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== EDU · ARMA ========== -->
+      <sc-if value="{{scr.arma}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 500">Arma tu DIMM</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">Un monitor de seeing con un telescopio pequeño y una cámara</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px">
+            <sc-for list="{{buildSteps}}" as="s" hint-placeholder-count="5">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+                <span style="display: inline-flex; width: 32px; height: 32px; border-radius: 9px; align-items: center; justify-content: center; font-family: 'Roboto Mono', monospace; font-size: 14px; background: {{c.accentSoft}}; color: {{c.accent}}">{{s.n}}</span>
+                <strong style="font-size: 15px; font-weight: 500">{{s.t}}</strong>
+                <span style="font-size: 14px; line-height: 1.55; color: {{c.muted}}">{{s.d}}</span>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+            <button type="button" onClick="{{goSimulador}}" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; padding: 0 20px; border: none; border-radius: 12px; background: {{c.accent}}; color: {{c.onAccent}}">Siguiente: simulador →</button>
+            <span style="font-size: 13px; color: {{c.muted}}">Basado en el protocolo ANDEAN ROAD (2026), capítulo 4</span>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== EDU · SIMULADOR ========== -->
+      <sc-if value="{{scr.simulador}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 500">Simulador de turbulencia</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">Mueve la barra y observa cómo baila la imagen doble de la estrella</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <div style="flex: 3 1 420px; position: relative; background: {{c.preview}}; border-radius: 16px; height: 360px; overflow: hidden">
+              <div style="position: absolute; left: {{sim.x1}}; top: {{sim.y1}}; width: 12px; height: 12px; border-radius: 50%; background: #FFFFFF; box-shadow: {{sim.glow}}"></div>
+              <div style="position: absolute; left: {{sim.x2}}; top: {{sim.y2}}; width: 12px; height: 12px; border-radius: 50%; background: #FFFFFF; box-shadow: {{sim.glow}}"></div>
+              <span style="position: absolute; left: 14px; top: 12px; font-size: 12px; color: #D8DAE0">Simulación ilustrativa</span>
+            </div>
+            <aside style="flex: 2 1 280px; display: flex; flex-direction: column; gap: 14px">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+                <label for="sim-t" style="font-size: 14px; font-weight: 500">Turbulencia de la atmósfera</label>
+                <input id="sim-t" type="range" min="0" max="100" value="{{turb}}" onChange="{{onTurb}}" style="accent-color: {{c.accent}}">
+                <div style="display: flex; justify-content: space-between; font-size: 12px; color: {{c.muted}}"><span>Aire quieto</span><span>Muy turbulento</span></div>
+              </div>
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 4px">
+                <span style="font-size: 12px; color: {{c.muted}}">Seeing aproximado</span>
+                <span style="font-family: 'Roboto Mono', monospace; font-size: 34px; color: {{c.accent}}">{{sim.seeing}}</span>
+                <span style="font-size: 13px; font-weight: 500; color: {{sim.qColor}}">{{sim.q}}</span>
+              </div>
+              <button type="button" onClick="{{goVideo}}" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 48px; border: none; border-radius: 12px; background: {{c.accent}}; color: {{c.onAccent}}">Ahora analiza un video real →</button>
+            </aside>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== EDU · LABORATORIO DE ESTADÍSTICA ========== -->
+      <sc-if value="{{scr.lab}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 500">Laboratorio de estadística</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">Con 303 distancias reales medidas en el video de Altair</span>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 16px">
+            <section style="flex: 3 1 460px; min-width: 0; background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px"><span style="font-size: 14px; font-weight: 500">Histograma de {{lab.nStr}} distancias</span><span style="font-family: 'Roboto Mono', monospace; font-size: 12px; color: {{c.muted}}">{{lab.bins}} intervalos</span></div>
+              <div style="position: relative; height: 220px; border-bottom: 1px solid {{c.border2}}">
+                <div role="img" aria-label="Histograma de las distancias medidas" style="position: absolute; inset: 0; display: flex; align-items: flex-end; gap: 2px">
+                  <sc-for list="{{lab.bars}}" as="b" hint-placeholder-count="12">
+                    <div style="flex: 1; height: {{b.h}}; background: {{c.accent}}; opacity: 0.85; border-radius: 2px 2px 0 0"></div>
+                  </sc-for>
+                </div>
+                <sc-if value="{{lab.showCurve}}" hint-placeholder-val="{{ true }}">
+                  <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible"><polyline points="{{lab.curve}}" fill="none" stroke="{{c.text}}" stroke-width="2" vector-effect="non-scaling-stroke"></polyline></svg>
+                </sc-if>
+                <div style="position: absolute; left: {{lab.meanPct}}; top: 0; bottom: 0; width: 0; border-left: 2px dashed {{c.text}}"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-family: 'Roboto Mono', monospace; font-size: 11px; color: {{c.muted}}"><span>{{lab.lo}} px</span><span>{{lab.mid}} px</span><span>{{lab.hi}} px</span></div>
+              <span style="font-size: 12px; color: {{c.muted}}">Línea punteada: la media. Curva: la distribución normal («campana de Gauss») con la misma media y σ.</span>
+            </section>
+            <aside style="flex: 2 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px">Cuadros usados: <strong style="font-family: 'Roboto Mono', monospace; font-weight: 500">{{lab.nStr}}</strong><input type="range" min="5" max="303" value="{{labN}}" onChange="{{onLabN}}" style="accent-color: {{c.accent}}"></label>
+                <label style="display: flex; flex-direction: column; gap: 4px; font-size: 13px">Intervalos del histograma: <strong style="font-family: 'Roboto Mono', monospace; font-weight: 500">{{lab.bins}}</strong><input type="range" min="4" max="30" value="{{labBins}}" onChange="{{onLabBins}}" style="accent-color: {{c.accent}}"></label>
+                <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{labOut}}" onChange="{{toggleLabOut}}" style="width: 18px; height: 18px; accent-color: {{c.accent}}"> Incluir 3 detecciones fallidas</label>
+                <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked="{{labCurve}}" onChange="{{toggleLabCurve}}" style="width: 18px; height: 18px; accent-color: {{c.accent}}"> Mostrar curva normal</label>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+                <sc-for list="{{lab.stats}}" as="s" hint-placeholder-count="6">
+                  <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px">
+                    <span style="font-size: 12px; color: {{c.muted}}">{{s.k}}</span>
+                    <span style="font-family: 'Roboto Mono', monospace; font-size: 18px">{{s.v}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </aside>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px">
+            <sc-for list="{{labCards}}" as="k" hint-placeholder-count="4">
+              <div style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 14px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; line-height: 1.55">
+                <strong style="font-weight: 500">{{k.t}}</strong>
+                <span style="color: {{c.muted}}">{{k.d}}</span>
+                <span style="font-size: 13px; color: {{c.accent}}">{{k.try}}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ========== EDU · QUIZ ========== -->
+      <sc-if value="{{scr.quiz}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px; max-width: 840px">
+          <div>
+            <h1 style="margin: 0; font-size: 26px; font-weight: 500">Ponte a prueba</h1>
+            <span style="font-size: 14px; color: {{c.muted}}">{{quizScore}}</span>
+          </div>
+          <sc-for list="{{quiz}}" as="q" hint-placeholder-count="4">
+            <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+              <strong style="font-size: 16px; font-weight: 500">{{q.text}}</strong>
+              <sc-for list="{{q.opts}}" as="o" hint-placeholder-count="3">
+                <button type="button" onClick="{{o.pick}}" aria-pressed="{{o.on}}" style="font: inherit; font-size: 14px; text-align: left; min-height: 46px; padding: 8px 14px; border: 1px solid {{o.bd}}; border-radius: 10px; background: {{o.bg}}; color: {{c.text}}">{{o.label}}</button>
+              </sc-for>
+              <sc-if value="{{q.answered}}" hint-placeholder-val="{{ false }}">
+                <span style="font-size: 14px; line-height: 1.5; color: {{q.fbColor}}">{{q.feedback}}</span>
+              </sc-if>
+            </section>
+          </sc-for>
+          <button type="button" onClick="{{resetQuiz}}" style="align-self: flex-start; font: inherit; font-size: 13px; min-height: 40px; padding: 0 14px; border: 1px solid {{c.border2}}; border-radius: 9px; background: {{c.panel2}}; color: {{c.text}}">Reiniciar respuestas</button>
+        </div>
+      </sc-if>
+
+      <!-- ========== ACERCA DE ========== -->
+      <sc-if value="{{scr.acerca}}" hint-placeholder-val="{{ false }}">
+        <div style="display: flex; flex-direction: column; gap: 16px; max-width: 780px">
+          <h1 style="margin: 0; font-size: 26px; font-weight: 500">Acerca de TurbuLENS</h1>
+          <section style="background: {{c.panel}}; border: 1px solid {{c.border}}; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 14px; font-size: 15px; line-height: 1.6">
+            <p style="margin: 0">TurbuLENS separa videos de un DIMM en imágenes, mide la imagen doble de una estrella y estima el seeing del lugar de observación. Tiene un modo científico y un modo educativo para colegios.</p>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 12px; color: {{c.muted}}">Autor</span>
+              <strong style="font-weight: 500">Diego Fernando Cagua Lozada</strong>
+              <span style="color: {{c.muted}}">Estudiante del pregrado de Física</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 12px; color: {{c.muted}}">Institución</span>
+              <span>Observatorio Astronómico Nacional · Universidad Nacional de Colombia</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 2px">
+              <span style="font-size: 12px; color: {{c.muted}}">Código abierto</span>
+              <span>Código fuente: github.com/[usuario]/TurbuLENS · Licencia: [por definir]</span>
+              <span style="color: {{c.muted}}">Cualquier persona puede usarla, estudiarla, mejorarla y compartirla.</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px">
+              <span style="font-size: 12px; color: {{c.muted}}">Referencias</span>
+              <a href="https://arxiv.org/abs/astro-ph/0111022" style="color: {{c.accent}}">Tokovinin (2002), From differential image motion to seeing</a>
+              <span>Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)</span>
+            </div>
+            <span style="font-size: 12px; color: {{c.muted}}">Versión 0.3 · preliminar</span>
+          </section>
+        </div>
+      </sc-if>
+
+    </main>
+  </div>
+</sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"temaInicial":{"editor":"enum","default":"oscuro","options":["oscuro","claro"]},"$preview":{"width":1440,"height":900}}'>
+var SAMPLE = [11.67,13.16,12.73,12.28,12.32,12.49,13.55,13.80,12.32,12.81,13.22,13.29,12.74,14.36,14.07,13.22,12.98,12.00,13.05,13.45,13.50,12.91,13.48,12.32,13.58,13.37,12.88,12.17,12.50,12.07,12.38,12.27,11.01,12.18,14.86,14.26,11.46,12.53,12.80,12.26,13.44,12.74,12.00,13.21,12.24,14.05,12.96,13.58,13.43,12.68,13.76,13.44,14.17,12.98,14.32,13.63,12.15,13.22,13.07,12.54,12.82,13.48,13.52,14.16,15.43,14.73,12.62,12.59,14.08,11.73,12.62,14.23,13.24,12.73,12.53,13.85,13.57,11.77,11.78,13.62,11.99,12.91,13.39,14.13,12.13,14.28,12.73,12.92,12.92,12.24,13.62,13.06,12.16,13.14,13.27,12.05,14.10,13.30,13.06,12.68,12.64,12.34,12.71,14.57,13.48,13.11,12.21,13.63,12.85,13.48,13.26,12.65,13.33,13.77,14.05,13.49,13.30,12.90,13.79,13.28,12.46,12.67,12.67,13.48,13.37,12.50,12.67,12.98,13.19,13.37,13.32,12.28,12.87,15.12,14.02,13.96,13.46,13.85,13.85,13.13,12.79,12.92,13.24,13.19,13.10,12.29,11.89,12.46,12.87,12.46,12.32,12.72,12.13,12.05,11.74,12.87,12.40,13.05,13.78,13.55,13.77,12.18,14.21,12.48,13.20,13.91,12.77,12.51,13.32,12.52,12.57,13.42,14.02,13.24,13.10,11.46,13.97,12.94,13.74,13.50,13.10,14.79,12.56,12.99,14.10,13.21,14.28,13.04,14.56,13.93,13.18,13.48,13.12,13.16,14.17,14.52,13.57,13.70,14.75,13.45,12.47,13.17,12.98,13.96,13.35,14.18,12.74,12.34,12.49,13.62,13.35,13.23,12.04,12.73,12.89,11.79,12.31,12.44,13.37,12.94,13.47,12.49,12.58,12.89,11.83,13.26,11.36,12.13,11.74,11.79,13.04,13.24,12.69,12.67,13.26,12.55,11.68,12.48,13.57,12.95,12.77,13.92,13.45,13.16,13.56,12.94,13.26,13.29,12.84,13.39,13.61,12.82,12.47,13.85,15.41,11.85,12.94,13.42,12.60,13.04,13.29,13.26,12.98,13.40,12.34,13.82,12.99,13.49,13.62,14.32,13.93,14.10,12.97,13.71,13.28,12.95,14.42,13.98,13.68,13.75,13.63,14.08,13.86,12.84,12.42,13.53,14.05,13.68,13.75,12.27,13.30,13.40,13.66,14.34,14.02,13.33,13.69,13.56,14.21,13.13,12.72,12.63,13.60];
+var TRACK = [37,41,36,41,38,42,100,45,41,40,44,45,57,46,42,43,39,51,38,42,37,41,45,52,46,51,46,46,50,47,44,43,42,40,45,43,46,40,50,50,47,53,50,60,38,47,47,36,38,36,45,41,56,42,45,40,41,46,39,48];
+var STARS = [[901.7, 495.0], [895.7, 509.0]];
+var VW = 1920, VH = 1080, TOTAL = 8484, DUR = 141.54;
+
+function slice0() {
+  return {
+    loaded: false, roi: { x: 867, y: 470, w: 64, h: 64 }, zoom: 4, tin: 0, tout: 8483, frame: 1820,
+    D: '2,5', B: '14', lam: '550', scale: '', pix: '', focal: '',
+    fmt: 'PNG', everyN: '1', saveImgs: true,
+    progress: 0, running: false, done: false,
+    history: [], sel: {}, exp: { csv: true, pdfg: true }, toast: ''
+  };
+}
+
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      theme: null, mode: null, screen: 'video', startAbout: false,
+      data: { analisis: slice0(), educativo: slice0() },
+      turb: 35, tick: 0, q: {},
+      labN: 60, labBins: 12, labOut: false, labCurve: true,
+      play: null, gotoF: '', gotoT: '', gotoErr: '', cursor: 'crosshair'
+    };
+  }
+  componentDidMount() {
+    this.timer = setInterval(() => {
+      const st = this.state;
+      let changed = false;
+      const data = { ...st.data };
+      if (st.play && st.mode) {
+        const k = st.mode, x = data[k], tg = st.play.target;
+        let v = x[tg] + st.play.dir * 9, stop = false;
+        if (tg === 'tin' && v >= x.tout) { v = x.tout; stop = true; }
+        if (tg === 'tout' && v <= x.tin) { v = x.tin; stop = true; }
+        if (v <= 0) { v = 0; stop = true; }
+        if (v >= 8483) { v = 8483; stop = true; }
+        data[k] = { ...x, [tg]: v, frame: v };
+        this.setState({ data, play: stop ? null : st.play });
+        return;
+      }
+      ['analisis', 'educativo'].forEach((k) => {
+        const x = data[k];
+        if (x.running) {
+          const p = Math.min(100, x.progress + 2.5);
+          data[k] = { ...x, progress: p, running: p < 100, done: p >= 100 };
+          changed = true;
+        }
+      });
+      if (changed) this.setState({ data });
+      else if (st.mode === 'educativo' && st.screen === 'simulador') this.setState({ tick: st.tick + 1 });
+    }, 140);
+  }
+  componentWillUnmount() { clearInterval(this.timer); }
+
+  upd(patch) {
+    this.setState((st) => {
+      const k = st.mode || 'analisis';
+      return { data: { ...st.data, [k]: { ...st.data[k], ...patch } } };
+    });
+  }
+  num(v) { const x = parseFloat(String(v).replace(',', '.')); return isFinite(x) ? x : NaN; }
+  f(x, dd) { return x.toFixed(dd).replace('.', ','); }
+  miles(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  mmss(sec) { const m = Math.floor(sec / 60); const s = sec - m * 60; return String(m).padStart(2, '0') + ':' + s.toFixed(1).padStart(4, '0'); }
+  stats(a) {
+    const n = a.length;
+    const mean = a.reduce((s, v) => s + v, 0) / n;
+    const sd = n > 1 ? Math.sqrt(a.reduce((s, v) => s + (v - mean) * (v - mean), 0) / (n - 1)) : 0;
+    const srt = a.slice().sort((x, y) => x - y);
+    const med = n % 2 ? srt[(n - 1) / 2] : (srt[n / 2 - 1] + srt[n / 2]) / 2;
+    return { n, mean, sd, med, min: srt[0], max: srt[n - 1] };
+  }
+  view(d) {
+    const z = d.zoom || 1, w = VW / z, h = VH / z;
+    const cx = (STARS[0][0] + STARS[1][0]) / 2, cy = (STARS[0][1] + STARS[1][1]) / 2;
+    return { x: Math.min(Math.max(cx - w / 2, 0), VW - w), y: Math.min(Math.max(cy - h / 2, 0), VH - h), w, h, z };
+  }
+  curD() { return this.state.data[this.state.mode || 'analisis']; }
+  toVideo(e, el, v) {
+    const b = el.getBoundingClientRect();
+    return { px: v.x + (e.clientX - b.left) / b.width * v.w, py: v.y + (e.clientY - b.top) / b.height * v.h, tol: 10 / b.width * v.w };
+  }
+  hitKind(r, px, py, tol) {
+    const near = (a, b) => Math.abs(a - b) <= tol;
+    const kx = near(px, r.x) ? 'w' : (near(px, r.x + r.w) ? 'e' : (near(px, r.x + r.w / 2) ? 'c' : null));
+    const ky = near(py, r.y) ? 'n' : (near(py, r.y + r.h) ? 's' : (near(py, r.y + r.h / 2) ? 'c' : null));
+    if (kx && ky && !(kx === 'c' && ky === 'c')) return (ky === 'c' ? '' : ky) + (kx === 'c' ? '' : kx);
+    if (px > r.x && px < r.x + r.w && py > r.y && py < r.y + r.h) return 'move';
+    return 'new';
+  }
+  cvDown(e) {
+    const d = this.curD(), v = this.view(d), p = this.toVideo(e, e.currentTarget, v);
+    this.drag = { kind: this.hitKind(d.roi, p.px, p.py, p.tol), sx: p.px, sy: p.py, r0: { ...d.roi } };
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { }
+  }
+  cvMove(e) {
+    const d = this.curD(), v = this.view(d), p = this.toVideo(e, e.currentTarget, v);
+    if (!this.drag) {
+      const k = this.hitKind(d.roi, p.px, p.py, p.tol);
+      const cur = { n: 'ns-resize', s: 'ns-resize', e: 'ew-resize', w: 'ew-resize', nw: 'nwse-resize', se: 'nwse-resize', ne: 'nesw-resize', sw: 'nesw-resize', move: 'move', new: 'crosshair' }[k];
+      if (cur !== this.state.cursor) this.setState({ cursor: cur });
+      return;
+    }
+    const { kind, sx, sy, r0 } = this.drag, dx = p.px - sx, dy = p.py - sy;
+    if (kind === 'move') { this.upd({ roi: this.clampRoi({ ...r0, x: r0.x + dx, y: r0.y + dy }) }); return; }
+    let x1 = r0.x, y1 = r0.y, x2 = r0.x + r0.w, y2 = r0.y + r0.h;
+    if (kind === 'new') { x1 = sx; y1 = sy; x2 = p.px; y2 = p.py; if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return; }
+    else {
+      if (kind.indexOf('n') >= 0) y1 += dy;
+      if (kind.indexOf('s') >= 0) y2 += dy;
+      if (kind.indexOf('w') >= 0) x1 += dx;
+      if (kind.indexOf('e') >= 0) x2 += dx;
+    }
+    this.upd({ roi: this.clampRoi({ x: Math.min(x1, x2), y: Math.min(y1, y2), w: Math.abs(x2 - x1), h: Math.abs(y2 - y1) }) });
+  }
+  cvUp(e) {
+    if (!this.drag) return;
+    const d = this.curD(), v = this.view(d), p = this.toVideo(e, e.currentTarget, v);
+    const { kind, sx, sy, r0 } = this.drag;
+    this.drag = null;
+    if (kind === 'new' && Math.abs(p.px - sx) < 6 && Math.abs(p.py - sy) < 6) this.upd({ roi: this.clampRoi({ ...r0, x: sx - r0.w / 2, y: sy - r0.h / 2 }) });
+  }
+  cvKey(e) {
+    const m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+    if (!m) return;
+    e.preventDefault();
+    const r = this.curD().roi;
+    if (e.shiftKey) this.upd({ roi: this.clampRoi({ x: r.x - m[0] * 4, y: r.y - m[1] * 4, w: r.w + m[0] * 8, h: r.h + m[1] * 8 }) });
+    else this.upd({ roi: this.clampRoi({ ...r, x: r.x + m[0] * 4, y: r.y + m[1] * 4 }) });
+  }
+  tlFrame(e, el) {
+    const b = el.getBoundingClientRect();
+    return { f: Math.round(Math.min(Math.max((e.clientX - b.left) / b.width, 0), 1) * 8483), tol: 12 / b.width * 8483 };
+  }
+  tlApply(kind, f) {
+    const d = this.curD();
+    if (kind === 'tin') { const v = Math.min(f, d.tout - 1); this.upd({ tin: v, frame: v }); }
+    else if (kind === 'tout') { const v = Math.max(f, d.tin + 1); this.upd({ tout: v, frame: v }); }
+    else this.upd({ frame: f });
+  }
+  tlDown(e) {
+    const d = this.curD(), p = this.tlFrame(e, e.currentTarget);
+    const kind = Math.abs(p.f - d.tin) <= p.tol ? 'tin' : (Math.abs(p.f - d.tout) <= p.tol ? 'tout' : 'head');
+    this.tdrag = kind;
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch (err) { }
+    this.setState({ play: null });
+    this.tlApply(kind, p.f);
+  }
+  tlMove(e) { if (this.tdrag) this.tlApply(this.tdrag, this.tlFrame(e, e.currentTarget).f); }
+  tlKey(e) {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    const d = this.curD(), step = (e.shiftKey ? 60 : 1) * (e.key === 'ArrowLeft' ? -1 : 1);
+    this.setState({ play: null });
+    this.upd({ frame: Math.min(8483, Math.max(0, d.frame + step)) });
+  }
+  clampRoi(r) {
+    const w = Math.round(Math.min(Math.max(r.w, 16), VW));
+    const h = Math.round(Math.min(Math.max(r.h, 16), VH));
+    const x = Math.round(Math.min(Math.max(r.x, 0), VW - w));
+    const y = Math.round(Math.min(Math.max(r.y, 0), VH - h));
+    return { x, y, w, h };
+  }
+  seeing(d, sigPx) {
+    const scale = this.num(d.scale), D = this.num(d.D) / 100, B = this.num(d.B) / 100, lam = this.num(d.lam) * 1e-9;
+    if (!(scale > 0 && D > 0 && B > D && lam > 0 && sigPx > 0)) return NaN;
+    const sig = sigPx * scale / 206265;
+    const b = B / D;
+    const K = 0.364 * (1 - 0.532 * Math.pow(b, -1 / 3) - 0.024 * Math.pow(b, -7 / 3));
+    const r0 = Math.pow(K * lam * lam * Math.pow(D, -1 / 3) / (sig * sig), 3 / 5);
+    return 0.98 * lam / r0 * 206265;
+  }
+  quality(v, c) {
+    if (!isFinite(v)) return { label: 'Ingresa la escala de placa en Parámetros', color: c.muted };
+    if (v <= 1.5) return { label: 'Excelente', color: c.good };
+    if (v <= 3) return { label: 'Aceptable', color: c.warn };
+    return { label: 'Muy turbulento', color: c.bad };
+  }
+  chip(on, c) { return { on: on ? 'true' : 'false', bg: on ? c.accent : c.panel2, fg: on ? c.onAccent : c.text, bd: on ? c.accent : c.border2 }; }
+
+  renderVals() {
+    const s = this.state;
+    const theme = s.theme || ((this.props.temaInicial ?? 'oscuro') === 'claro' ? 'light' : 'dark');
+    const dark = theme === 'dark';
+    const c = dark ? {
+      bg: '#1C1D21', panel: '#232429', panel2: '#2D2F35', border: '#34363D', border2: '#4A4C55',
+      text: '#ECEDEF', muted: '#A5A8B1', accent: '#F28C28', onAccent: '#1C1D21', accentSoft: 'rgba(242,140,40,0.16)',
+      preview: '#000000', good: '#5DBB8A', warn: '#E8B54A', bad: '#E57A62', track: '#5A5D66', dim: '#6A5440'
+    } : {
+      bg: '#F1F3F2', panel: '#FFFFFF', panel2: '#F5F7F6', border: '#DDE2DF', border2: '#C2CBC7',
+      text: '#1D2622', muted: '#55615B', accent: '#3E7C72', onAccent: '#FFFFFF', accentSoft: 'rgba(62,124,114,0.12)',
+      preview: '#0C0F0E', good: '#2E7D5B', warn: '#9A6B12', bad: '#B0452C', track: '#B9C4BF', dim: '#B5CCC7'
+    };
+    const mode = s.mode;
+    const isEdu = mode === 'educativo';
+    const d = s.data[mode || 'analisis'];
+    const go = (screen) => () => this.setState({ screen });
+
+    // navegación
+    const it = (id, label) => ({ id, label });
+    const groups = isEdu ? [
+      { title: 'APRENDE', items: [it('concepto', '¿Qué es el seeing?'), it('arma', 'Arma tu DIMM'), it('simulador', 'Simulador')] },
+      { title: 'ANALIZA UN VIDEO', items: [it('video', 'Video'), it('region', 'Recorte y tramo'), it('parametros', 'Parámetros'), it('procesar', 'Procesar'), it('resultados', 'Resultados')] },
+      { title: 'ESTADÍSTICA', items: [it('lab', 'Laboratorio'), it('quiz', 'Ponte a prueba')] },
+      { title: 'TUS DATOS', items: [it('historial', 'Mis mediciones')] }
+    ] : [
+      { title: 'FLUJO DE ANÁLISIS', items: [it('video', 'Video'), it('region', 'Recorte y tramo'), it('parametros', 'Parámetros'), it('procesar', 'Procesar'), it('resultados', 'Resultados')] },
+      { title: 'DATOS', items: [it('historial', 'Historial')] }
+    ];
+    const navGroups = groups.map((g) => ({
+      title: g.title,
+      items: g.items.map((n, i) => {
+        const cur = s.screen === n.id;
+        return { label: n.label, n: String(i + 1), go: go(n.id), cur: cur ? 'page' : 'false', bg: cur ? c.accentSoft : 'transparent', bd: cur ? c.accent : 'transparent', badgeBg: cur ? c.accent : c.panel2, badgeFg: cur ? c.onAccent : c.muted };
+      })
+    }));
+    const scr = {};
+    ['video', 'region', 'parametros', 'procesar', 'resultados', 'historial', 'concepto', 'arma', 'simulador', 'lab', 'quiz', 'acerca'].forEach((id) => { scr[id] = s.screen === id; });
+
+    // tramo
+    const tinF = Math.min(d.tin, d.tout), toutF = Math.max(d.tin, d.tout);
+    const tin = tinF / 8483 * 100, tout = toutF / 8483 * 100;
+    const nIn = Math.max(1, toutF - tinF + 1);
+    const play = s.play;
+    const mkCtl = (tg) => {
+      const rewOn = !!play && play.target === tg && play.dir < 0, ffOn = !!play && play.target === tg && play.dir > 0;
+      const step = (dv) => () => {
+        let v = Math.min(8483, Math.max(0, d[tg] + dv));
+        if (tg === 'tin') v = Math.min(v, d.tout);
+        if (tg === 'tout') v = Math.max(v, d.tin);
+        this.setState({ play: null }); this.upd({ [tg]: v, frame: v });
+      };
+      return {
+        rew: () => this.setState({ play: rewOn ? null : { target: tg, dir: -1 } }),
+        ff: () => this.setState({ play: ffOn ? null : { target: tg, dir: 1 } }),
+        prev: step(-1), next: step(1),
+        rewOn: rewOn ? 'true' : 'false', ffOn: ffOn ? 'true' : 'false',
+        rewBg: rewOn ? c.accent : c.panel2, rewFg: rewOn ? c.onAccent : c.text, rewBd: rewOn ? c.accent : c.border2,
+        ffBg: ffOn ? c.accent : c.panel2, ffFg: ffOn ? c.onAccent : c.text, ffBd: ffOn ? c.accent : c.border2
+      };
+    };
+    const ctl = { frame: mkCtl('frame'), tin: mkCtl('tin'), tout: mkCtl('tout') };
+    const edges = [
+      { label: 'Entrada (inicio del tramo)', frame: d.tin, time: this.mmss(d.tin / 59.94), ctl: ctl.tin, onChange: (e) => { const v = parseInt(e.target.value, 10); this.upd({ tin: Math.min(v, d.tout), frame: Math.min(v, d.tout) }); }, setLabel: 'Fijar entrada en el cuadro de vista previa', setHere: () => this.upd({ tin: Math.min(d.frame, d.tout) }) },
+      { label: 'Salida (fin del tramo)', frame: d.tout, time: this.mmss(d.tout / 59.94), ctl: ctl.tout, onChange: (e) => { const v = parseInt(e.target.value, 10); this.upd({ tout: Math.max(v, d.tin), frame: Math.max(v, d.tin) }); }, setLabel: 'Fijar salida en el cuadro de vista previa', setHere: () => this.upd({ tout: Math.max(d.frame, d.tin) }) }
+    ];
+    const parseTime = (str) => {
+      const t = String(str).trim().replace(',', '.');
+      if (!t) return NaN;
+      const parts = t.split(':');
+      if (parts.length === 1) return parseFloat(parts[0]);
+      if (parts.length === 2) return parseInt(parts[0], 10) * 60 + parseFloat(parts[1]);
+      return NaN;
+    };
+    const spanSec = DUR * (tout - tin) / 100;
+    const i0 = Math.floor(tin / 100 * SAMPLE.length), i1 = Math.max(i0 + 2, Math.ceil(tout / 100 * SAMPLE.length));
+    const sub = SAMPLE.slice(i0, i1);
+    const st = this.stats(sub);
+    const track = TRACK.map((v, i) => { const pos = (i + 0.5) / TRACK.length * 100; return { h: v + '%', c: (pos >= tin && pos <= tout) ? c.accent : c.track }; });
+
+    // región
+    const r = d.roi;
+    const full = r.w === VW && r.h === VH;
+    const v = this.view(d);
+    const pX = (x) => ((x - v.x) / v.w * 100) + '%', pY = (y) => ((y - v.y) / v.h * 100) + '%';
+    const roiBox = { left: pX(r.x), top: pY(r.y), w: (r.w / v.w * 100) + '%', h: (r.h / v.h * 100) + '%' };
+    const dsz = Math.max(5, Math.min(40, 5 * v.z));
+    const canvasDots = STARS.map(([sx, sy]) => ({ left: pX(sx), top: pY(sy), size: dsz + 'px', off: (-dsz / 2) + 'px', glow: '0 0 ' + Math.round(dsz * 1.2) + 'px ' + Math.round(dsz / 3) + 'px rgba(255,255,255,0.45)' }));
+    const handles = [[0, 0], [50, 0], [100, 0], [0, 50], [100, 50], [0, 100], [50, 100], [100, 100]].map(([hx, hy]) => ({ left: hx + '%', top: hy + '%' }));
+    const zoomChips = [1, 2, 4, 8].map((z) => ({ label: z + '×', pick: () => this.upd({ zoom: z }), ...this.chip(v.z === z, c) }));
+    const inside = STARS.every(([sx, sy]) => sx >= r.x + 4 && sx <= r.x + r.w - 4 && sy >= r.y + 4 && sy <= r.y + r.h - 4);
+    const tight = inside && (r.w < 48 || r.h < 48);
+    const roiStatus = !inside ? { text: 'La región no contiene los dos puntos: muévela o agrándala', color: c.bad }
+      : (tight ? { text: 'Muy ajustada: deja margen para el movimiento', color: c.warn }
+        : (full ? { text: 'Cuadro completo: archivos mucho más pesados', color: c.warn } : { text: 'Contiene los dos puntos ✓', color: c.good }));
+    const zw = Math.min(280, 230 * r.w / r.h);
+    const zoom = {
+      w: zw + 'px', aspect: r.w + ' / ' + r.h,
+      dots: STARS.filter(([sx, sy]) => sx >= r.x && sx <= r.x + r.w && sy >= r.y && sy <= r.y + r.h).map(([sx, sy]) => {
+        const size = Math.max(3, Math.min(30, zw / r.w * 6));
+        return { left: ((sx - r.x) / r.w * 100) + '%', top: ((sy - r.y) / r.h * 100) + '%', size: size + 'px', off: (-size / 2) + 'px', glow: '0 0 ' + Math.round(size) + 'px ' + Math.round(size / 3) + 'px rgba(255,255,255,0.5)' };
+      })
+    };
+    const setRoi = (nr) => this.upd({ roi: this.clampRoi(nr) });
+    const mv = (dx, dy) => () => setRoi({ ...r, x: r.x + dx, y: r.y + dy });
+    const rs = (dw, dh) => () => setRoi({ x: r.x - dw / 2, y: r.y - dh / 2, w: r.w + dw, h: r.h + dh });
+    const cx = (STARS[0][0] + STARS[1][0]) / 2, cy = (STARS[0][1] + STARS[1][1]) / 2;
+    const preset = (sz) => () => sz === 'full' ? setRoi({ x: 0, y: 0, w: VW, h: VH }) : setRoi({ x: cx - sz / 2, y: cy - sz / 2, w: sz, h: sz });
+
+    // guardado
+    const N = Math.max(1, Math.round(this.num(d.everyN)) || 1);
+    const savedFrames = d.saveImgs ? Math.ceil(nIn / N) : 0;
+    const bpp = { PNG: 0.06, 'TIFF 16 bits': 2, JPG: 0.04, NumPy: 1, FITS: 2 }[d.fmt];
+    const bytes = savedFrames * r.w * r.h * bpp;
+    const diskStr = !d.saveImgs ? '0 MB (solo análisis)' : (bytes > 1e9 ? this.f(bytes / 1e9, 2) + ' GB' : this.f(Math.max(bytes / 1e6, 0.1), 1) + ' MB');
+    const fmtHelp = {
+      PNG: 'Predeterminado (el más eficiente para medir): sin pérdida, en escala de grises y muy liviano al recortar a la estrella.',
+      'TIFF 16 bits': 'Conserva toda la profundidad de cámaras astronómicas de 16 bits.',
+      JPG: 'El más liviano, pero altera levemente los píxeles: no recomendado para medir.',
+      NumPy: 'Un solo archivo .npy con todos los cuadros, listo para Python.',
+      FITS: 'Formato estándar en astronomía: abre en DS9 o Astropy.'
+    }[d.fmt];
+    const fmts = ['PNG', 'TIFF 16 bits', 'JPG', 'NumPy', 'FITS'].map((label) => ({ label, pick: () => this.upd({ fmt: label }), ...this.chip(d.fmt === label, c) }));
+
+    // resultados
+    const see = this.seeing(d, st.sd);
+    const seeingStr = isFinite(see) ? this.f(see, 2) + '″' : '—';
+    const HB = 18, HLO = 11, HHI = 15.5, hw = (HHI - HLO) / HB;
+    const hc = new Array(HB).fill(0);
+    sub.forEach((v) => { const k = Math.floor((v - HLO) / hw); if (k >= 0 && k < HB) hc[k]++; });
+    const hmax = Math.max(1, ...hc);
+    const resBars = hc.map((v) => ({ h: Math.max(1, v / hmax * 100) + '%' }));
+    const scaleNum = this.num(d.scale);
+    const key = [tin, tout, d.D, d.B, d.lam, d.scale].join('|');
+    const saved = d.history.some((h) => h.key === key);
+
+    // exportación
+    const expDefs = [
+      { title: 'Datos', items: [['csv', 'CSV'], ['xlsx', 'Excel (.xlsx)'], ['json', 'JSON'], ['npz', 'NumPy (.npz)'], ['fits', 'Tabla FITS']] },
+      { title: 'Gráficas', items: [['pdfg', 'PDF solo gráficas'], ['png', 'PNG'], ['svg', 'SVG']] },
+      { title: 'Informe', items: [['pdf', 'PDF completo']] }
+    ];
+    const allLabels = {}; expDefs.forEach((g) => g.items.forEach(([k, l]) => { allLabels[k] = l; }));
+    const expGroups = expDefs.map((g) => ({
+      title: g.title,
+      items: g.items.map(([k, label]) => ({ label, toggle: () => this.upd({ exp: { ...d.exp, [k]: !d.exp[k] } }), ...this.chip(!!d.exp[k], c) }))
+    }));
+    const expOn = Object.keys(d.exp).filter((k) => d.exp[k]);
+    const expNames = expOn.map((k) => allLabels[k]).join(', ');
+
+    // historial
+    const sel = d.sel;
+    const selRows = d.history.filter((h) => sel[h.key]);
+    const anySeeing = d.history.some((h) => isFinite(h.seeingVal));
+    const vals = d.history.map((h) => anySeeing ? (isFinite(h.seeingVal) ? h.seeingVal : 0) : h.sigmaVal);
+    const vmax = Math.max(0.0001, ...vals);
+    const histBars = d.history.slice().reverse().map((h) => {
+      const v = anySeeing ? (isFinite(h.seeingVal) ? h.seeingVal : 0) : h.sigmaVal;
+      return { h: Math.max(2, v / vmax * 85) + '%', v: anySeeing ? (isFinite(h.seeingVal) ? this.f(h.seeingVal, 2) + '″' : '—') : this.f(h.sigmaVal, 2), c: sel[h.key] ? c.accent : c.dim };
+    });
+    const history = d.history.map((h) => ({
+      ...h, sel: !!sel[h.key],
+      toggle: () => this.upd({ sel: { ...sel, [h.key]: !sel[h.key] } }),
+      remove: () => { const ns = { ...sel }; delete ns[h.key]; this.upd({ history: d.history.filter((x) => x.key !== h.key), sel: ns }); }
+    }));
+    const allSel = d.history.length > 0 && d.history.every((h) => sel[h.key]);
+
+    // simulador
+    const t = s.turb, amp = t * 0.22;
+    const rnd = () => ((Math.random() - 0.5) * 2 * amp).toFixed(1);
+    const blur = 6 + t * 0.22, simSee = 0.5 + t * 0.045, sq = this.quality(simSee, c);
+    const sim = {
+      x1: 'calc(50% + ' + rnd() + 'px)', y1: 'calc(42% + ' + rnd() + 'px)', x2: 'calc(47.5% + ' + rnd() + 'px)', y2: 'calc(56% + ' + rnd() + 'px)',
+      glow: '0 0 ' + Math.round(blur) + 'px ' + Math.round(blur / 3) + 'px rgba(255,255,255,0.45)', seeing: this.f(simSee, 1) + '″', q: sq.label, qColor: sq.color
+    };
+
+    // laboratorio
+    const la = SAMPLE.slice(0, s.labN).concat(s.labOut ? [0.41, 0.66, 0.52] : []);
+    const ls = this.stats(la);
+    const lo = s.labOut ? 0 : Math.floor(ls.min * 2) / 2, hi = Math.ceil(ls.max * 2) / 2;
+    const nb = s.labBins, bw = (hi - lo) / nb;
+    const lc = new Array(nb).fill(0);
+    la.forEach((v) => { let k = Math.floor((v - lo) / bw); if (k >= nb) k = nb - 1; if (k >= 0) lc[k]++; });
+    const lmax = Math.max(1, ...lc);
+    const pts = [];
+    for (let i = 0; i <= 80; i++) {
+      const x = lo + (hi - lo) * i / 80;
+      const y = ls.n * bw * Math.exp(-0.5 * Math.pow((x - ls.mean) / ls.sd, 2)) / (ls.sd * Math.sqrt(2 * Math.PI));
+      pts.push((i / 80 * 100).toFixed(2) + ',' + Math.max(0, 100 - y / lmax * 100).toFixed(2));
+    }
+    const lab = {
+      nStr: this.miles(ls.n), bins: nb, showCurve: s.labCurve, curve: pts.join(' '),
+      bars: lc.map((v) => ({ h: Math.max(0.5, v / lmax * 100) + '%' })),
+      meanPct: ((ls.mean - lo) / (hi - lo) * 100) + '%',
+      lo: this.f(lo, 1), mid: this.f((lo + hi) / 2, 1), hi: this.f(hi, 1),
+      stats: [
+        { k: 'Media x̄', v: this.f(ls.mean, 3) + ' px' }, { k: 'Mediana', v: this.f(ls.med, 3) + ' px' },
+        { k: 'Desviación σ', v: this.f(ls.sd, 3) + ' px' }, { k: 'Error de la media', v: '± ' + this.f(ls.sd / Math.sqrt(ls.n), 3) },
+        { k: 'Mínimo', v: this.f(ls.min, 2) + ' px' }, { k: 'Máximo', v: this.f(ls.max, 2) + ' px' }
+      ]
+    };
+
+    // quiz
+    const qDefs = [
+      { id: 'a', text: '¿Por qué se graba video a 30 cuadros por segundo o más?', ok: 0, opts: ['Porque la turbulencia cambia en milisegundos y cada cuadro la «congela»', 'Para que el video se vea con mejor calidad', 'Porque la estrella se mueve muy rápido en el cielo'], good: '¡Exacto! La atmósfera cambia tan rápido que solo con muchos cuadros por segundo se captura su movimiento.', bad: 'No exactamente: la clave es la rapidez de la turbulencia, que cambia en milisegundos.' },
+      { id: 'b', text: 'Si la desviación estándar σ de las distancias aumenta, el seeing…', ok: 1, opts: ['Mejora: el cielo está más nítido', 'Empeora: hay más turbulencia', 'No cambia'], good: 'Correcto: una campana más ancha significa que la imagen se mueve más, es decir, más turbulencia.', bad: 'Piensa en el histograma: una campana más ancha significa que los puntos se mueven más.' },
+      { id: 'c', text: 'Si usas 4 veces más cuadros, el error de la media…', ok: 2, opts: ['Se multiplica por 4', 'No cambia', 'Se reduce a la mitad'], good: '¡Muy bien! El error es σ/√N, y √4 = 2. Compruébalo en el laboratorio.', bad: 'Recuerda: error = σ/√N. Pruébalo en el laboratorio moviendo la barra de cuadros.' },
+      { id: 'd', text: 'Tres detecciones fallidas con distancia cercana a 0 px hacen que σ…', ok: 0, opts: ['Aumente mucho', 'Disminuya', 'Quede igual'], good: 'Exacto: los datos atípicos inflan la desviación. Por eso la app los detecta y los descarta.', bad: 'Actívalos en el laboratorio y mira qué le pasa a σ.' }
+    ];
+    let correct = 0, answered = 0;
+    const quiz = qDefs.map((qd) => {
+      const pick = s.q[qd.id], has = pick !== undefined;
+      if (has) { answered++; if (pick === qd.ok) correct++; }
+      return {
+        text: qd.text, answered: has, feedback: has ? (pick === qd.ok ? qd.good : qd.bad) : '', fbColor: has && pick === qd.ok ? c.good : c.bad,
+        opts: qd.opts.map((label, i) => ({ label, on: pick === i ? 'true' : 'false', pick: () => this.setState({ q: { ...this.state.q, [qd.id]: i } }), bg: pick === i ? c.accentSoft : c.panel2, bd: has && i === qd.ok ? c.good : (pick === i ? c.bad : c.border) }))
+      };
+    });
+
+    const p = d.progress;
+    return {
+      c, isEdu, d, scr, navGroups, noMode: !mode, hasMode: !!mode,
+      themeLabel: dark ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro', themeShort: dark ? '☀ Tema claro' : '☾ Tema oscuro',
+      toggleTheme: () => this.setState({ theme: dark ? 'light' : 'dark' }),
+      startAbout: s.startAbout, toggleStartAbout: () => this.setState({ startAbout: !s.startAbout }),
+      toAnalisis: () => this.setState({ mode: 'analisis', screen: 'video' }),
+      toEducativo: () => this.setState({ mode: 'educativo', screen: 'concepto' }),
+      toStart: () => this.setState({ mode: null }),
+      modeChip: isEdu ? 'Modo educativo' : 'Modo análisis',
+      goAcerca: go('acerca'), acercaBd: s.screen === 'acerca' ? c.accent : c.border,
+      goVideo: go('video'), goRegion: go('region'), goParametros: go('parametros'), goProcesar: go('procesar'), goResultados: go('resultados'),
+      goSimulador: go('simulador'), goArma: go('arma'), goLab: go('lab'),
+      notLoaded: !d.loaded, loadVideo: () => this.upd({ loaded: true }), unloadVideo: () => this.upd({ loaded: false }),
+      videoInfo: [{ k: 'Formato', v: 'H.264 · MOV' }, { k: 'Resolución', v: '1920 × 1080' }, { k: 'Cuadros por segundo', v: '59,94' }, { k: 'Cuadros', v: '8.484' }, { k: 'Duración', v: '2 min 21 s' }, { k: 'Tamaño', v: '13,9 MB' }],
+
+      roiBox, roiStatus, zoom, roiXY: r.x + ', ' + r.y + ' px', roiWH: r.w + ' × ' + r.h + ' px',
+      canvasDots, handles, zoomChips, cursor: s.cursor,
+      viewLabel: 'Zoom ' + v.z + '× · cuadro ' + d.frame + ' · ' + this.mmss(d.frame / 59.94),
+      cvDown: (e) => this.cvDown(e), cvMove: (e) => this.cvMove(e), cvUp: (e) => this.cvUp(e), cvKey: (e) => this.cvKey(e),
+      tlDown: (e) => this.tlDown(e), tlMove: (e) => this.tlMove(e), tlUp: () => { this.tdrag = null; }, tlKey: (e) => this.tlKey(e),
+      autoFit: () => {
+        const xs = STARS.map((p) => p[0]), ys = STARS.map((p) => p[1]), m = 24;
+        const w = Math.ceil((Math.max(...xs) - Math.min(...xs) + 2 * m) / 16) * 16, h = Math.ceil((Math.max(...ys) - Math.min(...ys) + 2 * m) / 16) * 16;
+        setRoi({ x: cx - w / 2, y: cy - h / 2, w, h });
+      },
+      markIn: () => this.upd({ tin: Math.min(d.frame, d.tout - 1) }), markOut: () => this.upd({ tout: Math.max(d.frame, d.tin + 1) }),
+      spanPct: (tout - tin) + '%', isDark: dark, isLight: !dark,
+      mvU: mv(0, -16), mvD: mv(0, 16), mvL: mv(-16, 0), mvR: mv(16, 0),
+      wPlus: rs(16, 0), wMinus: rs(-16, 0), hPlus: rs(0, 16), hMinus: rs(0, -16),
+      centerStar: () => setRoi({ ...r, x: cx - r.w / 2, y: cy - r.h / 2 }),
+      centerAt: (e) => { const b = e.currentTarget.getBoundingClientRect(); const fx = (e.clientX - b.left) / b.width * VW, fy = (e.clientY - b.top) / b.height * VH; setRoi({ ...r, x: fx - r.w / 2, y: fy - r.h / 2 }); },
+      roiPresets: [{ label: '64 px', pick: preset(64) }, { label: '128 px', pick: preset(128) }, { label: '256 px', pick: preset(256) }, { label: 'Cuadro completo', pick: preset('full') }],
+      onFrame: (e) => { this.setState({ play: null }); this.upd({ frame: parseInt(e.target.value, 10) }); },
+      frameTime: this.mmss(d.frame / 59.94), framePct: (d.frame / 8483 * 100) + '%',
+      tinPct: tin + '%', toutPct: tout + '%', ctl, edges,
+      gotoF: s.gotoF, gotoT: s.gotoT,
+      onGotoF: (e) => this.setState({ gotoF: e.target.value, gotoErr: '' }), onGotoT: (e) => this.setState({ gotoT: e.target.value, gotoErr: '' }),
+      doGotoF: () => { const v = parseInt(s.gotoF, 10); if (v >= 0 && v <= 8483) { this.setState({ play: null, gotoF: '', gotoErr: '' }); this.upd({ frame: v }); } else this.setState({ gotoErr: 'El cuadro debe estar entre 0 y 8483' }); },
+      doGotoT: () => { const sec = parseTime(s.gotoT); if (sec >= 0 && sec <= DUR) { this.setState({ play: null, gotoT: '', gotoErr: '' }); this.upd({ frame: Math.min(8483, Math.round(sec * 59.94)) }); } else this.setState({ gotoErr: 'Escribe un tiempo entre 00:00.0 y 02:21.5' }); },
+      gotoMsg: s.gotoErr ? { text: s.gotoErr, color: c.bad } : { text: '59,94 cuadros por segundo', color: c.muted },
+      useAll: () => this.upd({ tin: 0, tout: 8483 }), skipPeak: () => this.upd({ tin: 1018, frame: 1018 }),
+      tinStr: this.mmss(DUR * tin / 100), toutStr: this.mmss(DUR * tout / 100), spanSecStr: this.f(spanSec, 1) + ' s', nInStr: this.miles(nIn), track,
+      spanWarn: spanSec < 15 ? { text: 'Tramo menor a 15 s: el resultado será menos confiable', color: c.warn } : { text: 'Duración suficiente ✓', color: c.good },
+
+      onD: (e) => this.upd({ D: e.target.value }), onB: (e) => this.upd({ B: e.target.value }), onLam: (e) => this.upd({ lam: e.target.value }),
+      onScale: (e) => this.upd({ scale: e.target.value }), onPix: (e) => this.upd({ pix: e.target.value }), onFocal: (e) => this.upd({ focal: e.target.value }),
+      calcScale: () => { const px = this.num(d.pix), fo = this.num(d.focal); if (px > 0 && fo > 0) this.upd({ scale: this.f(206.265 * px / fo, 3) }); },
+      useExample: () => this.upd({ D: '2,5', B: '14', lam: '550', scale: '1,0' }),
+      scaleBorder: scaleNum > 0 ? c.border2 : c.accent,
+      fmts, fmtHelp, onEveryN: (e) => this.upd({ everyN: e.target.value }), toggleSave: () => this.upd({ saveImgs: !d.saveImgs }),
+      savedFramesStr: this.miles(savedFrames), diskStr,
+
+      progressStr: Math.round(p) + '%', ring: 'conic-gradient(' + c.accent + ' 0 ' + p + '%, ' + c.panel2 + ' ' + p + '% 100%)',
+      procStatus: d.done ? 'Listo' : (d.running ? 'Procesando…' : (p > 0 ? 'Cancelado' : 'Listo para empezar')),
+      procFramesStr: this.miles(nIn * p / 100) + ' de ' + this.miles(nIn) + ' cuadros',
+      procEta: d.running ? 'Faltan ~' + Math.max(1, Math.round((100 - p) / 2.5 * 0.14)) + ' s (simulado)' : (d.done ? 'Imágenes y mediciones guardadas' : 'Tiempo estimado: ~3 min en un computador típico'),
+      canStart: !d.running && !d.done, notDone: !d.done,
+      startProc: () => this.upd({ running: true, done: false, progress: 0 }), cancelProc: () => this.upd({ running: false }),
+      summary: [
+        { k: 'Tramo', v: this.mmss(DUR * tin / 100) + ' – ' + this.mmss(DUR * tout / 100) }, { k: 'Región', v: r.w + '×' + r.h + ' px' },
+        { k: 'Formato', v: d.saveImgs ? d.fmt : 'No guardar' }, { k: 'Imágenes', v: this.miles(savedFrames) },
+        { k: 'Disco', v: diskStr }, { k: 'Escala', v: d.scale ? d.scale + ' ″/px' : 'Falta' }
+      ],
+
+      seeingStr, quality: this.quality(see, c), resBars,
+      resStats: [
+        { k: 'Separación media', v: this.f(st.mean, 2) + ' px', note: scaleNum > 0 ? '= ' + this.f(st.mean * scaleNum, 2) + '″ en el cielo' : 'en píxeles' },
+        { k: 'Desviación σ', v: this.f(st.sd, 2) + ' px', note: 'movimiento diferencial' },
+        { k: 'Cuadros válidos', v: this.miles(nIn), note: '100 % del tramo' }
+      ],
+      saveLabel: saved ? 'Guardado ✓' : 'Guardar en historial',
+      saveHistory: () => {
+        if (saved) return;
+        const dt = new Date();
+        const when = dt.toLocaleDateString('es-CO') + ' ' + dt.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+        const row = { key, when, span: this.mmss(DUR * tin / 100) + '–' + this.mmss(DUR * tout / 100), mean: this.f(st.mean, 2), sigma: this.f(st.sd, 3), sigmaVal: st.sd, seeing: seeingStr, seeingVal: see, scale: d.scale || '—' };
+        this.upd({ history: [row, ...d.history], sel: { ...d.sel, [key]: true } });
+      },
+      expGroups, exportLabel: expOn.length ? 'Exportar (' + expOn.length + ')' : 'Elige al menos un formato',
+      exportNow: () => this.upd({ toast: expOn.length ? 'Simulado: se exportaría ' + expNames + ' en la carpeta de salida.' : 'Elige al menos un formato.' }),
+
+      histTitle: isEdu ? 'Mis mediciones' : 'Historial de estadísticas',
+      histSub: isEdu ? 'Las mediciones del modo educativo se guardan aparte de las científicas' : 'Base de datos local de tus análisis científicos, para comparar noches y épocas del año',
+      history, historyEmpty: d.history.length === 0, historyFull: d.history.length > 0, histBars,
+      histChartTitle: anySeeing ? 'Seeing por análisis guardado' : 'σ por análisis guardado (agrega la escala para ver el seeing)',
+      allSel, toggleAll: () => { const ns = {}; if (!allSel) d.history.forEach((h) => { ns[h.key] = true; }); this.upd({ sel: ns }); },
+      selCountStr: selRows.length === 1 ? '1 análisis seleccionado' : selRows.length + ' análisis seleccionados',
+      exportHist: () => this.upd({ toast: !selRows.length ? 'Selecciona al menos una fila.' : (expOn.length ? 'Simulado: ' + selRows.length + ' análisis → ' + expNames + '.' : 'Elige al menos un formato.') }),
+      exportHistCharts: () => this.upd({ toast: selRows.length ? 'Simulado: PDF solo con las gráficas de ' + selRows.length + ' análisis.' : 'Selecciona al menos una fila.' }),
+
+      turb: s.turb, onTurb: (e) => this.setState({ turb: parseInt(e.target.value, 10) }), sim,
+      buildSteps: [
+        { n: '1', t: 'Telescopio', d: 'Uno de 4 pulgadas o más es suficiente.' },
+        { n: '2', t: 'Máscara de dos orificios', d: 'Para 8 pulgadas de apertura: orificios de 2,5 cm separados 14 cm. Se puede hacer en cartón.' },
+        { n: '3', t: 'Cámara de video', d: 'Una DSLR en modo video o una cámara de 30 cuadros por segundo o más.' },
+        { n: '4', t: 'Desenfoca un poco', d: 'Así la estrella se ve como dos puntos, uno por cada orificio.' },
+        { n: '5', t: 'Graba 15 a 20 s', d: 'Elige una estrella brillante, a más de 40° sobre el horizonte.' }
+      ],
+
+      lab, labN: s.labN, labBins: s.labBins, labOut: s.labOut, labCurve: s.labCurve,
+      onLabN: (e) => this.setState({ labN: parseInt(e.target.value, 10) }), onLabBins: (e) => this.setState({ labBins: parseInt(e.target.value, 10) }),
+      toggleLabOut: () => this.setState({ labOut: !s.labOut }), toggleLabCurve: () => this.setState({ labCurve: !s.labCurve }),
+      labCards: [
+        { t: 'Media', d: 'La suma de todas las distancias dividida entre cuántas hay. Es el valor «típico».', try: 'Prueba: con pocos cuadros la media salta; con muchos se estabiliza.' },
+        { t: 'Desviación estándar σ', d: 'Qué tan lejos de la media caen los datos. En el DIMM, una σ grande significa más turbulencia.', try: 'Es el ancho de la campana.' },
+        { t: 'Error de la media', d: 'σ ÷ √N: cuánto podría cambiar la media si repitieras el experimento.', try: 'Prueba: pasa de 75 a 300 cuadros y verás que se reduce a la mitad.' },
+        { t: 'Datos atípicos', d: 'Una detección fallida da una distancia cercana a 0 px, muy lejos del resto.', try: 'Prueba: actívalos y mira cuánto crece σ con solo 3 datos malos.' }
+      ],
+      quiz, quizScore: answered === 0 ? qDefs.length + ' preguntas sobre seeing y estadística' : correct + ' de ' + qDefs.length + ' correctas',
+      resetQuiz: () => this.setState({ q: {} })
+    };
+  }
+}
+</script>
+</body>
+</html>

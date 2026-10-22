@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Asistente por pasos</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&amp;family=IBM+Plex+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#F4F6F9}
+a{color:#1F5FBF}a:hover{color:#163F80}
+</style>
+</helmet>
+<div style="font-family: 'IBM Plex Sans', system-ui, sans-serif; color: #17202E; background: #F4F6F9; min-height: 820px; display: flex; flex-direction: column">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 32px; background: #FFFFFF; border-bottom: 1px solid #DCE2EA">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="14" r="12" fill="none" stroke="#1F5FBF" stroke-width="2"></circle><circle cx="10" cy="12" r="2.5" fill="#1F5FBF"></circle><circle cx="17" cy="16" r="2.5" fill="#1F5FBF"></circle></svg>
+      <div style="display: flex; flex-direction: column">
+        <strong style="font-size: 17px; font-weight: 600">DIMM Seeing</strong>
+        <span style="font-size: 12px; color: #4A5668">Diego Fernando Cagua Lozada</span>
+      </div>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <button type="button" style="font: inherit; font-size: 14px; padding: 10px 16px; min-height: 44px; border: 1px solid #C7D0DC; background: #FFFFFF; color: #17202E; border-radius: 8px">Ayuda</button>
+      <button type="button" style="font: inherit; font-size: 14px; padding: 10px 16px; min-height: 44px; border: 1px solid #C7D0DC; background: #FFFFFF; color: #17202E; border-radius: 8px">Acerca de</button>
+    </div>
+  </header>
+
+  <nav aria-label="Pasos" style="display: flex; flex-wrap: wrap; gap: 8px; padding: 20px 32px 0">
+    <sc-for list="{{steps}}" as="s" hint-placeholder-count="5">
+      <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px; background: {{s.bg}}; color: {{s.fg}}; font-size: 14px; font-weight: 500">
+        <span style="display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center; background: {{s.dotBg}}; color: {{s.dotFg}}; font-size: 12px; font-weight: 600">{{s.n}}</span>
+        <span>{{s.label}}</span>
+      </div>
+    </sc-for>
+  </nav>
+
+  <main style="flex: 1; display: flex; flex-wrap: wrap; gap: 24px; padding: 24px 32px">
+    <section style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px">
+        <h1 style="margin: 0; font-size: 22px; font-weight: 600">Paso 2 · Elige la región de la estrella</h1>
+        <span style="font-size: 13px; color: #4A5668">Arrastra un rectángulo sobre los dos puntos</span>
+      </div>
+      <div style="position: relative; background: #05070B; border-radius: 12px; height: 420px; overflow: hidden">
+        <div style="position: absolute; left: 46%; top: 44%; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 12px 4px rgba(255,255,255,0.45)"></div>
+        <div style="position: absolute; left: 44.5%; top: 50%; width: 10px; height: 10px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 12px 4px rgba(255,255,255,0.45)"></div>
+        <div style="position: absolute; left: 40%; top: 36%; width: 12%; height: 24%; border: 2px dashed #6FA8FF; border-radius: 4px"></div>
+        <span style="position: absolute; left: 40%; top: calc(36% - 26px); font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #A9C8FF">ROI 128 × 128 px</span>
+        <span style="position: absolute; left: 16px; bottom: 12px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #C9D2DE">Cuadro 1.820 / 8.484</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <label for="w1-frame" style="font-size: 13px; color: #4A5668">Cuadro de vista previa</label>
+        <input id="w1-frame" type="range" min="0" max="8484" value="1820" style="flex: 1; accent-color: #1F5FBF">
+      </div>
+    </section>
+
+    <aside style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+      <div style="background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Video cargado</h2>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: #4A5668; word-break: break-all">G_3_Altair_300824_21_38_DSC0034_Mascara.MOV</span>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; font-size: 13px">
+          <span style="color: #4A5668">Formato</span><span>H.264 · MOV</span>
+          <span style="color: #4A5668">Resolución</span><span>1920 × 1080</span>
+          <span style="color: #4A5668">Cuadros/s</span><span>59,94</span>
+          <span style="color: #4A5668">Cuadros</span><span>8.484</span>
+          <span style="color: #4A5668">Duración</span><span>2 min 21 s</span>
+        </div>
+      </div>
+      <div style="background: #FFFFFF; border: 1px solid #DCE2EA; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+        <h2 style="margin: 0; font-size: 15px; font-weight: 600">Recorte</h2>
+        <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5FBF"> Seguir la estrella si se mueve</label>
+        <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #1F5FBF"> Convertir a escala de grises</label>
+        <button type="button" style="font: inherit; font-size: 14px; min-height: 44px; border: 1px solid #C7D0DC; background: #FFFFFF; color: #17202E; border-radius: 8px">Detectar estrella automáticamente</button>
+      </div>
+      <div style="font-size: 13px; color: #4A5668; background: #E8F0FC; border-radius: 10px; padding: 12px 14px">Espacio estimado en disco: <strong style="color: #17202E">[ESTIMADO] MB</strong></div>
+    </aside>
+  </main>
+
+  <footer style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 32px; background: #FFFFFF; border-top: 1px solid #DCE2EA">
+    <button type="button" style="font: inherit; font-size: 15px; padding: 10px 22px; min-height: 44px; border: 1px solid #C7D0DC; background: #FFFFFF; color: #17202E; border-radius: 8px">← Atrás</button>
+    <button type="button" style="font: inherit; font-size: 15px; font-weight: 600; padding: 10px 26px; min-height: 44px; border: none; background: {{accent}}; color: #FFFFFF; border-radius: 8px">Siguiente: parámetros →</button>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#1F5FBF","options":["#1F5FBF","#0F7B6C","#7A3FB8"]},"pasoActual":{"editor":"int","default":2,"min":1,"max":5},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#1F5FBF';
+    const cur = this.props.pasoActual ?? 2;
+    const labels = ['Video', 'Región', 'Parámetros', 'Procesar', 'Resultados'];
+    const steps = labels.map((label, i) => {
+      const n = i + 1;
+      const done = n < cur, active = n === cur;
+      return {
+        n: done ? '✓' : String(n), label,
+        bg: active ? accent : (done ? '#E3EAF5' : '#FFFFFF'),
+        fg: active ? '#FFFFFF' : '#17202E',
+        dotBg: active ? '#FFFFFF' : (done ? accent : '#E3E8EF'),
+        dotFg: active ? accent : (done ? '#FFFFFF' : '#4A5668')
+      };
+    });
+    return { accent, steps };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cola de lotes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&amp;family=Source+Code+Pro:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#FFFFFF}
+a{color:#3B4CCA}a:hover{color:#26328A}
+</style>
+</helmet>
+<div style="font-family: 'Source Sans 3', system-ui, sans-serif; color: #1C1F2A; background: #FFFFFF; min-height: 820px; display: flex; flex-direction: column">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 16px 28px; border-bottom: 1px solid #E1E4EC">
+    <strong style="font-size: 20px; font-weight: 700">DIMM Seeing</strong>
+    <span style="font-size: 13px; color: #555B6E">por Diego Fernando Cagua Lozada</span>
+    <div style="flex: 1"></div>
+    <button type="button" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 0 18px; border: 1px solid #C9CEDB; border-radius: 6px; background: #FFFFFF; color: #1C1F2A">+ Agregar videos</button>
+    <button type="button" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 0 18px; border: 1px solid #C9CEDB; border-radius: 6px; background: #FFFFFF; color: #1C1F2A">+ Agregar carpeta</button>
+    <button type="button" style="font: inherit; font-size: 15px; font-weight: 600; min-height: 44px; padding: 0 20px; border: none; border-radius: 6px; background: {{accent}}; color: #FFFFFF">Procesar cola</button>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap">
+    <main style="flex: 999 1 640px; min-width: 0; padding: 20px 28px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; align-items: baseline">
+        <h1 style="margin: 0; font-size: 20px; font-weight: 700">Cola de procesamiento</h1>
+        <span style="font-size: 14px; color: #555B6E">3 videos · 1,06 GB en total</span>
+      </div>
+      <div style="overflow-x: auto; border: 1px solid #E1E4EC; border-radius: 8px">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; min-width: 640px">
+          <thead>
+            <tr style="background: #F5F6FA; text-align: left">
+              <th style="padding: 10px 14px; font-weight: 600">Archivo</th>
+              <th style="padding: 10px 14px; font-weight: 600">Formato</th>
+              <th style="padding: 10px 14px; font-weight: 600">Tamaño</th>
+              <th style="padding: 10px 14px; font-weight: 600; width: 200px">Estado</th>
+              <th style="padding: 10px 14px; font-weight: 600">σ (px)</th>
+              <th style="padding: 10px 14px; font-weight: 600">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+              <tr style="border-top: 1px solid #E1E4EC">
+                <td style="padding: 12px 14px; font-family: 'Source Code Pro', monospace; font-size: 13px; word-break: break-all">{{r.name}}</td>
+                <td style="padding: 12px 14px">{{r.fmt}}</td>
+                <td style="padding: 12px 14px">{{r.size}}</td>
+                <td style="padding: 12px 14px">
+                  <div style="display: flex; flex-direction: column; gap: 4px">
+                    <span style="font-size: 13px; color: {{r.stColor}}; font-weight: 600">{{r.status}}</span>
+                    <div style="height: 6px; background: #E8EAF1; border-radius: 3px"><div style="height: 6px; width: {{r.pct}}; background: {{accent}}; border-radius: 3px"></div></div>
+                  </div>
+                </td>
+                <td style="padding: 12px 14px; font-family: 'Source Code Pro', monospace">{{r.sigma}}</td>
+                <td style="padding: 12px 14px"><div style="display: flex; gap: 6px"><button type="button" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 10px; border: 1px solid #C9CEDB; border-radius: 6px; background: #FFFFFF; color: #1C1F2A">Abrir</button><button type="button" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 10px; border: 1px solid #C9CEDB; border-radius: 6px; background: #FFFFFF; color: #1C1F2A">Quitar</button></div></td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+      <div style="border: 2px dashed #C9CEDB; border-radius: 8px; padding: 26px; text-align: center; font-size: 15px; color: #555B6E">Arrastra aquí más videos para agregarlos a la cola</div>
+    </main>
+
+    <aside style="flex: 1 1 300px; min-width: 0; border-left: 1px solid #E1E4EC; background: #FAFBFD; padding: 20px 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">Ajustes para toda la cola</h2>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14px">Carpeta de salida<span style="display: flex; gap: 6px"><input type="text" value="[ELIGE UNA CARPETA]" style="flex: 1; min-width: 0; font: inherit; font-size: 14px; min-height: 40px; border: 1px solid #C9CEDB; border-radius: 6px; padding: 0 10px"><button type="button" style="font: inherit; font-size: 14px; min-height: 40px; padding: 0 12px; border: 1px solid #C9CEDB; border-radius: 6px; background: #FFFFFF; color: #1C1F2A">…</button></span></label>
+      <label style="display: flex; flex-direction: column; gap: 4px; font-size: 14px">Formato de imagen<select style="font: inherit; font-size: 14px; min-height: 40px; border: 1px solid #C9CEDB; border-radius: 6px; padding: 0 8px; background: #FFFFFF"><option>PNG (sin pérdida)</option><option>TIFF 16 bits</option><option>JPG</option><option>NumPy .npy</option><option>FITS</option></select></label>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #3B4CCA"> Recortar automáticamente a la estrella</label>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #3B4CCA"> Calcular histograma y seeing</label>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #3B4CCA"> Apagar el equipo al terminar</label>
+      <div style="margin-top: auto; font-size: 13px; color: #555B6E; background: #EEF0FA; border-radius: 6px; padding: 10px 12px">Espacio libre en disco: [—] GB · Necesario: [—] GB</div>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#3B4CCA","options":["#3B4CCA","#0F7B6C","#B4531F"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      accent: this.props.accent ?? '#3B4CCA',
+      rows: [
+        { name: 'G_3_Altair_300824_21_38_DSC0034_Mascara.MOV', fmt: 'H.264 · MOV', size: '13,9 MB', status: 'Listo', stColor: '#1D6B3A', pct: '100%', sigma: '0,72' },
+        { name: '2024-12-19-Aldebaran_19_09.avi', fmt: 'AVI', size: '1,03 GB', status: 'Procesando · 38 %', stColor: '#3B4CCA', pct: '38%', sigma: '—' },
+        { name: '[otro_video].mp4', fmt: '—', size: '—', status: 'En cola', stColor: '#555B6E', pct: '0%', sigma: '—' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

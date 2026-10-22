@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pestañas clásicas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#E9E9E9}
+a{color:#0B57A4}a:hover{color:#073B70}
+</style>
+</helmet>
+<div style="font-family: 'Noto Sans', 'Segoe UI', system-ui, sans-serif; font-size: 14px; color: #1A1A1A; background: #F0F0F0; min-height: 820px; display: flex; flex-direction: column; border: 1px solid #A9A9A9; box-sizing: border-box">
+  <div style="display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: #FFFFFF; border-bottom: 1px solid #D0D0D0">
+    <span style="font-size: 13px">DIMM Seeing — Diego Fernando Cagua Lozada</span>
+  </div>
+  <nav aria-label="Menú" style="display: flex; flex-wrap: wrap; gap: 2px; padding: 2px 6px; background: #F7F7F7; border-bottom: 1px solid #D0D0D0">
+    <sc-for list="{{menus}}" as="m" hint-placeholder-count="5">
+      <button type="button" style="font: inherit; font-size: 14px; min-height: 32px; padding: 0 10px; border: none; background: transparent; color: #1A1A1A">{{m}}</button>
+    </sc-for>
+  </nav>
+  <div style="display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; border-bottom: 1px solid #D0D0D0">
+    <sc-for list="{{tools}}" as="t" hint-placeholder-count="5">
+      <button type="button" style="font: inherit; font-size: 13px; min-height: 36px; padding: 0 12px; border: 1px solid #BDBDBD; border-radius: 3px; background: linear-gradient(#FFFFFF, #E8E8E8); color: #1A1A1A">{{t}}</button>
+    </sc-for>
+  </div>
+
+  <div style="flex: 1; padding: 12px; display: flex; flex-direction: column">
+    <div role="tablist" style="display: flex; flex-wrap: wrap; gap: 2px">
+      <sc-for list="{{tabs}}" as="t" hint-placeholder-count="4">
+        <button type="button" role="tab" aria-selected="{{t.sel}}" style="font: inherit; font-size: 14px; min-height: 36px; padding: 0 16px; border: 1px solid #A9A9A9; border-bottom: {{t.bb}}; border-radius: 4px 4px 0 0; background: {{t.bg}}; color: #1A1A1A; margin-bottom: -1px">{{t.label}}</button>
+      </sc-for>
+    </div>
+    <div role="tabpanel" style="flex: 1; background: #FFFFFF; border: 1px solid #A9A9A9; padding: 16px; display: flex; flex-wrap: wrap; gap: 16px; align-content: flex-start">
+      <fieldset style="flex: 1 1 340px; min-width: 0; border: 1px solid #C4C4C4; border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+        <legend style="padding: 0 6px; font-weight: 600">Rango de cuadros</legend>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px">Primer cuadro<input type="text" value="0" style="width: 120px; font: inherit; min-height: 30px; border: 1px solid #A9A9A9; padding: 0 6px"></label>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px">Último cuadro<input type="text" value="8483" style="width: 120px; font: inherit; min-height: 30px; border: 1px solid #A9A9A9; padding: 0 6px"></label>
+        <label style="display: flex; align-items: center; justify-content: space-between; gap: 10px">Guardar 1 de cada<input type="text" value="1" style="width: 120px; font: inherit; min-height: 30px; border: 1px solid #A9A9A9; padding: 0 6px"></label>
+      </fieldset>
+      <fieldset style="flex: 1 1 340px; min-width: 0; border: 1px solid #C4C4C4; border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 8px">
+        <legend style="padding: 0 6px; font-weight: 600">Formato de imagen</legend>
+        <sc-for list="{{fmts}}" as="f" hint-placeholder-count="5">
+          <label style="display: flex; align-items: center; gap: 8px; min-height: 26px"><input type="radio" name="p-fmt" checked="{{f.on}}" style="width: 16px; height: 16px"> {{f.label}}</label>
+        </sc-for>
+      </fieldset>
+      <fieldset style="flex: 1 1 340px; min-width: 0; border: 1px solid #C4C4C4; border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+        <legend style="padding: 0 6px; font-weight: 600">Región</legend>
+        <label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" checked style="width: 16px; height: 16px"> Recortar a la región seleccionada</label>
+        <label style="display: flex; align-items: center; gap: 8px"><input type="checkbox" checked style="width: 16px; height: 16px"> Escala de grises</label>
+        <button type="button" style="align-self: flex-start; font: inherit; min-height: 32px; padding: 0 14px; border: 1px solid #BDBDBD; border-radius: 3px; background: linear-gradient(#FFFFFF, #E8E8E8); color: #1A1A1A">Definir región…</button>
+      </fieldset>
+      <fieldset style="flex: 1 1 340px; min-width: 0; border: 1px solid #C4C4C4; border-radius: 4px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px">
+        <legend style="padding: 0 6px; font-weight: 600">Destino</legend>
+        <div style="display: flex; gap: 6px"><input type="text" aria-label="Carpeta de destino" value="[CARPETA DE SALIDA]" style="flex: 1; min-width: 0; font: inherit; min-height: 30px; border: 1px solid #A9A9A9; padding: 0 6px"><button type="button" style="font: inherit; min-height: 32px; padding: 0 12px; border: 1px solid #BDBDBD; border-radius: 3px; background: linear-gradient(#FFFFFF, #E8E8E8); color: #1A1A1A">Examinar…</button></div>
+        <span style="color: #4D4D4D; font-size: 13px">Espacio estimado: [—] MB</span>
+      </fieldset>
+      <div style="flex: 1 1 100%; display: flex; justify-content: flex-end; gap: 8px">
+        <button type="button" style="font: inherit; min-height: 34px; padding: 0 18px; border: 1px solid #BDBDBD; border-radius: 3px; background: linear-gradient(#FFFFFF, #E8E8E8); color: #1A1A1A">Restablecer</button>
+        <button type="button" style="font: inherit; font-weight: 600; min-height: 34px; padding: 0 18px; border: 1px solid #0B57A4; border-radius: 3px; background: {{accent}}; color: #FFFFFF">Extraer cuadros</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; padding: 4px 12px; background: #F0F0F0; border-top: 1px solid #D0D0D0; font-size: 13px; color: #333333">
+    <span>Listo</span>
+    <span>G_3_Altair_…_Mascara.MOV · 1920×1080 · 59,94 fps</span>
+    <div style="flex: 1"></div>
+    <div style="width: 180px; height: 14px; border: 1px solid #A9A9A9; background: #FFFFFF"><div style="width: 0%; height: 100%; background: #3A9A3A"></div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0B57A4","options":["#0B57A4","#2F6F3E","#6B3FA0"]},"pestana":{"editor":"enum","default":"Extracción","options":["Video","Extracción","Análisis DIMM","Resultados"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = this.props.pestana ?? 'Extracción';
+    return {
+      accent: this.props.accent ?? '#0B57A4',
+      menus: ['Archivo', 'Editar', 'Ver', 'Herramientas', 'Ayuda'],
+      tools: ['Abrir video', 'Vista previa', 'Extraer', 'Analizar', 'Exportar informe'],
+      tabs: ['Video', 'Extracción', 'Análisis DIMM', 'Resultados'].map((label) => ({
+        label, sel: label === sel ? 'true' : 'false',
+        bg: label === sel ? '#FFFFFF' : '#E4E4E4',
+        bb: label === sel ? '1px solid #FFFFFF' : '1px solid #A9A9A9'
+      })),
+      fmts: ['PNG (sin pérdida)', 'TIFF 16 bits', 'JPG', 'NumPy (.npy)', 'FITS'].map((label, i) => ({ label, on: i === 0 }))
+    };
+  }
+}
+</script>
+</body>
+</html>

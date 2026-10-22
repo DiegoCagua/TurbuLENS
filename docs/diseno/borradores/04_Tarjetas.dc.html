@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tablero de tarjetas</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EEF1EF}
+a{color:#0F6B5E}a:hover{color:#0A4A41}
+</style>
+</helmet>
+<div style="font-family: 'Manrope', system-ui, sans-serif; color: #1B2420; background: #EEF1EF; min-height: 820px; padding: 24px 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+    <div>
+      <h1 style="margin: 0; font-size: 26px; font-weight: 700">DIMM Seeing</h1>
+      <span style="font-size: 13px; color: #4F5D57">Diego Fernando Cagua Lozada</span>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap">
+      <button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 18px; border-radius: 22px; border: 1px solid #C5CEC9; background: #FFFFFF; color: #1B2420">Nuevo análisis</button>
+      <button type="button" style="font: inherit; font-size: 14px; font-weight: 600; min-height: 44px; padding: 0 20px; border-radius: 22px; border: none; background: {{accent}}; color: #FFFFFF">Procesar todo</button>
+    </div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px">
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">1 · Video</h2>
+      <button type="button" style="font: inherit; font-size: 14px; min-height: 96px; border: 2px dashed #B6C3BC; border-radius: 14px; background: #F7F9F8; color: #33403A">Suelta tu video aquí o haz clic para buscarlo</button>
+      <span style="font-size: 13px; color: #4F5D57">G_3_Altair_…_Mascara.MOV · 1920×1080 · 59,94 fps · 8.484 cuadros</span>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">2 · Vista previa</h2>
+      <div style="position: relative; height: 150px; border-radius: 12px; background: #0A0D0C; overflow: hidden">
+        <div style="position: absolute; left: 49%; top: 36%; width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 8px 3px rgba(255,255,255,0.4)"></div>
+        <div style="position: absolute; left: 47%; top: 54%; width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF; box-shadow: 0 0 8px 3px rgba(255,255,255,0.4)"></div>
+      </div>
+      <button type="button" style="font: inherit; font-size: 14px; min-height: 44px; border-radius: 10px; border: 1px solid #C5CEC9; background: #FFFFFF; color: #1B2420">Seleccionar región (ROI)</button>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">3 · Imágenes a guardar</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{fmts}}" as="f" hint-placeholder-count="5">
+          <button type="button" style="font: inherit; font-size: 13px; font-weight: 600; min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid {{f.bd}}; background: {{f.bg}}; color: {{f.fg}}">{{f.label}}</button>
+        </sc-for>
+      </div>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #0F7B6C"> Solo la región seleccionada</label>
+      <label style="display: flex; gap: 10px; align-items: center; font-size: 14px"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #0F7B6C"> No guardar imágenes (solo análisis)</label>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">4 · Telescopio y máscara</h2>
+      <sc-for list="{{params}}" as="p" hint-placeholder-count="4">
+        <label style="display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; color: #33403A">{{p.k}}<input type="text" value="{{p.v}}" style="width: 110px; font: inherit; font-size: 14px; min-height: 38px; border: 1px solid #C5CEC9; border-radius: 8px; padding: 0 10px; text-align: right"></label>
+      </sc-for>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">5 · Progreso</h2>
+      <div style="display: flex; align-items: center; gap: 16px">
+        <div role="img" aria-label="Progreso 72 por ciento" style="width: 96px; height: 96px; border-radius: 50%; background: conic-gradient({{accent}} 0 72%, #E2E8E5 72% 100%); display: flex; align-items: center; justify-content: center">
+          <div style="width: 72px; height: 72px; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px">72%</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #33403A">
+          <span>6.108 de 8.484 cuadros</span>
+          <span>Faltan ~40 s</span>
+          <button type="button" style="font: inherit; font-size: 13px; font-weight: 600; min-height: 40px; padding: 0 14px; margin-top: 4px; border-radius: 20px; border: 1px solid #C5CEC9; background: #FFFFFF; color: #1B2420">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <section style="background: #FFFFFF; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">6 · Resultado</h2>
+      <div role="img" aria-label="Histograma de separación" style="display: flex; align-items: flex-end; gap: 3px; height: 90px">
+        <sc-for list="{{bars}}" as="b" hint-placeholder-count="18">
+          <div style="flex: 1; height: {{b.h}}; background: {{accent}}; border-radius: 3px 3px 0 0"></div>
+        </sc-for>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 14px"><span>μ = 13,16 px</span><span>σ = 0,72 px</span><strong>Seeing [—]″</strong></div>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#0F7B6C","options":["#0F7B6C","#1F5FBF","#B4531F"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#0F7B6C';
+    const hs = [3, 5, 11, 20, 32, 54, 75, 93, 97, 100, 79, 65, 42, 21, 11, 6, 2, 1];
+    const fmts = ['PNG', 'TIFF 16 bits', 'JPG', 'NumPy', 'FITS'].map((label, i) => ({
+      label,
+      bg: i === 0 ? accent : '#FFFFFF',
+      fg: i === 0 ? '#FFFFFF' : '#1B2420',
+      bd: i === 0 ? accent : '#C5CEC9'
+    }));
+    return {
+      accent, fmts,
+      bars: hs.map((h) => ({ h: Math.max(h, 1) + '%' })),
+      params: [
+        { k: 'Diámetro de orificio', v: '2,5 cm' },
+        { k: 'Separación de orificios', v: '14 cm' },
+        { k: 'Longitud de onda', v: '550 nm' },
+        { k: 'Escala de placa', v: '[″/px]' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

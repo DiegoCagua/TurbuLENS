@@ -1,0 +1,137 @@
+"""Pantalla de inicio y «Acerca de»."""
+
+from __future__ import annotations
+
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
+
+from ... import APP_NAME, AUTHOR, AUTHOR_ROLE, INSTITUTION, LICENSE_NAME, REPO_URL, __version__
+from ..theme import theme
+from ..widgets import Card, app_icon, button, hbox, label, sun_moon_icon
+from .base import Page
+
+
+class ModeCard(QFrame):
+    def __init__(self, title, text, cta, cb):
+        super().__init__()
+        self.setProperty("card", "true")
+        self.setCursor(Qt.PointingHandCursor)
+        self.cb = cb
+        self.setMinimumSize(380, 210)
+        self.setMaximumWidth(520)
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(26, 24, 26, 22)
+        lay.setSpacing(10)
+        t = label(title, "h1")
+        d = label(text, "muted", wrap=True)
+        d.setStyleSheet("font-size:15px;")
+        lay.addWidget(t)
+        lay.addWidget(d)
+        lay.addStretch(1)
+        b = button(cta, "primary", cb)
+        b.setMinimumHeight(42)
+        lay.addLayout(hbox(b, "stretch"))
+
+    def mousePressEvent(self, ev):
+        if ev.button() == Qt.LeftButton:
+            self.cb()
+
+
+class StartPage(QWidget):
+    def __init__(self, main):
+        super().__init__()
+        self.main = main
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(30, 20, 30, 24)
+        lay.setSpacing(22)
+        top = QHBoxLayout()
+        top.addStretch(1)
+        self.theme_b = QToolButton()
+        self.theme_b.setProperty("kind", "theme")
+        self.theme_b.setCursor(Qt.PointingHandCursor)
+        self.theme_b.clicked.connect(theme.toggle)
+        top.addWidget(self.theme_b)
+        lay.addLayout(top)
+        self.logo = QLabel()
+        self.logo.setAlignment(Qt.AlignCenter)
+        lay.addWidget(self.logo)
+        t = label(APP_NAME, "hero")
+        t.setAlignment(Qt.AlignCenter)
+        lay.addWidget(t)
+        i = label(INSTITUTION, "muted")
+        i.setAlignment(Qt.AlignCenter)
+        lay.addWidget(i)
+        d = label("Separa videos de un DIMM en imágenes, mide la imagen doble de una estrella y calcula el seeing de tu cielo.",
+                  "muted", wrap=True)
+        d.setAlignment(Qt.AlignCenter)
+        lay.addWidget(d)
+        cards = QHBoxLayout()
+        cards.setSpacing(20)
+        cards.addStretch(1)
+        for title, text, cta, mode in (
+            ("Análisis científico", "Para mediciones reales de tu sitio de observación: extracción de cuadros, seeing, "
+             "historial y exportación de datos.", "Entrar al modo análisis  →", "analisis"),
+            ("Modo educativo", "Aprende estadística con un experimento astronómico real: histogramas, media, desviación "
+             "estándar, la campana de Gauss y más. Para colegios y cursos.", "Entrar al modo educativo  →", "educativo"),
+        ):
+            c = ModeCard(title, text, cta, lambda m=mode: self.main.set_mode(m))
+            cards.addWidget(c, 1)
+        cards.addStretch(1)
+        lay.addLayout(cards)
+        n = label("Cada modo guarda sus mediciones por separado: los datos de clase nunca se mezclan con los científicos.", "muted")
+        n.setAlignment(Qt.AlignCenter)
+        lay.addWidget(n)
+        lay.addStretch(1)
+        self.about_lbl = label("", "small")
+        self.about_lbl.setAlignment(Qt.AlignCenter)
+        self.about_lbl.setVisible(False)
+        foot = hbox("stretch", label(f"Código abierto · versión {__version__}", "small"),
+                    button("Acerca de", slot=self._about), "stretch")
+        lay.addLayout(foot)
+        lay.addWidget(self.about_lbl)
+        theme.changed.connect(self.on_theme)
+        self.on_theme(theme.pal)
+
+    def _about(self):
+        self.about_lbl.setText(f"<b>{AUTHOR}</b> · {AUTHOR_ROLE} · autor de {APP_NAME}<br>"
+                               f"Licencia {LICENSE_NAME} · <a href='{REPO_URL}'>{REPO_URL}</a>")
+        self.about_lbl.setTextFormat(Qt.RichText)
+        self.about_lbl.setOpenExternalLinks(True)
+        self.about_lbl.setVisible(not self.about_lbl.isVisible())
+
+    def on_theme(self, pal):
+        self.logo.setPixmap(app_icon(84))
+        self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
+        self.theme_b.setToolTip("Tema claro" if theme.dark else "Tema oscuro")
+
+
+class AboutPage(Page):
+    title = f"Acerca de {APP_NAME}"
+
+    def __init__(self, main):
+        super().__init__(main)
+        c = Card()
+        rows = [
+            ("", f"{APP_NAME} separa videos de un DIMM (monitor de movimiento diferencial de imagen) en imágenes, mide la "
+                 "imagen doble de una estrella y estima el seeing del lugar de observación. Tiene un modo científico y un "
+                 "modo educativo para aprender estadística."),
+            ("Autor", f"<b>{AUTHOR}</b><br>{AUTHOR_ROLE}"),
+            ("Institución", INSTITUTION),
+            ("Código abierto", f"Licencia {LICENSE_NAME}: cualquier persona puede usarla, estudiarla, mejorarla y compartirla."
+                               f"<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
+            ("Referencias", "<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion "
+                            "to seeing. PASP 114, 1156</a><br>Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)"),
+            ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl"),
+            ("Versión", __version__),
+        ]
+        g = QGridLayout()
+        g.setHorizontalSpacing(18)
+        g.setVerticalSpacing(12)
+        for r, (k, v) in enumerate(rows):
+            if k:
+                g.addWidget(label(k, "muted"), r, 0, Qt.AlignTop)
+            lv = label(v, wrap=True, rich=True)
+            g.addWidget(lv, r, 1 if k else 0, 1, 1 if k else 2)
+        c.add(g)
+        self.lay.addWidget(c)
+        self.lay.addStretch(1)

@@ -1,0 +1,24 @@
+TurbuLENS 1.0.0
+Observatorio Astronómico Nacional · Universidad Nacional de Colombia
+
+No hay que instalar nada: abre el programa y listo.
+
+WINDOWS
+  Doble clic en TurbuLENS.exe. La primera vez tarda unos segundos en abrir.
+  Si Windows muestra «Windows protegió su PC», pulsa «Más información» y
+  luego «Ejecutar de todas formas» (el programa no está firmado digitalmente).
+
+MAC
+  Arrastra TurbuLENS.app a Aplicaciones. La primera vez abre con clic
+  derecho → «Abrir» → «Abrir» (el programa no está firmado por Apple).
+
+LINUX
+  Dale permiso de ejecución (chmod +x TurbuLENS) y ábrelo con doble clic
+  o desde la terminal: ./TurbuLENS
+
+VIDEO DE EJEMPLO
+  Crea una carpeta llamada «ejemplos» junto al programa y pon ahí un video:
+  el botón «Usar video de ejemplo» lo abrirá.
+
+Código fuente, manual y novedades: https://github.com/DiegoCagua/TurbuLENS
+Licencia MIT · Autor: Diego Fernando Cagua Lozada

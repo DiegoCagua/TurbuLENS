@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Modo nocturno rojo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Barlow:wght@400;500&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000000}
+a{color:#FF7A6E}a:hover{color:#FFA49B}
+</style>
+</helmet>
+<div style="font-family: 'Barlow', system-ui, sans-serif; color: {{red}}; background: #000000; min-height: 820px; display: flex; flex-direction: column; gap: 20px; padding: 24px 32px; box-sizing: border-box">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px">
+    <div style="display: flex; flex-direction: column">
+      <strong style="font-family: 'Barlow Condensed', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: 0.06em">DIMM SEEING</strong>
+      <span style="font-size: 14px">Modo nocturno · Diego Fernando Cagua Lozada</span>
+    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap">
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 600; min-height: 56px; padding: 0 22px; background: #000000; color: {{red}}; border: 2px solid {{red}}; border-radius: 10px">BRILLO −</button>
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 20px; font-weight: 600; min-height: 56px; padding: 0 22px; background: #000000; color: {{red}}; border: 2px solid {{red}}; border-radius: 10px">MODO DÍA</button>
+    </div>
+  </header>
+
+  <div style="flex: 1; display: flex; flex-wrap: wrap; gap: 24px">
+    <section style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: 0.04em; min-height: 180px; background: #120000; color: {{red}}; border: 3px dashed {{red}}; border-radius: 16px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 16V4"></path><path d="M7 9l5-5 5 5"></path><path d="M4 20h16"></path></svg>
+        TOCA O ARRASTRA EL VIDEO AQUÍ
+        <span style="font-family: 'Barlow', sans-serif; font-size: 16px; font-weight: 400">MOV · AVI · MP4 · MKV · SER · y más</span>
+      </button>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px">
+        <sc-for list="{{reads}}" as="r" hint-placeholder-count="3">
+          <div style="border: 2px solid #5A1410; border-radius: 12px; padding: 14px 16px; display: flex; flex-direction: column; gap: 2px">
+            <span style="font-size: 15px">{{r.k}}</span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-size: 44px; font-weight: 600; line-height: 1.05">{{r.v}}</span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <div style="display: flex; justify-content: space-between; font-size: 16px"><span>Procesando cuadros…</span><span>4.212 / 8.484 · faltan ~1 min</span></div>
+        <div style="height: 14px; border: 2px solid #5A1410; border-radius: 8px; overflow: hidden"><div style="width: 50%; height: 100%; background: {{red}}"></div></div>
+      </div>
+    </section>
+
+    <aside style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: 0.05em; min-height: 120px; background: {{red}}; color: #000000; border: none; border-radius: 16px">▶ INICIAR</button>
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 600; min-height: 72px; background: #000000; color: {{red}}; border: 2px solid {{red}}; border-radius: 14px">■ DETENER</button>
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 600; min-height: 72px; background: #000000; color: {{red}}; border: 2px solid {{red}}; border-radius: 14px">AJUSTES DEL TELESCOPIO</button>
+      <button type="button" style="font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 600; min-height: 72px; background: #000000; color: {{red}}; border: 2px solid {{red}}; border-radius: 14px">VER RESULTADOS</button>
+      <p style="margin: 0; font-size: 14px; line-height: 1.45">Todo en rojo para no perder la adaptación del ojo a la oscuridad junto al telescopio.</p>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"red":{"editor":"color","default":"#FF5A4E","options":["#FF5A4E","#FF7A33","#E8453C"]},"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      red: this.props.red ?? '#FF5A4E',
+      reads: [
+        { k: 'Separación media', v: '13,16 px' },
+        { k: 'Desviación σ', v: '0,72 px' },
+        { k: 'Seeing', v: '[—]″' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>
