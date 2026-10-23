@@ -18,6 +18,7 @@ from .pages import analysis, edu, misc
 from .session import Session, resource_path
 from .theme import qss, theme
 from .widgets import app_icon, button, label, sun_moon_icon
+from ..i18n import tr
 
 NAV_ANALISIS = [
     ("FLUJO DE ANÁLISIS", [("video", "Video"), ("region", "Recorte y tramo"), ("parametros", "Parámetros"),
@@ -38,8 +39,9 @@ NAV_EDU = [
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, data_root: str | None = None):
+    def __init__(self, data_root: str | None = None, sessions: dict | None = None):
         super().__init__()
+        self.data_root = data_root
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(QIcon(resource_path("assets", "turbulens_256.png")))
         self.resize(1400, 880)
@@ -48,7 +50,8 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint
                             | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.settings = QSettings("TurbuLENS", "TurbuLENS")
-        self.sessions = {"analisis": Session("analisis", data_root), "educativo": Session("educativo", data_root)}
+        # Al cambiar de idioma se rehace la ventana pero se conservan los datos de trabajo de cada modo.
+        self.sessions = sessions or {"analisis": Session("analisis", data_root), "educativo": Session("educativo", data_root)}
         self.mode = "analisis"
         self.current = None
         self._busy = False
@@ -158,7 +161,7 @@ class MainWindow(QMainWindow):
         for title, items in nav:
             self.side_lay.addWidget(label(title, "section"))
             for i, (key, text) in enumerate(items, start=1):
-                b = button(f"{i}   {text}" if title.startswith(("FLUJO", "TU VIDEO", "ESTAD")) else text, "nav",
+                b = button(f"{i}   {tr(text)}" if title.startswith(("FLUJO", "TU VIDEO", "ESTAD")) else text, "nav",
                            checkable=True)
                 b.clicked.connect(lambda _=False, k=key: self.go(k))
                 group.addButton(b)
@@ -170,7 +173,7 @@ class MainWindow(QMainWindow):
         group.addButton(ab)
         self.nav_buttons["acerca"] = ab
         self.side_lay.addWidget(ab)
-        self.side_lay.addWidget(label(f"Versión {__version__}", "small"))
+        self.side_lay.addWidget(label(tr("Versión {}").format(__version__), "small"))
         self._nav_group = group
 
     # ------------------------------------------------------------ navegación
@@ -227,7 +230,14 @@ class MainWindow(QMainWindow):
 
     # ------------------------------------------------------------------ tema
     def apply_theme(self, pal: dict):
-        QApplication.instance().setStyleSheet(qss(pal))
+        app = QApplication.instance()
+        app.setStyleSheet(qss(pal))
+        from PySide6.QtGui import QColor, QPalette
+
+        qp = app.palette()  # enlaces legibles en los dos temas
+        qp.setColor(QPalette.Link, QColor(pal["accent"]))
+        qp.setColor(QPalette.LinkVisited, QColor(pal["accent"]))
+        app.setPalette(qp)
         self.logo.setPixmap(app_icon(34))
         self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
         self.theme_b.setToolTip("Cambiar a tema claro" if theme.dark else "Cambiar a tema oscuro")
@@ -235,6 +245,21 @@ class MainWindow(QMainWindow):
         for p in self.page_by_key.values():
             p.on_theme(pal)
             p.update()
+
+    # ---------------------------------------------------------------- idioma
+    def change_language(self, code: str):
+        """Cambia el idioma de toda la interfaz (se rehace la ventana conservando los datos)."""
+        from .. import i18n
+
+        if code == i18n.lang() or getattr(self, "_switching", False):
+            return
+        if self._busy:
+            self.toast("Espera a que termine el procesamiento o cancélalo.")
+            return False
+        self.settings.setValue("lang", code)
+        self._switching = True  # una sola reconstrucción aunque la señal llegue dos veces
+        QTimer.singleShot(0, lambda: _rebuild_window(self, code))
+        return True
 
     def closeEvent(self, ev):
         pg = self.page_by_key.get("procesar")
@@ -246,12 +271,58 @@ class MainWindow(QMainWindow):
         super().closeEvent(ev)
 
 
+def _rebuild_window(old: "MainWindow", code: str) -> "MainWindow":
+    from .. import i18n
+    from . import i18n_qt
+
+    i18n.load(code)
+    app = QApplication.instance()
+    i18n_qt.load_qt_translations(app)
+    import warnings
+
+    with warnings.catch_warnings():  # PySide avisa si la conexión ya no existe: no importa
+        warnings.simplefilter("ignore", RuntimeWarning)
+        for sig, slot in [(s.result_changed, old._on_result) for s in old.sessions.values()] + [
+                (theme.changed, old.apply_theme), (theme.changed, old.start.on_theme)]:
+            try:
+                sig.disconnect(slot)
+            except (RuntimeError, TypeError):
+                pass
+    new = MainWindow(data_root=old.data_root, sessions=old.sessions)
+    if old.root.currentIndex() == 1:
+        new.set_mode(old.mode)
+        if old.current:
+            new.go(old.current)
+    if old.isFullScreen():
+        new.showFullScreen()
+    elif old.isMaximized():
+        new.showMaximized()
+    else:
+        new.setGeometry(old.geometry())
+        new.show()
+    app._turbulens_window = new  # mantener la referencia
+    old.hide()
+    old.deleteLater()
+    return new
+
+
 def main(argv=None) -> int:
     argv = sys.argv if argv is None else argv
-    from PySide6.QtCore import QLocale
+    from .. import i18n
+    from . import i18n_qt
 
-    QLocale.setDefault(QLocale(QLocale.Spanish, QLocale.Colombia))
+    i18n_qt.install()  # todos los textos de Qt pasan por la traducción
+    i18n.load(QSettings("TurbuLENS", "TurbuLENS").value("lang", "es", type=str) or "es")
+    if sys.platform == "win32":  # icono y nombre propios en la barra de tareas (no los de Python)
+        try:
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("UNAL.OAN.TurbuLENS")
+        except Exception:
+            pass
     app = QApplication(argv)
+    app.setDesktopFileName("turbulens")  # Linux: enlaza la ventana con turbulens.desktop (icono del menú)
+    i18n_qt.load_qt_translations(app)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)
     app.setOrganizationName("TurbuLENS")
@@ -261,6 +332,7 @@ def main(argv=None) -> int:
     f.setPointSizeF(10)
     app.setFont(f)
     w = MainWindow()
+    app._turbulens_window = w
     w.showMaximized()  # abre ocupando toda la pantalla
     if len(argv) > 1 and os.path.isfile(argv[1]):
         w.set_mode("analisis")

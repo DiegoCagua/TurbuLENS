@@ -17,7 +17,9 @@ from .theme import theme
 
 
 def label(text: str = "", role: Optional[str] = None, wrap: bool = False, rich: bool = False) -> QLabel:
-    lb = QLabel(text)
+    lb = QLabel()
+    if text:
+        lb.setText(text)  # pasa por la traducción
     if role:
         lb.setProperty("role", role)
     if wrap:
@@ -31,7 +33,8 @@ def label(text: str = "", role: Optional[str] = None, wrap: bool = False, rich: 
 
 def button(text: str, kind: Optional[str] = None, slot: Optional[Callable] = None, checkable: bool = False,
            tip: str = "") -> QPushButton:
-    b = QPushButton(text)
+    b = QPushButton()
+    b.setText(text)
     if kind:
         b.setProperty("kind", kind)
     b.setCheckable(checkable)
@@ -105,7 +108,8 @@ class HelpPopup(QFrame):
         self.setAttribute(Qt.WA_DeleteOnClose)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(14, 12, 14, 12)
-        lb = QLabel(text)
+        lb = QLabel()
+        lb.setText(text)
         lb.setWordWrap(True)
         lb.setTextFormat(Qt.RichText)
         lb.setOpenExternalLinks(True)
@@ -417,7 +421,10 @@ class FormulaLabel(QWidget):
         sp.setHeightForWidth(True)
         self.setSizePolicy(sp)
         self.setMinimumWidth(60)
-        theme.changed.connect(lambda *_: self._load())
+        theme.changed.connect(self._on_theme_changed)
+        self._load()
+
+    def _on_theme_changed(self, *_):
         self._load()
 
     def _load(self):

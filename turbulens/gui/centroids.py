@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QS
 from .canvas import fmt_time, to_qimage
 from .theme import theme
 from .widgets import button, label, speed_combo, transport_buttons
+from ..i18n import integer, num, tr
 
 
 class CentroidView(QWidget):
@@ -104,7 +105,7 @@ class CentroidView(QWidget):
             f.setPointSizeF(10)
             f.setBold(True)
             p.setFont(f)
-            txt = f"d = {d:.2f} px".replace(".", ",")
+            txt = f"d = {num(d, 2)} px"
             tw = p.fontMetrics().horizontalAdvance(txt) + 12
             box = QRectF(mid.x() + 10, mid.y() - 11, tw, 22)
             p.setPen(Qt.NoPen)
@@ -151,7 +152,7 @@ class CentroidPlayer(QWidget):
         self.slider = QSlider(Qt.Horizontal)
         self.slider.valueChanged.connect(self._seek)
         self.speed = speed_combo(1.0)
-        self.trail = QCheckBox("Rastro")
+        self.trail = QCheckBox(tr("Rastro"))
         self.trail.setChecked(True)
         self.trail.toggled.connect(self._trail)
         row = QHBoxLayout()
@@ -190,8 +191,8 @@ class CentroidPlayer(QWidget):
         self.slider.setValue(0)
         self.slider.blockSignals(False)
         self.step_frames = max(1, int(np.median(np.diff(meas["frame"][rows])))) if len(rows) > 1 else 1
-        self.info.setText(f"Muestra de {len(rows)} cuadros (uno de cada {self.step_frames}). Naranja: primer punto · "
-                          "segundo color: segundo punto · línea: la distancia que se mide en cada cuadro.")
+        self.info.setText(tr("Muestra de {} cuadros (uno de cada {}). Naranja: primer punto · segundo color: segundo punto · "
+                             "línea: la distancia que se mide en cada cuadro.").format(integer(len(rows)), self.step_frames))
         self.i = 0
         self._show()
 
@@ -281,9 +282,9 @@ class CentroidPlayer(QWidget):
                 t1.append(a)
                 t2.append(b)
         f = int(self.meas["frame"][r])
-        cap = f"cuadro {f:,} · {fmt_time(f / self.fps_video)}".replace(",", ".")
+        cap = tr("cuadro {} · {}").format(integer(f), fmt_time(f / self.fps_video))
         if valid:
-            cap += f" · punto 1 ({p1[0]:.2f}; {p1[1]:.2f}) · punto 2 ({p2[0]:.2f}; {p2[1]:.2f}) px".replace(".", ",")
+            cap += tr(" · punto 1 ({}; {}) · punto 2 ({}; {}) px").format(num(p1[0]), num(p1[1]), num(p2[0]), num(p2[1]))
         self.view.set_frame(self.frames[self.i], p1, p2, valid, t1, t2, cap)
 
     def hideEvent(self, ev):

@@ -17,6 +17,8 @@ from PySide6.QtCore import QPointF, QRectF, QSize, Qt
 from PySide6.QtGui import QBrush, QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
+from .i18n import integer, localize_number_text, tr
+
 PRINT_PALETTE = {
     "bg": "#FFFFFF", "panel": "#FFFFFF", "text": "#1D2622", "muted": "#55615B", "grid": "#E4E8E6",
     "accent": "#3E7C72", "accent2": "#B4652A", "good": "#2E7D5B", "warn": "#9A6B12", "bad": "#B0452C",
@@ -79,7 +81,7 @@ def _fmt(v: float) -> str:
         return "0"
     a = abs(v)
     if a >= 1000:
-        s = f"{v:,.0f}".replace(",", ".")
+        s = integer(round(v))
     elif a >= 100:
         s = f"{v:.0f}"
     elif a >= 10:
@@ -90,7 +92,7 @@ def _fmt(v: float) -> str:
         s = f"{v:.3f}"
     if "." in s and a < 1000:
         s = s.rstrip("0").rstrip(".")
-    return s.replace(".", ",") if a < 1000 else s
+    return localize_number_text(s) if a < 1000 else s
 
 
 def _col(pal: dict, key: str, alpha: float = 1.0) -> QColor:

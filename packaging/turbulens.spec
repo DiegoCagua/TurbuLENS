@@ -28,13 +28,26 @@ if sys.platform.startswith("linux"):
         raise SystemExit("Falta libxcb-cursor0 en el equipo de compilación: sudo apt install libxcb-cursor0")
     print("Bibliotecas xcb empaquetadas:", [b[0] for b in extra_bins], "faltan:", faltan)
 
+# Traducciones propias de Qt (botones de los diálogos estándar en español y portugués)
+qt_tr = []
+try:
+    from PySide6.QtCore import QLibraryInfo
+
+    _trd = QLibraryInfo.path(QLibraryInfo.TranslationsPath)
+    for _n in ("qtbase_es.qm", "qtbase_pt_BR.qm"):
+        if os.path.isfile(os.path.join(_trd, _n)):
+            qt_tr.append((os.path.join(_trd, _n), "translations"))
+except Exception as exc:  # no impide compilar
+    print("Sin traducciones de Qt:", exc)
+
 a = Analysis(
     [os.path.join(ROOT, "packaging", "turbulens_app.py")],
     pathex=[ROOT],
     binaries=extra_bins,
     datas=[(os.path.join(ROOT, "LICENSE"), "."), (os.path.join(ROOT, "THIRD_PARTY_NOTICES.md"), "."),
            (os.path.join(ROOT, "turbulens", "assets"), "assets"),
-           (os.path.join(ROOT, "turbulens", "data"), "data")],
+           (os.path.join(ROOT, "turbulens", "data"), "data"),
+           (os.path.join(ROOT, "turbulens", "locales"), "locales")] + qt_tr,
     hiddenimports=["PySide6.QtSvg", "openpyxl", "PIL.Image", "PIL.TiffImagePlugin", "PIL.PngImagePlugin",
                    "PIL.JpegImagePlugin"],
     excludes=["tkinter", "matplotlib", "scipy", "pandas", "IPython", "pytest", "cv2",
@@ -44,7 +57,28 @@ a = Analysis(
 )
 pyz = PYZ(a.pure)
 icon = os.path.join(ROOT, "turbulens", "assets", "turbulens.ico" if sys.platform == "win32" else "turbulens.png")
+import re as _re
+
+VERSION = _re.search(r'__version__ = "(.+?)"', open(os.path.join(ROOT, "turbulens", "__init__.py"), encoding="utf-8").read()).group(1)
 common = dict(name="TurbuLENS", debug=False, strip=False, upx=False, console=False, icon=icon)
+if sys.platform == "win32":
+    # Propiedades del .exe (clic derecho → Propiedades → Detalles): nombre, autores y versión.
+    from PyInstaller.utils.win32.versioninfo import (FixedFileInfo, StringFileInfo, StringStruct, StringTable,
+                                                      VarFileInfo, VarStruct, VSVersionInfo)
+
+    _v = tuple(int(x) for x in VERSION.split(".")[:3]) + (0,)
+    common["version"] = VSVersionInfo(
+        ffi=FixedFileInfo(filevers=_v, prodvers=_v),
+        kids=[StringFileInfo([StringTable("040A04B0", [
+            StringStruct("CompanyName", "Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina"),
+            StringStruct("FileDescription", "TurbuLENS"),
+            StringStruct("FileVersion", VERSION),
+            StringStruct("InternalName", "TurbuLENS"),
+            StringStruct("LegalCopyright", "Copyright (c) 2026 D. F. Cagua Lozada y F. E. Cruz Ospina · PolyForm Noncommercial 1.0.0"),
+            StringStruct("OriginalFilename", "TurbuLENS.exe"),
+            StringStruct("ProductName", "TurbuLENS"),
+            StringStruct("ProductVersion", VERSION)])]),
+            VarFileInfo([VarStruct("Translation", [0x040A, 1200])])])
 if ONEFILE:
     exe = EXE(pyz, a.scripts, a.binaries, a.datas, [], runtime_tmpdir=None, **common)
 else:
@@ -54,4 +88,5 @@ else:
         app = BUNDLE(coll, name="TurbuLENS.app", icon=os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")
                      if os.path.exists(os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")) else None,
                      bundle_identifier="co.edu.unal.oan.turbulens",
-                     info_plist={"NSHighResolutionCapable": True, "CFBundleShortVersionString": "1.1.2"})
+                     info_plist={"NSHighResolutionCapable": True, "CFBundleShortVersionString": VERSION, "CFBundleVersion": VERSION,
+                                 "CFBundleDisplayName": "TurbuLENS", "LSApplicationCategoryType": "public.app-category.education"})

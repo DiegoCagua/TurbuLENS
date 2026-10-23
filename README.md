@@ -9,25 +9,26 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-**Versión actual: 1.1.2.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**.
+**Versión actual: 1.2.0.** TurbuLENS se instala como cualquier programa (queda en el menú y en el escritorio): **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
 
-| Sistema | Descarga directa | Se abre con |
+| Sistema | Descarga directa | Cómo se instala |
 |---|---|---|
-| Windows 10/11 | [TurbuLENS-v1.1.2-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-Windows-x64.zip) | `TurbuLENS.exe` |
-| Mac con Apple Silicon | [TurbuLENS-v1.1.2-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
-| Mac con Intel | [TurbuLENS-v1.1.2-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-macOS-Intel.zip) | `TurbuLENS.app` |
-| Linux | [TurbuLENS-v1.1.2-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-Linux-x64.tar.gz) | `TurbuLENS` |
+| Windows 10/11 | [TurbuLENS-v1.2.0-Windows-x64-Instalador.exe](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Windows-x64-Instalador.exe) | Doble clic y *Siguiente*: menú Inicio y escritorio |
+| Windows portátil | [TurbuLENS-v1.2.0-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Windows-x64.zip) | Descomprimir y abrir `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.2.0-macOS-AppleSilicon.dmg](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-macOS-AppleSilicon.dmg) | Arrastrar `TurbuLENS` a Aplicaciones |
+| Mac con Intel | [TurbuLENS-v1.2.0-macOS-Intel.dmg](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-macOS-Intel.dmg) | Arrastrar `TurbuLENS` a Aplicaciones |
+| Linux | [TurbuLENS-v1.2.0-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Linux-x64.tar.gz) | Descomprimir y `sh instalar.sh` (menú de aplicaciones) |
 
 Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
-> El programa no está firmado digitalmente. La primera vez, en Windows pulsa *Más información → Ejecutar de todas formas*; en Mac, clic derecho → *Abrir*.
+> El programa aún no está firmado digitalmente. La primera vez, en Windows pulsa *Más información → Ejecutar de todas formas*; en Mac, clic derecho → *Abrir*. La publicación ya está preparada para firmar cuando haya certificados: ver [docs/firma_digital.md](docs/firma_digital.md).
 
 ## Qué hace
 
 **Modo análisis** (mediciones científicas)
 
 1. **Video**: abre cientos de formatos (MOV, MP4, AVI, MKV, WMV, MTS, WebM, SER, FITS, …) con FFmpeg incluido, también de cámaras astronómicas de 16 bits. Arrastra el archivo a la ventana o búscalo.
-2. **Recorte y tramo**: dibuja la región de la estrella **como en Paint** (arrastrar, mover, cuadritos para cambiar el tamaño, zoom con la rueda) o pulsa *Ajustar a la estrella*. Elige el tramo con una línea de tiempo: `<<` `>>` reproducen a velocidad constante (2× a 32×), `<` `>` mueven un cuadro, `[ Entrada` y `Salida ]` marcan el tramo, *Ir a* salta a un cuadro o a un minuto.
+2. **Recorte y tramo**: dibuja la región de la estrella **como en Paint** (arrastrar, mover, cuadritos para cambiar el tamaño, zoom con la rueda) o pulsa *Ajustar a la estrella*. Elige el tramo con una línea de tiempo: `<<` `>>` reproducen a velocidad constante (0.25× a 32× respecto al video real; la región sigue a la estrella en vivo), `<` `>` mueven un cuadro, `[ Entrada` y `Salida ]` marcan el tramo, *Ir a* salta a un cuadro o a un minuto.
 3. **Parámetros**: diámetro y separación de los orificios, longitud de onda, escala de placa (con calculadora y enlaces para consultarla), altura de la estrella y perfiles de equipo guardados.
 4. **Procesar**: separa el video en imágenes recortadas y **seguidas** (la región se recentra si la estrella se mueve), en PNG (predeterminado, el más eficiente), TIFF 16 bits, JPG, un cubo NumPy o un cubo FITS. Mide los dos puntos en cada cuadro.
 5. **Resultados**: seeing (longitudinal, transversal y promedio), r₀, corrección al cenit, histograma con la curva normal, σ segundo a segundo (para detectar golpes o ráfagas) y diagrama del movimiento diferencial.
@@ -50,11 +51,11 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 | 9 | Laboratorio libre |
 | 10 | Prueba final de 11 preguntas |
 
-Cada lección tiene controles interactivos, una explicación corta, una pregunta para comprobar y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica se explica en tres pantallas muy sencillas (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). Las mediciones del modo educativo se guardan **aparte** de las científicas.
+Cada lección tiene controles interactivos, tablas que cambian con los datos elegidos, fórmulas en LaTeX, una pregunta que se responde una sola vez por sesión, guarda sus datos en **CSV o Excel** y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica se explica en tres pantallas muy sencillas (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). Las mediciones del modo educativo se guardan **aparte** de las científicas.
 
 En **Resultados**, una **animación de los centroides** muestra cuadro a cuadro dónde ubicó TurbuLENS cada punto (cruces, distancia medida y rastro de las posiciones anteriores).
 
-La ventana se abre ocupando toda la pantalla (⛶ o F11 para pantalla completa sin bordes, Esc para salir). Ambos modos tienen tema **claro y oscuro** (sol / luna) y botones **!** que explican cada control al hacer clic.
+La ventana se abre maximizada (F11 para pantalla completa sin bordes, Esc para salir). Ambos modos tienen tema **claro y oscuro** (sol / luna), botones **!** que explican cada control al hacer clic y tres idiomas (**español, English, Português**, en *Acerca de* o en la pantalla de inicio). La reproducción usa en todas partes los mismos botones `<<` `<` `>` `>>` y las mismas velocidades (0.25× a 32× respecto al video real).
 
 <p align="center">
 <img src="docs/capturas/01_analisis_region_oscuro.png" width="420" alt="Recorte y tramo">
@@ -84,17 +85,20 @@ python -m pytest                         # pruebas del motor
 pyinstaller packaging/turbulens.spec     # ejecutable para tu sistema
 ```
 
-Cada `git push` ejecuta las pruebas en GitHub Actions; al crear una etiqueta `v*` se compilan y prueban los ejecutables de Windows, macOS y Linux y se publican en *Releases*.
+Cada `git push` ejecuta las pruebas en GitHub Actions y compila y prueba los ejecutables de Windows, macOS y Linux. Cuando llega a `main` una versión nueva (`python scripts/nueva_version.py X.Y.Z`), se publica sola en *Releases* con el instalador de Windows, los .dmg de Mac y el paquete de Linux.
+
+Los textos de la interfaz están en español en el código; las traducciones están en `turbulens/locales/en.json` y `pt.json` (clave = texto en español).
 
 ```
 turbulens/
   core/        motor sin interfaz: video, detección, DIMM, estadística, FITS, exportación, historial
-  gui/         interfaz PySide6 (páginas de análisis y del modo educativo, lienzo, temas)
+  gui/         interfaz PySide6 (páginas de análisis y del modo educativo, lienzo, temas, idiomas)
+  locales/     traducciones al inglés y al portugués
   charts.py    gráficas dibujadas con Qt (pantalla, PNG, SVG, PDF)
   reports.py   gráficas e informes de un análisis o del historial
 tests/         pruebas con videos sintéticos de valores conocidos
 docs/          método, análisis de los códigos originales, capturas y diseños de la interfaz
-packaging/     PyInstaller y notas de versión
+packaging/     PyInstaller, instaladores (Windows, Mac, Linux), firma y notas de versión
 ```
 
 ## Diseño
@@ -114,14 +118,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow y openpyxl.
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores:
 
-> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.1.2) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.2.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
   author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.1.2},
+  version   = {1.2.0},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

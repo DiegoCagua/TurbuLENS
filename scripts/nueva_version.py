@@ -28,7 +28,6 @@ def main():
     cambios = {
         "turbulens/__init__.py": [(f'__version__ = "{old}"', f'__version__ = "{new}"')],
         "pyproject.toml": [(f'version = "{old}"', f'version = "{new}"')],
-        "packaging/turbulens.spec": [(f'"CFBundleShortVersionString": "{old}"', f'"CFBundleShortVersionString": "{new}"')],
         "CITATION.cff": [(f'version: "{old}"', f'version: "{new}"')],
         "LICENSE": [(f"(versión {old})", f"(versión {new})")],
         "packaging/LEEME.txt": [(f"TurbuLENS {old}", f"TurbuLENS {new}"), (f"(versión {old})", f"(versión {new})")],
@@ -45,6 +44,11 @@ def main():
             s = s.replace(a, b)
         p.write_text(s, encoding="utf-8")
         print(f"  {rel}")
+    import datetime
+
+    c = ROOT / "CITATION.cff"
+    c.write_text(re.sub(r'date-released: "[^"]+"', f'date-released: "{datetime.date.today().isoformat()}"',
+                        c.read_text(encoding="utf-8")), encoding="utf-8")
     print(f"Versión {old} → {new}. Escribe las novedades en packaging/NOTAS_VERSION.md y corre las pruebas.")
 
 

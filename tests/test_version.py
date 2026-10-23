@@ -9,7 +9,7 @@ import turbulens
 
 ROOT = Path(__file__).resolve().parents[1]
 V = turbulens.__version__
-SISTEMAS = ["Windows-x64.zip", "macOS-AppleSilicon.zip", "macOS-Intel.zip", "Linux-x64.tar.gz"]
+SISTEMAS = ["Windows-x64-Instalador.exe", "Windows-x64.zip", "macOS-AppleSilicon.dmg", "macOS-Intel.dmg", "Linux-x64.tar.gz"]
 
 
 def leer(rel):
@@ -23,7 +23,8 @@ def test_version_bien_formada():
 def test_metadatos():
     assert f'version = "{V}"' in leer("pyproject.toml")
     assert f'version: "{V}"' in leer("CITATION.cff")
-    assert f'"CFBundleShortVersionString": "{V}"' in leer("packaging/turbulens.spec")
+    # El .spec (versión del .exe y de la app de Mac) lee la versión de turbulens/__init__.py
+    assert "__version__" in leer("packaging/turbulens.spec") and '"CFBundleShortVersionString": VERSION' in leer("packaging/turbulens.spec")
 
 
 def test_cita_en_licencia_leeme_y_readme():

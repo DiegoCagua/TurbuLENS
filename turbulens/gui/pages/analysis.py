@@ -31,17 +31,18 @@ from ..session import example_video
 from ..theme import theme
 from ..widgets import TRANSPORT_HELP, ask, ask_text, notify, dialog_options, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
+from ...i18n import integer, localize_number_text, num, tr
 
 
 def fnum(v, d=2, unit=""):
     if v is None or (isinstance(v, float) and not math.isfinite(v)):
         return "—"
-    s = f"{v:.{d}f}".replace(".", ",")
+    s = num(v, d)
     return s + unit
 
 
 def miles(n) -> str:
-    return f"{int(n):,}".replace(",", ".")
+    return integer(n)
 
 
 def human_bytes(b: float) -> str:
@@ -115,7 +116,7 @@ class VideoPage(Page):
             self.open(urls[0].toLocalFile())
 
     def pick(self):
-        path, _ = QFileDialog.getOpenFileName(self, "Elegir video", "", file_dialog_filter(), options=dialog_options())
+        path, _ = QFileDialog.getOpenFileName(self, tr("Elegir video"), "", file_dialog_filter(), options=dialog_options())
         if path:
             self.open(path)
 
@@ -231,7 +232,7 @@ class RegionPage(Page):
             self.size_box.addItem(f"{s} × {s} px", s)
         self.size_box.addItem("Cuadro completo", 0)
         self.size_box.activated.connect(self._size)
-        self.track = QCheckBox("Seguir a la estrella")
+        self.track = QCheckBox(tr("Seguir a la estrella"))
         self.track.setChecked(True)
         self.track.toggled.connect(self._track)
         self.status = label("", "small")
@@ -339,7 +340,8 @@ class RegionPage(Page):
         if s.track and prev_idx is not None and prev_idx != idx:
             self._follow_star(arr)
         self.canvas.track_roi = s.tracked_roi_at(idx)
-        self.canvas.overlay = f"Zoom {self.canvas.zoom:g}× · cuadro {miles(idx)} · {fmt_time(idx / s.info.fps)}"
+        self.canvas.overlay = tr("Zoom {}× · cuadro {} · {}").format(localize_number_text(f"{self.canvas.zoom:g}"), miles(idx),
+                                                                  fmt_time(idx / s.info.fps))
         self.canvas.set_frame(arr)
         self.timeline.set_state(s.tin, s.tout, idx)
         self.pos_lbl.setText(f"{fmt_time(idx / s.info.fps)} · {miles(idx)}")
@@ -400,9 +402,9 @@ class RegionPage(Page):
         s = self.s
         n = s.tout - s.tin + 1
         sec = n / s.info.fps
-        warn = "" if sec >= 15 else " · menos de 15 s: menos confiable"
-        self.span_lbl.setText(f"Tramo {fmt_time(s.tin / s.info.fps)} – {fmt_time(s.tout / s.info.fps)} · "
-                              f"{fnum(sec, 1)} s · {miles(n)} cuadros{warn}")
+        warn = "" if sec >= 15 else tr(" · menos de 15 s: menos confiable")
+        self.span_lbl.setText(tr("Tramo {} – {} · {} s · {} cuadros").format(
+            fmt_time(s.tin / s.info.fps), fmt_time(s.tout / s.info.fps), fnum(sec, 1), miles(n)) + warn)
         self.span_lbl.setStyleSheet(f"color:{theme.pal['warn']};" if warn else "")
 
     # -------------------------------------------------------------- región
@@ -550,7 +552,7 @@ class RegionPage(Page):
             self.goto.setProperty("invalid", True)
             self.goto.style().unpolish(self.goto)
             self.goto.style().polish(self.goto)
-            self.goto.setToolTip(f"Escribe un cuadro entre 0 y {self.s.info.n_frames - 1} o un tiempo mm:ss.s")
+            self.goto.setToolTip(tr("Escribe un cuadro entre 0 y {} o un tiempo mm:ss.s").format(self.s.info.n_frames - 1))
             return
         self.goto.setProperty("invalid", False)
         self.goto.style().unpolish(self.goto)
@@ -607,7 +609,7 @@ class ParamsPage(Page):
         self.scale.setPlaceholderText("ej. 1,0")
         self.scale.setFixedWidth(120)
         self.scale.textChanged.connect(self._changed)
-        self.alt_on = QCheckBox("Conozco la altura de la estrella")
+        self.alt_on = QCheckBox(tr("Conozco la altura de la estrella"))
         self.alt = self._dspin(5, 90, 60, "°", 0)
         self.alt.setEnabled(False)
         self.alt_on.toggled.connect(lambda on: (self.alt.setEnabled(on), self._changed()))
@@ -633,9 +635,9 @@ class ParamsPage(Page):
         tel.add(calc)
         from ... import SCALE_LINKS
 
-        links = "<br>".join(f"• <a href='{u}'>{t}</a>" for u, t in SCALE_LINKS)
-        tel.add(label("<b>Datos para tu equipo:</b> la focal del telescopio está en la etiqueta del tubo (por ejemplo "
-                      "«D = 203 mm, F = 2032 mm») y el tamaño de píxel en la ficha de la cámara.<br>" + links,
+        links = "<br>".join(f"• <a href='{u}'>{tr(t)}</a>" for u, t in SCALE_LINKS)
+        tel.add(label(tr("<b>Datos para tu equipo:</b> la focal del telescopio está en la etiqueta del tubo (por ejemplo "
+                         "«D = 203 mm, F = 2032 mm») y el tamaño de píxel en la ficha de la cámara.<br>") + links,
                       "small", wrap=True, rich=True))
         self.prof = QComboBox()
         self.prof.setMinimumWidth(160)
@@ -646,7 +648,7 @@ class ParamsPage(Page):
         tel.add(self.ex_btn)
 
         sav = Card("Imágenes a guardar", help_text=SAVE_HELP)
-        self.save_on = QCheckBox("Guardar los cuadros como imágenes")
+        self.save_on = QCheckBox(tr("Guardar los cuadros como imágenes"))
         self.save_on.setChecked(True)
         self.save_on.toggled.connect(self._changed)
         self.fmt = ChipGroup([("PNG", "PNG · recomendado"), ("TIFF", "TIFF 16 bits"), ("JPG", "JPG"),
@@ -750,8 +752,8 @@ class ParamsPage(Page):
         n = s.tout - s.tin + 1
         nsave = (n + s.every_n - 1) // s.every_n if s.save_images else 0
         b = estimate_bytes(s.fmt, nsave, s.roi[2], s.roi[3], s.info.bit_depth)
-        self.est.setText(f"Se guardarán <b>{miles(nsave)}</b> imágenes de {s.roi[2]} × {s.roi[3]} px · "
-                         f"espacio aproximado: <b>{human_bytes(b) if nsave else '0 (solo análisis)'}</b>")
+        self.est.setText(tr("Se guardarán <b>{}</b> imágenes de {} × {} px · espacio aproximado: <b>{}</b>").format(
+            miles(nsave), s.roi[2], s.roi[3], human_bytes(b) if nsave else tr("0 (solo análisis)")))
 
     def _calc(self):
         v = 206.265 * self.pix.value() / self.focal.value()
@@ -912,7 +914,7 @@ class ProcessPage(Page):
         n = s.tout - s.tin + 1
         nsave = (n + s.every_n - 1) // s.every_n if s.save_images else 0
         rows = [("Video", s.info.name), ("Tramo", f"{fmt_time(s.tin / s.info.fps)} – {fmt_time(s.tout / s.info.fps)}"),
-                ("Cuadros a medir", miles(n)), ("Región", f"{s.roi[2]} × {s.roi[3]} px" + (" · con seguimiento" if s.track else "")),
+                ("Cuadros a medir", miles(n)), ("Región", f"{s.roi[2]} × {s.roi[3]} px" + (tr(" · con seguimiento") if s.track else "")),
                 ("Imágenes", f"{miles(nsave)} · {FORMATS[s.fmt]['label']}" if s.save_images else "No se guardan"),
                 ("Escala", fnum(s.params.scale_arcsec_px, 3, " ″/px") if s.params.scale_arcsec_px else "Falta (sin seeing)"),
                 ("Salida", s.out_dir if s.save_images else "—")]
@@ -943,7 +945,7 @@ class ProcessPage(Page):
             try:
                 os.makedirs(s.out_dir, exist_ok=True)
             except OSError as exc:
-                notify(self, "Carpeta de salida", f"No se pudo crear la carpeta:\n{exc}", "warning")
+                notify(self, "Carpeta de salida", tr("No se pudo crear la carpeta:") + f"\n{exc}", "warning")
                 return
         # Lector propio para el hilo (el de la vista previa sigue libre)
         from ...core.video import VideoReader
@@ -969,7 +971,7 @@ class ProcessPage(Page):
     def _progress(self, a, b, fps):
         self.bar.setValue(int(1000 * a / max(1, b)))
         eta = (b - a) / fps if fps > 0 else 0
-        self.detail.setText(f"{miles(a)} de {miles(b)} cuadros · {fnum(fps, 0)} cuadros/s · faltan ~{fmt_time(eta)}")
+        self.detail.setText(tr("{} de {} cuadros · {} cuadros/s · faltan ~{}").format(miles(a), miles(b), fnum(fps, 0), fmt_time(eta)))
 
     def _finish_thread(self):
         if self.thread is not None:
@@ -990,14 +992,15 @@ class ProcessPage(Page):
         self._finish_thread()
         if res.cancelled:
             self.state.setText("Cancelado")
-            self.detail.setText(f"Se alcanzaron a medir {miles(res.meas.size)} cuadros.")
+            self.detail.setText(tr("Se alcanzaron a medir {} cuadros.").format(miles(res.meas.size)))
             if res.meas.size < 10:
                 return
         else:
             self.state.setText("Listo ✓")
             self.bar.setValue(1000)
-            self.detail.setText(f"{miles(res.meas.size)} cuadros en {fnum(res.elapsed_s, 1)} s · "
-                                f"{miles(res.n_saved)} imágenes guardadas" + (" · " + " ".join(res.notes) if res.notes else ""))
+            self.detail.setText(tr("{} cuadros en {} s · {} imágenes guardadas").format(
+                miles(res.meas.size), fnum(res.elapsed_s, 1), miles(res.n_saved))
+                + (" · " + " ".join(tr(n) for n in res.notes) if res.notes else ""))
         sess.set_result(res)
         self.res_b.setVisible(True)
         if not res.cancelled and sess is self.s:
@@ -1167,8 +1170,8 @@ class ResultsPage(Page):
         d = s.dimm
         r = s.result
         fps = r.video.get("fps", 30)
-        self.sub.setText(f"{r.video.get('name')} · tramo {fmt_time(r.options.start / fps)} – {fmt_time(r.options.stop / fps)}"
-                         f" · {miles(d.n_frames)} cuadros")
+        self.sub.setText(tr("{} · tramo {} – {} · {} cuadros").format(
+            r.video.get('name'), fmt_time(r.options.start / fps), fmt_time(r.options.stop / fps), miles(d.n_frames)))
         self.sub.setVisible(True)
         pal = theme.pal
         q = quality_label(d.eps)
@@ -1178,17 +1181,17 @@ class ResultsPage(Page):
         self.k_t.set(fnum(d.eps_t, 2, "″"), f"σ = {fnum(d.sigma_t_px, 3)} px")
         self.k_r0.set(fnum(d.r0_cm, 1, " cm"), "")
         sc = s.params.scale_arcsec_px
-        self.k_sep.set(fnum(d.mean_sep_px, 2, " px"), f"= {fnum(d.mean_sep_px * sc, 2)}″ en el cielo" if sc else "mediana " + fnum(d.median_sep_px, 2, " px"))
+        self.k_sep.set(fnum(d.mean_sep_px, 2, " px"), tr("= {}″ en el cielo").format(fnum(d.mean_sep_px * sc, 2)) if sc else tr("mediana {} px").format(fnum(d.median_sep_px, 2)))
         self.k_sd.set(fnum(d.std_sep_px, 3, " px"), "movimiento diferencial")
         pct = 100 * d.n_used / max(1, d.n_frames)
-        self.k_n.set(miles(d.n_used), f"{fnum(pct, 1)} % del tramo · {miles(d.n_frames - d.n_detected)} sin detección")
-        self.k_z.set(fnum(d.eps_zenith, 2, "″"), f"masa de aire {fnum(d.airmass, 2)}" if math.isfinite(d.airmass) else "indica la altura en Parámetros")
+        self.k_n.set(miles(d.n_used), tr("{} % del tramo · {} sin detección").format(fnum(pct, 1), miles(d.n_frames - d.n_detected)))
+        self.k_z.set(fnum(d.eps_zenith, 2, "″"), tr("masa de aire {}").format(fnum(d.airmass, 2)) if math.isfinite(d.airmass) else "indica la altura en Parámetros")
         notes = []
         if not sc:
             notes.append("<b>Falta la escala de placa:</b> ingrésala en Parámetros para obtener el seeing en segundos de arco. "
                          "El resultado se recalcula al instante, sin volver a procesar.")
         if r.notes:
-            notes += r.notes
+            notes += [tr(n) for n in r.notes]
         if r.cancelled:
             notes.append("El procesamiento se canceló: estos resultados son parciales.")
         self.note.setVisible(bool(notes))
@@ -1202,7 +1205,7 @@ class ResultsPage(Page):
             self.c_t.set_spec(self.specs[1])
             self.c_sc.set_spec(self.specs[2])
         self.on_theme(pal)
-        self.save_b.setText(f"Guardado ✓ (#{s.saved_id})" if s.saved_id else "Guardar en historial")
+        self.save_b.setText(tr("Guardado ✓ (#{})").format(s.saved_id) if s.saved_id else "Guardar en historial")
         self.save_b.setEnabled(not s.saved_id)
 
     def on_theme(self, pal):
@@ -1214,7 +1217,7 @@ class ResultsPage(Page):
         if s.result is None:
             return
         rid = s.save_to_history(self.labelEdit.text().strip())
-        self.save_b.setText(f"Guardado ✓ (#{rid})")
+        self.save_b.setText(tr("Guardado ✓ (#{})").format(rid))
         self.save_b.setEnabled(False)
 
     def export(self, formats, msg):
@@ -1223,7 +1226,7 @@ class ResultsPage(Page):
             msg.setText("Elige al menos un formato.")
             return
         start = s.result.out_dir or os.path.dirname(s.info.path) if s.info else ""
-        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", start, options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
+        folder = QFileDialog.getExistingDirectory(self, tr("Carpeta para exportar"), start, options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
         if not folder:
             return
         base = os.path.splitext(s.result.video.get("name", "turbulens"))[0][:40].replace(" ", "_")
@@ -1234,10 +1237,10 @@ class ResultsPage(Page):
             out += reports.export_analysis_charts(self.specs, formats, folder, base, rec)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
-            notify(self, "Exportar", f"No se pudo exportar:\n{exc}", "warning")
+            notify(self, "Exportar", tr("No se pudo exportar:") + f"\n{exc}", "warning")
             return
         QApplication.restoreOverrideCursor()
-        msg.setText(f"Listo: {len(out)} archivo(s) en {folder}")
+        msg.setText(tr("Listo: {} archivo(s) en {}").format(len(out), folder))
         self.exp.show_open(folder)
 
 
@@ -1391,7 +1394,7 @@ class HistoryPage(Page):
         sel = self._selected()
         if not sel:
             return
-        if not ask(self, "Eliminar", f"¿Eliminar {len(sel)} análisis del historial?"):
+        if not ask(self, "Eliminar", tr("¿Eliminar {} análisis del historial?").format(len(sel))):
             return
         for r in sel:
             self.s.history.delete(r["id"])
@@ -1405,7 +1408,7 @@ class HistoryPage(Page):
         if not formats:
             msg.setText("Elige al menos un formato.")
             return
-        folder = QFileDialog.getExistingDirectory(self, "Carpeta para exportar", "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
+        folder = QFileDialog.getExistingDirectory(self, tr("Carpeta para exportar"), "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
         if not folder:
             return
         QApplication.setOverrideCursor(Qt.WaitCursor)
@@ -1415,8 +1418,8 @@ class HistoryPage(Page):
             out += reports.export_history_charts(sel, formats, folder, base)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
-            notify(self, "Exportar", f"No se pudo exportar:\n{exc}", "warning")
+            notify(self, "Exportar", tr("No se pudo exportar:") + f"\n{exc}", "warning")
             return
         QApplication.restoreOverrideCursor()
-        msg.setText(f"Listo: {len(out)} archivo(s) en {folder}")
+        msg.setText(tr("Listo: {} archivo(s) en {}").format(len(out), folder))
         self.exp.show_open(folder)

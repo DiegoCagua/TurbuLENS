@@ -17,6 +17,7 @@ from .charts import PRINT_PALETTE, ChartSpec, Series, draw_chart, histogram_spec
 from .core import stats
 from .core.dimm import DimmResult, quality_label
 from .core.export import SUMMARY_LABELS
+from .i18n import num, tr
 
 
 def analysis_charts(dimm: DimmResult, t: np.ndarray, fps: float = 30.0) -> list[ChartSpec]:
@@ -44,7 +45,7 @@ def analysis_charts(dimm: DimmResult, t: np.ndarray, fps: float = 30.0) -> list[
                            xlabel="Δ longitudinal (px)", ylabel="Δ transversal (px)",
                            series=[Series("scatter", x=lon[::step], y=tra[::step], color="accent", alpha=0.35, size=1.8)],
                            xlim=(-lim, lim), ylim=(-lim, lim), legend=False,
-                           note=f"Correlación r = {dimm.corr_lt:.2f}".replace(".", ",")))
+                           note=tr("Correlación r = {}").format(num(dimm.corr_lt, 2))))
     return specs
 
 
@@ -85,7 +86,7 @@ def _footer(p: QPainter, writer: QPdfWriter) -> None:
     p.setFont(f)
     p.setPen(QColor(PRINT_PALETTE["muted"]))
     p.drawText(QRectF(0, page.height() - 46, page.width(), 44), Qt.AlignLeft | Qt.AlignBottom | Qt.TextWordWrap,
-               "Generado con TurbuLENS · " + citation_apa())
+               tr("Generado con TurbuLENS · ") + citation_apa())
     p.restore()
 
 
@@ -152,7 +153,7 @@ def _fmt_val(v):
     if isinstance(v, float):
         if not math.isfinite(v):
             return "—"
-        return f"{v:.3f}".replace(".", ",")
+        return num(v, 3)
     return str(v)
 
 
@@ -187,9 +188,9 @@ def export_analysis_charts(specs: list[ChartSpec], formats: Iterable[str], folde
     if "pdf" in formats and rec is not None:
         pth = os.path.join(folder, f"{base}_informe.pdf")
         q = rec.get("calidad") or quality_label(rec.get("eps") or float("nan"))
-        notes = "Seeing calculado con el modelo de Tokovinin (2002) a partir de la varianza del movimiento diferencial. " \
-                f"Calidad del cielo: {q}."
-        write_report_pdf(pth, "Informe de seeing", summary_rows(rec), specs, notes)
+        notes = tr("Seeing calculado con el modelo de Tokovinin (2002) a partir de la varianza del movimiento diferencial. "
+                   "Calidad del cielo: {}.").format(tr(q))
+        write_report_pdf(pth, tr("Informe de seeing"), summary_rows(rec), specs, notes)
         out.append(pth)
     return out
 
@@ -218,6 +219,6 @@ def export_history_charts(records: list[dict], formats: Iterable[str], folder: s
         pth = os.path.join(folder, f"{base}_informe.pdf")
         rows = [(f"#{r['id']} · {r.get('label') or r.get('video_name') or ''}"[:60],
                  f"seeing {_fmt_val(r.get('eps'))}″ · σ {_fmt_val(r.get('std_sep_px'))} px") for r in records]
-        write_report_pdf(pth, "Historial de seeing", rows, specs)
+        write_report_pdf(pth, tr("Historial de seeing"), rows, specs)
         out.append(pth)
     return out

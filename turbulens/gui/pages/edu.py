@@ -30,12 +30,13 @@ from ..session import resource_path
 from ..theme import theme
 from ..widgets import FormulaLabel, dialog_options, Card, ChipGroup, HelpButton, button, hbox, label, vbox
 from .base import Page
+from ...i18n import integer, num, tr
 
 
 def f(v, d=3):
     if v is None or not np.isfinite(v):
         return "—"
-    return f"{v:.{d}f}".replace(".", ",")
+    return num(v, d)
 
 
 # --------------------------------------------------------------------- datos
@@ -59,7 +60,7 @@ class EduData:
         a = s.dimm.arrays
         used = a["used"]
         return {"t": s.result.meas["t"][used], "sep": a["sep"][used], "lon": a["lon"][used], "tra": a["tra"][used],
-                "name": f"Mi video ({s.result.video.get('name')})"}
+                "name": tr("Mi video ({})").format(s.result.video.get('name'))}
 
 
 def seeing_example(sigma_px: float, scale: float = 1.0) -> float:
@@ -70,9 +71,10 @@ def seeing_example(sigma_px: float, scale: float = 1.0) -> float:
 
 # ------------------------------------------------------------------ widgets
 class MiniQuiz(Card):
-    def __init__(self, question: str, options: list[str], ok: int, good: str, bad: str):
+    def __init__(self, question: str, options: list[str], ok: int, good: str, bad: str, store: dict | None = None):
         super().__init__("Comprueba", kind="panel2", margins=(12, 10, 12, 10))
         self.ok, self.good, self.bad = ok, good, bad
+        self.store, self.key = store, question
         self.add(label(question, wrap=True))
         self.btns = []
         for i, o in enumerate(options):
@@ -82,11 +84,15 @@ class MiniQuiz(Card):
         self.fb = label("", wrap=True)
         self.add(self.fb)
         self.answered = False
+        if store is not None and self.key in store:
+            self.pick(store[self.key])
 
     def pick(self, i):
         if self.answered:  # solo se puede responder una vez por sesión
             return
         self.answered = True
+        if self.store is not None:
+            self.store[self.key] = i
         for b in self.btns:
             b.setCursor(Qt.ArrowCursor)
         for j, b in enumerate(self.btns):
@@ -95,8 +101,8 @@ class MiniQuiz(Card):
             b.style().polish(b)
         pal = theme.pal
         right = i == self.ok
-        self.fb.setText((self.good if right else self.bad) + "<br><span style='font-weight:400'>Respuesta registrada: "
-                        "solo se puede responder una vez por sesión.</span>")
+        self.fb.setText(tr(self.good if right else self.bad) + "<br><span style='font-weight:400'>"
+                        + tr("Respuesta registrada: solo se puede responder una vez por sesión.") + "</span>")
         self.fb.setStyleSheet(f"color:{pal['good'] if right else pal['bad']}; font-weight:600;")
 
 
@@ -146,7 +152,7 @@ class LessonPage(Page):
 
     def __init__(self, main):
         super().__init__(main)
-        self.h1.setText(f"{self.number}. {self.title}" if self.number else self.title)
+        self.h1.setText(f"{self.number}. {tr(self.title)}" if self.number else self.title)
         src = hbox(label("Datos:", "small"), spacing=6)
         self.src = ChipGroup([("ejemplo", "Altair (ejemplo)"), ("propio", "Mi video")])
         self.src.set_value("ejemplo")
@@ -170,10 +176,10 @@ class LessonPage(Page):
             tc.add(fb)
         if self.tryit:
             tc.add(label("Pruébalo", "h2"))
-            tc.add(label("".join(f"• {t}<br>" for t in self.tryit), wrap=True, rich=True))
+            tc.add(label("".join(f"• {tr(t)}<br>" for t in self.tryit), wrap=True, rich=True))
         left.addWidget(tc)
         if self.quiz:
-            left.addWidget(MiniQuiz(*self.quiz))
+            left.addWidget(MiniQuiz(*self.quiz, store=self.main.sessions["educativo"].answers))
         left.addStretch(1)
         right = QVBoxLayout()
         right.setSpacing(12)
@@ -209,7 +215,7 @@ class LessonPage(Page):
         ext = "csv" if fmt == "csv" else "xlsx"
         name = f"turbulens_{self.__class__.__name__[2:].lower()}.{ext}"
         flt = "CSV (*.csv)" if fmt == "csv" else "Excel (*.xlsx)"
-        p, _ = QFileDialog.getSaveFileName(self, "Guardar datos", name, flt, options=dialog_options())
+        p, _ = QFileDialog.getSaveFileName(self, tr("Guardar datos"), name, flt, options=dialog_options())
         if not p:
             return
         if not p.lower().endswith("." + ext):
@@ -225,19 +231,19 @@ class LessonPage(Page):
 
                 with open(p, "w", newline="", encoding="utf-8") as fh:
                     w = csv.writer(fh)
-                    w.writerow(headers)
+                    w.writerow([tr(h) for h in headers])
                     w.writerows(rows)
                     w.writerow([])
-                    w.writerow(["Generado con TurbuLENS · " + citation_apa()])
+                    w.writerow([tr("Generado con TurbuLENS · ") + citation_apa()])
             else:
                 from ...core.export import write_xlsx
 
-                write_xlsx(p, [(self.title[:31] or "Datos", headers, rows),
-                               ("Créditos", ["TurbuLENS"], [[citation_apa()]])])
+                write_xlsx(p, [(tr(self.title)[:31] or tr("Datos"), [tr(h) for h in headers], rows),
+                               (tr("Créditos"), ["TurbuLENS"], [[citation_apa()]])])
         except Exception as exc:
-            self.export_msg.setText(f"No se pudo guardar: {exc}")
+            self.export_msg.setText(tr("No se pudo guardar: {}").format(exc))
             return
-        self.export_msg.setText(f"Guardado: {os.path.basename(p)} ({len(rows)} filas)")
+        self.export_msg.setText(tr("Guardado: {} ({} filas)").format(os.path.basename(p), len(rows)))
 
     # Datos activos
     def data(self) -> dict:
@@ -343,10 +349,10 @@ class L1Datos(LessonPage):
                 it.setTextAlignment(Qt.AlignCenter)
                 self.tbl.setItem(i, j, it)
         s = stats.summarize(x)  # solo los datos mostrados
-        self.read.set([("Datos mostrados", f"{s.n:,}".replace(",", ".")), ("Mínimo", f(s.min, 2) + " px"),
+        self.read.set([("Datos mostrados", integer(s.n)), ("Mínimo", f(s.min, 2) + " px"),
                        ("Máximo", f(s.max, 2) + " px"), ("Media", f(s.mean, 3) + " px"),
                        ("Duración", f(float(t[-1] - t[0]) if n > 1 else 0.0, 2) + " s"),
-                       ("Datos disponibles", f"{d['sep'].size:,}".replace(",", "."))])
+                       ("Datos disponibles", integer(d['sep'].size))])
 
 
 class L2Histograma(LessonPage):
@@ -372,7 +378,7 @@ class L2Histograma(LessonPage):
         self.bins = slider(3, 90, 20)
         self.b_lbl = label("", "mono")
         self.ctl("Número de intervalos", self.bins, self.b_lbl)
-        self.rel = QCheckBox("Mostrar frecuencia relativa")
+        self.rel = QCheckBox(tr("Mostrar frecuencia relativa"))
         self.ctl("Eje vertical", self.rel)
 
     def update_view(self, *a):
@@ -461,7 +467,7 @@ class L4Dispersion(LessonPage):
     def update_view(self, *a):
         d = self.data()
         k = self.fac.value() / 100
-        self.f_lbl.setText(f"{k:.2f}×".replace(".", ","))
+        self.f_lbl.setText(f"{num(k, 2)}×")
         x0 = d["sep"]
         m = float(np.mean(x0))
         x = m + k * (x0 - m)
@@ -547,7 +553,7 @@ class L6Muestras(LessonPage):
         s = stats.summarize(x)
         sm = stats.summarize(means)
         lim = (s.mean - 4 * s.std / math.sqrt(2), s.mean + 4 * s.std / math.sqrt(2))
-        sp = histogram_spec(means, bins=40, title=f"Medias de 1.000 muestras de {n} cuadros", xlabel="Media de la muestra (px)",
+        sp = histogram_spec(means, bins=40, title=tr("Medias de 1.000 muestras de {} cuadros").format(n), xlabel="Media de la muestra (px)",
                             ylabel="Muestras", normal=True, mean_line=True, lim=lim)
         self.show_chart(sp)
         self.read.set([("σ de los datos", f(s.std) + " px"), ("Error predicho σ/√n", f(s.std / math.sqrt(n), 4) + " px"),
@@ -574,7 +580,7 @@ class L7Atipicos(LessonPage):
         self.bad = slider(0, 200, 68, 1)
         self.b_lbl = label("", "mono")
         self.ctl("Detecciones fallidas", self.bad, self.b_lbl)
-        self.clean = QCheckBox("Aplicar limpieza (recorte a 5 σ robustas)")
+        self.clean = QCheckBox(tr("Aplicar limpieza (recorte a 5 σ robustas)"))
         self.ctl("Limpieza", self.clean)
 
     def update_view(self, *a):
@@ -633,7 +639,7 @@ class L8Correlacion(LessonPage):
             lag = {0: 1, 1: 5, 2: 30}[i]
             sep = d["sep"]
             x, y = sep[:-lag], sep[lag:]
-            xl, yl = "Distancia en el cuadro i (px)", f"Distancia en el cuadro i + {lag} (px)"
+            xl, yl = "Distancia en el cuadro i (px)", tr("Distancia en el cuadro i + {} (px)").format(lag)
         r = stats.pearson_r(x, y)
         self.table_data = (["punto", xl, yl], [np.arange(x.size), x, y])
         step = max(1, x.size // 2500)
@@ -664,9 +670,9 @@ class L9Laboratorio(LessonPage):
         self.bins = slider(5, 90, 40)
         self.b_lbl = label("", "mono")
         self.ctl("Intervalos", self.bins, self.b_lbl)
-        self.curve = QCheckBox("Curva normal")
+        self.curve = QCheckBox(tr("Curva normal"))
         self.curve.setChecked(True)
-        self.band = QCheckBox("Banda ± σ")
+        self.band = QCheckBox(tr("Banda ± σ"))
         self.ctl("Mostrar", self.curve)
         self.ctl("", self.band)
 
@@ -681,7 +687,7 @@ class L9Laboratorio(LessonPage):
         self.table_data = (["tiempo_s", self.var.currentText().lower() + "_px"], [t, x])
         self.n_lbl.setText(str(x.size))
         self.b_lbl.setText(str(self.bins.value()))
-        sp = histogram_spec(x, bins=self.bins.value(), title=f"{self.var.currentText()}: histograma", xlabel="px",
+        sp = histogram_spec(x, bins=self.bins.value(), title=tr("{}: histograma").format(self.var.currentText()), xlabel="px",
                             normal=self.curve.isChecked(), mean_line=True, median_line=True,
                             sigma_band=1 if self.band.isChecked() else 0)
         self.show_chart(sp)
@@ -733,7 +739,7 @@ class QuizPage(Page):
         grid.setSpacing(12)
         for k, (q, opts, ok, why) in enumerate(QUIZ):
             c = Card(margins=(14, 12, 14, 12))
-            c.add(label(f"{k + 1}. {q}", "h2", wrap=True))
+            c.add(label(f"{k + 1}. {tr(q)}", "h2", wrap=True))
             bs = []
             fb = label("", wrap=True)
             for i, o in enumerate(opts):
@@ -748,6 +754,10 @@ class QuizPage(Page):
         self.lay.addWidget(label("Cada pregunta se puede responder una sola vez por sesión: piensa bien antes de elegir.",
                                  "muted", wrap=True))
         self.lay.addStretch(1)
+        self._store = self.main.sessions["educativo"].answers
+        for k in range(len(self.items)):
+            if ("prueba", k) in self._store:
+                self.pick(k, self._store[("prueba", k)])
         self._score()
 
     def pick(self, k, i):
@@ -755,6 +765,8 @@ class QuizPage(Page):
         if it["ans"] is not None:  # ya respondida: no se puede cambiar
             return
         it["ans"] = i
+        if hasattr(self, "_store"):
+            self._store[("prueba", k)] = i
         for b in it["btns"]:
             b.setCursor(Qt.ArrowCursor)
         pal = theme.pal
@@ -763,14 +775,14 @@ class QuizPage(Page):
             b.style().unpolish(b)
             b.style().polish(b)
         right = i == it["ok"]
-        it["fb"].setText(("¡Correcto! " if right else "No exactamente. ") + it["why"])
+        it["fb"].setText(tr("¡Correcto! " if right else "No exactamente. ") + tr(it["why"]))
         it["fb"].setStyleSheet(f"color:{pal['good'] if right else pal['bad']}; font-weight:600;")
         self._score()
 
     def _score(self):
         done = [it for it in self.items if it["ans"] is not None]
         ok = sum(1 for it in done if it["ans"] == it["ok"])
-        self.score.setText(f"{ok} de {len(self.items)} correctas" if done else f"{len(self.items)} preguntas")
+        self.score.setText(tr("{} de {} correctas").format(ok, len(self.items)) if done else tr("{} preguntas").format(len(self.items)))
 
 
 # --------------------------------------------------------- astronomía sencilla

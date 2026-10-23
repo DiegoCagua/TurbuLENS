@@ -7,7 +7,7 @@ Autores: Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes de
 Universidad Nacional de Colombia.
 """
 
-__version__ = "1.1.2"
+__version__ = "1.2.0"
 
 APP_NAME = "TurbuLENS"
 AUTHORS = [("Diego Fernando Cagua Lozada", "Estudiante del pregrado de Física · Universidad Nacional de Colombia"),
@@ -32,7 +32,10 @@ CITATION_BIBTEX = """@software{{cagua_lozada_turbulens_2026,
 
 
 def citation_apa() -> str:
-    return CITATION_APA.format(v=__version__)
+    from . import i18n
+
+    word = {"en": "Version", "pt": "versão"}.get(i18n.lang(), "versión")
+    return CITATION_APA.replace("versión", word).format(v=__version__)
 
 
 def citation_bibtex() -> str:

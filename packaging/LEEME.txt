@@ -1,20 +1,23 @@
-TurbuLENS 1.1.2
+TurbuLENS 1.2.0
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia
-
-No hay que instalar nada: abre el programa y listo.
+Español · English · Português (cambia el idioma en «Acerca de»)
 
 WINDOWS
-  Doble clic en TurbuLENS.exe. La primera vez tarda unos segundos en abrir.
+  Instalador: doble clic en TurbuLENS-...-Instalador.exe y sigue los pasos.
+  TurbuLENS queda en el menú Inicio y, si quieres, en el escritorio.
+  Versión portátil (.zip): doble clic en TurbuLENS.exe, sin instalar nada.
   Si Windows muestra «Windows protegió su PC», pulsa «Más información» y
-  luego «Ejecutar de todas formas» (el programa no está firmado digitalmente).
+  luego «Ejecutar de todas formas» (el programa aún no está firmado digitalmente).
 
 MAC
-  Arrastra TurbuLENS.app a Aplicaciones. La primera vez abre con clic
-  derecho → «Abrir» → «Abrir» (el programa no está firmado por Apple).
+  Abre el .dmg y arrastra TurbuLENS a Aplicaciones. La primera vez ábrelo con
+  clic derecho → «Abrir» → «Abrir» (el programa aún no está notarizado por Apple).
 
 LINUX
-  Dale permiso de ejecución (chmod +x TurbuLENS) y ábrelo con doble clic
-  o desde la terminal: ./TurbuLENS
+  En esta carpeta, ejecuta:  sh instalar.sh
+  TurbuLENS aparece en el menú de aplicaciones con su icono.
+  Para quitarlo:  sh instalar.sh --desinstalar
+  También puedes abrirlo sin instalar:  ./TurbuLENS
 
 VIDEO DE EJEMPLO
   Crea una carpeta llamada «ejemplos» junto al programa y pon ahí un video:
@@ -26,5 +29,5 @@ Autores: Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina
 LICENCIA: PolyForm Noncommercial 1.0.0 (ver LICENSE.txt). Uso libre SIN fines
 comerciales. Toda copia o versión modificada debe conservar el crédito a los autores.
 Si usas TurbuLENS en un trabajo o publicación, cítalo:
-  Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). TurbuLENS (versión 1.1.2) [Software].
+  Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). TurbuLENS (versión 1.2.0) [Software].
   https://github.com/DiegoCagua/TurbuLENS

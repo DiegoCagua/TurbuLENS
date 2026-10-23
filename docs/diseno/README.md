@@ -38,3 +38,7 @@ Animación de los centroides en Resultados, corrección del arranque en Linux y 
 ## 5. Versión 1.1.2
 
 Fredy Esteban Cruz Ospina se suma como coautor en la aplicación, la licencia, la cita y la documentación.
+
+## 6. Versión 1.2.0
+
+Tres idiomas (español, inglés y portugués) que se cambian desde *Acerca de* o la pantalla de inicio; los mismos botones `<<` `<` `>` `>>` y las mismas velocidades (0.25× a 32×) en toda la app; fórmulas en LaTeX en las lecciones; botón de maximizar en la barra de título; e instaladores para Windows, macOS y Linux.

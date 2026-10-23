@@ -51,6 +51,8 @@ class Session(QObject):
     def __init__(self, mode: str, data_root: Optional[str] = None):
         super().__init__()
         self.mode = mode
+        # Respuestas de las preguntas (una sola vez por sesión; se conservan si se cambia el idioma)
+        self.answers: dict = {}
         self.reader: Optional[VideoReader] = None
         self.info = None
         self.roi = (0, 0, 64, 64)

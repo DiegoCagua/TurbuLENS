@@ -3,8 +3,8 @@
 """Idiomas de TurbuLENS: español (original), inglés y portugués.
 
 Los textos del programa están escritos en español. ``tr(texto)`` devuelve la
-traducción del idioma activo usando los diccionarios ``i18n/en.json`` y
-``i18n/pt.json`` (clave = texto en español). Para textos con partes que cambian
+traducción del idioma activo usando los diccionarios ``locales/en.json`` y
+``locales/pt.json`` (clave = texto en español). Para textos con partes que cambian
 (números, nombres), las claves pueden tener ``{}``: «Muestra de {} cuadros».
 Si un texto no tiene traducción se muestra en español.
 """
@@ -24,9 +24,9 @@ _cache: dict[str, str] = {}
 
 def _dir() -> str:
     base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.abspath(__file__))
-    d = os.path.join(base, "i18n")
+    d = os.path.join(base, "locales")
     if not os.path.isdir(d):
-        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "i18n")
+        d = os.path.join(os.path.dirname(os.path.abspath(__file__)), "locales")
     return d
 
 
@@ -84,3 +84,20 @@ def tr(text):
 
 def decimal_point() -> str:
     return "." if _lang == "en" else ","
+
+
+def num(v, d: int = 2) -> str:
+    """Número con decimales según el idioma: 1,25 (es, pt) o 1.25 (en)."""
+    s = f"{v:.{d}f}"
+    return s if _lang == "en" else s.replace(".", ",")
+
+
+def integer(n) -> str:
+    """Entero con separador de miles: 8.484 (es, pt) o 8,484 (en)."""
+    s = f"{int(n):,}"
+    return s if _lang == "en" else s.replace(",", ".")
+
+
+def localize_number_text(s: str) -> str:
+    """Cambia los puntos decimales de un texto ya formateado («1.25») al idioma activo."""
+    return s if _lang == "en" else s.replace(".", ",")

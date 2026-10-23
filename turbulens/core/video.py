@@ -296,4 +296,6 @@ class VideoReader:
 
 def file_dialog_filter() -> str:
     exts = " ".join(f"*.{e} *.{e.upper()}" for e in VIDEO_EXTENSIONS)
-    return f"Videos ({exts});;Todos los archivos (*)"
+    from ..i18n import tr
+
+    return f"{tr('Videos')} ({exts});;{tr('Todos los archivos')} (*)"
