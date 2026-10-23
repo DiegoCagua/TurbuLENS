@@ -9,14 +9,16 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-Ve a **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases/latest)** y baja el archivo de tu sistema. Descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**.
+**Versión actual: 1.1.2.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**.
 
-| Sistema | Archivo |
-|---|---|
-| Windows 10/11 | `TurbuLENS-v1.0.0-Windows-x64.zip` → `TurbuLENS.exe` |
-| Mac con Apple Silicon | `TurbuLENS-v1.0.0-macOS-AppleSilicon.zip` → `TurbuLENS.app` |
-| Mac con Intel | `TurbuLENS-v1.0.0-macOS-Intel.zip` → `TurbuLENS.app` |
-| Linux | `TurbuLENS-v1.0.0-Linux-x64.tar.gz` → `TurbuLENS` |
+| Sistema | Descarga directa | Se abre con |
+|---|---|---|
+| Windows 10/11 | [TurbuLENS-v1.1.2-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-Windows-x64.zip) | `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.1.2-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
+| Mac con Intel | [TurbuLENS-v1.1.2-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-macOS-Intel.zip) | `TurbuLENS.app` |
+| Linux | [TurbuLENS-v1.1.2-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.1.2/TurbuLENS-v1.1.2-Linux-x64.tar.gz) | `TurbuLENS` |
+
+Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
 > El programa no está firmado digitalmente. La primera vez, en Windows pulsa *Más información → Ejecutar de todas formas*; en Mac, clic derecho → *Abrir*.
 
