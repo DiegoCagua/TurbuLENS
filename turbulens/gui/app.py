@@ -158,6 +158,20 @@ class MainWindow(QMainWindow):
     def _add_page(self, key, page):
         self.page_by_key[key] = page
         self.pages.addWidget(page)
+        self._loading_tick()
+
+    def _loading_tick(self):
+        """Mientras se rehace la interfaz, deja que el logo de la pantalla de carga siga girando."""
+        import time
+
+        ov = getattr(self, "_loading", None)
+        if ov is None or time.monotonic() - getattr(self, "_last_tick", 0.0) < 0.025:
+            return
+        self._last_tick = time.monotonic()
+        ov.raise_()
+        from PySide6.QtCore import QEventLoop
+
+        QApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
 
     def _build_nav(self):
         while self.side_lay.count():
@@ -245,7 +259,9 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ tema
     def apply_theme(self, pal: dict):
         app = QApplication.instance()
-        app.setStyleSheet(qss(pal))
+        css = qss(pal)
+        if app.styleSheet() != css:  # volver a poner la misma hoja de estilo repinta toda la app (lento)
+            app.setStyleSheet(css)
         from PySide6.QtGui import QColor, QPalette
 
         qp = app.palette()  # enlaces legibles en los dos temas
@@ -292,27 +308,22 @@ class MainWindow(QMainWindow):
         ov.setStyleSheet(f"QFrame#loading {{ background: {pal['bg']}; }}")
         lay = QVBoxLayout(ov)
         lay.addStretch(1)
-        logo = QLabel()
-        logo.setPixmap(app_icon(84))
-        logo.setAlignment(Qt.AlignCenter)
-        lay.addWidget(logo)
+        from .widgets import SpinningLogo
+
+        lay.addWidget(SpinningLogo(96), 0, Qt.AlignHCenter)
         t = QLabel()
         t.setText(text)
         t.setAlignment(Qt.AlignCenter)
         t.setStyleSheet(f"font-size: 22px; font-weight: 600; color: {pal['text']}; background: transparent;")
         lay.addWidget(t)
-        from PySide6.QtWidgets import QProgressBar
-
-        bar = QProgressBar()
-        bar.setRange(0, 0)  # barra «ocupada»
-        bar.setFixedWidth(260)
-        bar.setTextVisible(False)
-        lay.addWidget(bar, 0, Qt.AlignHCenter)
         lay.addStretch(1)
         ov.setGeometry(self.rect())
         ov.show()
         ov.raise_()
         self._loading = ov
+        from . import widgets as _w
+
+        _w.LOADING_TICK = self._loading_tick
         ov.repaint()
         QApplication.processEvents()
 
@@ -334,6 +345,9 @@ class MainWindow(QMainWindow):
                 self.root.setCurrentIndex(idx)
         finally:
             self._switching = False
+            from . import widgets as _w
+
+            _w.LOADING_TICK = None
             ov = getattr(self, "_loading", None)
             if ov is not None:
                 ov.raise_()

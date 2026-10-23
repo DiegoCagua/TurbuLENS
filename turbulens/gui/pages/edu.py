@@ -28,7 +28,7 @@ from ...core import stats
 from ...core.dimm import DimmParams, k_coefficients, r0_from_variance, seeing_from_r0
 from ..session import resource_path
 from ..theme import theme
-from ..widgets import FormulaLabel, dialog_options, Card, ChipGroup, HelpButton, button, hbox, label, vbox
+from ..widgets import FormulaLabel, choose_folder, free_name, Card, ChipGroup, HelpButton, button, hbox, label, vbox
 from .base import Page
 from ...i18n import integer, num, tr
 
@@ -213,8 +213,10 @@ class LessonPage(Page):
         self.build()
         self.export_msg = label("", "small")
         self.controls.add(hbox(label("Guardar los datos que ves:", "small"),
-                               button("CSV…", slot=lambda: self.export("csv")),
-                               button("Excel…", slot=lambda: self.export("xlsx")), self.export_msg, "stretch"))
+                               button("CSV…", slot=lambda: self.export("csv"), tip="Elige la carpeta; el nombre es automático"),
+                               button("Excel…", slot=lambda: self.export("xlsx"), tip="Elige la carpeta; el nombre es automático"),
+                               self.export_msg, "stretch"))
+        self.controls.add(label("Al guardar solo eliges la carpeta: el nombre del archivo es automático.", "small", wrap=True))
 
     def export(self, fmt):
         """Guarda en CSV o Excel exactamente los datos de la gráfica actual."""
@@ -224,12 +226,10 @@ class LessonPage(Page):
         headers, cols = self.table_data
         ext = "csv" if fmt == "csv" else "xlsx"
         name = f"turbulens_{self.__class__.__name__[2:].lower()}.{ext}"
-        flt = "CSV (*.csv)" if fmt == "csv" else "Excel (*.xlsx)"
-        p, _ = QFileDialog.getSaveFileName(self, tr("Guardar datos"), name, flt, options=dialog_options())
-        if not p:
+        folder = choose_folder(self, "Carpeta para guardar los datos")
+        if not folder:
             return
-        if not p.lower().endswith("." + ext):
-            p += "." + ext
+        p = free_name(folder, name)
         cols = [np.asarray(c) for c in cols]
         rows = [[(round(float(c[i]), 6) if np.issubdtype(c.dtype, np.floating) else int(c[i])) for c in cols]
                 for i in range(len(cols[0]))]

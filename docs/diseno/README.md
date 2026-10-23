@@ -46,3 +46,7 @@ Tres idiomas (español, inglés y portugués) que se cambian desde *Acerca de* o
 ## 7. Versión 1.2.1
 
 «Acerca de» del inicio abre una página completa (antes el texto se montaba sobre la pantalla), pantalla de carga al cambiar de idioma, la ficha «Mi video» de las lecciones funciona con el video procesado en cualquiera de los dos modos y se quitó el botón de video de ejemplo.
+
+## 8. Versión 1.2.2
+
+Un solo selector de archivos y carpetas en toda la app (el propio, con el tema y el idioma de TurbuLENS); exportar pide solo la carpeta y nombra los archivos solo; historial y perfiles de equipo compartidos entre los dos modos; en la pantalla de carga del idioma gira el logo; y Recorte y tramo se desplaza en ventanas bajas en vez de montar los textos sobre el video.

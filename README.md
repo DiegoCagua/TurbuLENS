@@ -9,14 +9,14 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-**Versión actual: 1.2.1.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
+**Versión actual: 1.2.2.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
 
 | Sistema | Descarga directa | Se abre con |
 |---|---|---|
-| Windows 10/11 | [TurbuLENS-v1.2.1-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-Windows-x64.zip) | `TurbuLENS.exe` |
-| Mac con Apple Silicon | [TurbuLENS-v1.2.1-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
-| Mac con Intel | [TurbuLENS-v1.2.1-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-macOS-Intel.zip) | `TurbuLENS.app` |
-| Linux | [TurbuLENS-v1.2.1-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-Linux-x64.tar.gz) | `TurbuLENS` |
+| Windows 10/11 | [TurbuLENS-v1.2.2-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.2/TurbuLENS-v1.2.2-Windows-x64.zip) | `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.2.2-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.2/TurbuLENS-v1.2.2-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
+| Mac con Intel | [TurbuLENS-v1.2.2-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.2/TurbuLENS-v1.2.2-macOS-Intel.zip) | `TurbuLENS.app` |
+| Linux | [TurbuLENS-v1.2.2-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.2/TurbuLENS-v1.2.2-Linux-x64.tar.gz) | `TurbuLENS` |
 
 Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
@@ -28,12 +28,12 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 
 1. **Video**: abre cientos de formatos (MOV, MP4, AVI, MKV, WMV, MTS, WebM, SER, FITS, …) con FFmpeg incluido, también de cámaras astronómicas de 16 bits. Arrastra el archivo a la ventana o búscalo.
 2. **Recorte y tramo**: dibuja la región de la estrella **como en Paint** (arrastrar, mover, cuadritos para cambiar el tamaño, zoom con la rueda) o pulsa *Ajustar a la estrella*. Elige el tramo con una línea de tiempo: `<<` `>>` reproducen a velocidad constante (0.25× a 32× respecto al video real; la región sigue a la estrella en vivo), `<` `>` mueven un cuadro, `[ Entrada` y `Salida ]` marcan el tramo, *Ir a* salta a un cuadro o a un minuto.
-3. **Parámetros**: diámetro y separación de los orificios, longitud de onda, escala de placa (con calculadora y enlaces para consultarla), altura de la estrella y perfiles de equipo guardados.
+3. **Parámetros**: diámetro y separación de los orificios, longitud de onda, escala de placa (con calculadora y enlaces para consultarla), altura de la estrella (con decimales, explicada en su botón **!**) y perfiles de equipo guardados, compartidos por los dos modos.
 4. **Procesar**: separa el video en imágenes recortadas y **seguidas** (la región se recentra si la estrella se mueve), en PNG (predeterminado, el más eficiente), TIFF 16 bits, JPG, un cubo NumPy o un cubo FITS. Mide los dos puntos en cada cuadro.
 5. **Resultados**: seeing (longitudinal, transversal y promedio), r₀, corrección al cenit, histograma con la curva normal, σ segundo a segundo (para detectar golpes o ráfagas) y diagrama del movimiento diferencial.
-6. **Historial**: base de datos local para comparar noches y épocas del año, con etiquetas y notas.
+6. **Historial**: base de datos local para comparar noches y épocas del año, con etiquetas y notas; es el mismo en el modo análisis y en el educativo (una columna dice en cuál se hizo cada análisis).
 
-**Exportación** desde Resultados y desde el Historial: datos en **CSV, Excel, JSON, NumPy y tabla FITS**; gráficas en **PDF (solo gráficas), PNG y SVG**; e **informe PDF** completo. Además, cada procesamiento deja `mediciones.csv` y `resumen.json` junto a las imágenes.
+**Exportación** desde Resultados y desde el Historial (solo eliges la carpeta; el nombre de los archivos es automático y nunca se sobrescribe nada): datos en **CSV, Excel, JSON, NumPy y tabla FITS**; gráficas en **PDF (solo gráficas), PNG y SVG**; e **informe PDF** completo. Además, cada procesamiento deja `mediciones.csv` y `resumen.json` junto a las imágenes.
 
 **Modo educativo** (colegios y cursos): el eje es **aprender estadística** con datos reales de una estrella.
 
@@ -50,7 +50,7 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 | 9 | Laboratorio libre |
 | 10 | Prueba final de 11 preguntas |
 
-Cada lección tiene controles interactivos, tablas que cambian con los datos elegidos, fórmulas en LaTeX, una pregunta que se responde una sola vez por sesión, guarda sus datos en **CSV o Excel** y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica se explica en tres pantallas muy sencillas (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). Las mediciones del modo educativo se guardan **aparte** de las científicas.
+Cada lección tiene controles interactivos, tablas que cambian con los datos elegidos, fórmulas en LaTeX, una pregunta que se responde una sola vez por sesión, guarda sus datos en **CSV o Excel** y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica se explica en tres pantallas muy sencillas (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). El historial y los perfiles de equipo son **los mismos** en los dos modos.
 
 En **Resultados**, una **animación de los centroides** muestra cuadro a cuadro dónde ubicó TurbuLENS cada punto (cruces, distancia medida y rastro de las posiciones anteriores).
 
@@ -118,14 +118,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow y openpyxl.
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores:
 
-> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.2.1) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.2.2) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
   author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.2.1},
+  version   = {1.2.2},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

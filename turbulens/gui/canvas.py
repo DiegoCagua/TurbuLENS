@@ -69,7 +69,8 @@ class RoiCanvas(QWidget):
         self.setAccessibleName("Lienzo de la región de la estrella")
 
     def sizeHint(self):
-        return QSize(800, 450)
+        # Pequeño a propósito: el lienzo crece con el espacio libre y no empuja la línea de tiempo fuera de la vista.
+        return QSize(640, 260)
 
     # ------------------------------------------------------------ datos
     def set_frame(self, arr: Optional[np.ndarray]):

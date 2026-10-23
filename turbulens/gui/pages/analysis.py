@@ -28,7 +28,7 @@ from ...core.writers import FORMATS, estimate_bytes
 from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
 from ..theme import theme
-from ..widgets import TRANSPORT_HELP, ask, ask_text, notify, dialog_options, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
+from ..widgets import AUTO_NAME_NOTE, TRANSPORT_HELP, ask, ask_text, choose_file, choose_folder, free_base, notify, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
 from ...i18n import integer, localize_number_text, num, tr
 
@@ -114,7 +114,7 @@ class VideoPage(Page):
             self.open(urls[0].toLocalFile())
 
     def pick(self):
-        path, _ = QFileDialog.getOpenFileName(self, tr("Elegir video"), "", file_dialog_filter(), options=dialog_options())
+        path = choose_file(self, "Elegir video", file_dialog_filter())
         if path:
             self.open(path)
 
@@ -200,7 +200,8 @@ TRAMO_HELP = (
 class RegionPage(Page):
     title = "Recorte y tramo"
     subtitle = "Dónde mirar en cada cuadro y qué parte del video usar"
-    scrollable = False
+    # Con desplazamiento: en ventanas bajas la página se desplaza en vez de montar los textos sobre el video.
+    scrollable = True
 
 
     def __init__(self, main):
@@ -235,7 +236,7 @@ class RegionPage(Page):
         side = QVBoxLayout()
         side.setSpacing(8)
         self.zoomview = QLabel()
-        self.zoomview.setFixedSize(200, 200)
+        self.zoomview.setFixedSize(176, 176)
         self.zoomview.setAlignment(Qt.AlignCenter)
         self.zoomview.setStyleSheet("background:#000; border-radius:8px;")
         side.addWidget(label("Dentro de la región", "small"))
@@ -355,7 +356,7 @@ class RegionPage(Page):
         crop = self._arr[y:y + h, x:x + w]
         if crop.size == 0:
             return
-        pm = QPixmap.fromImage(to_qimage(crop)).scaled(200, 200, Qt.KeepAspectRatio, Qt.FastTransformation)
+        pm = QPixmap.fromImage(to_qimage(crop)).scaled(176, 176, Qt.KeepAspectRatio, Qt.FastTransformation)
         self.zoomview.setPixmap(pm)
         # Revisión rápida: ¿están los dos puntos dentro y con margen?
         try:
@@ -576,6 +577,17 @@ SAVE_HELP = (
 )
 
 
+ALT_HELP = (
+    "<b>Altura de la estrella</b><br>Es el ángulo entre el horizonte y la estrella en el momento de grabar: 0° en el "
+    "horizonte y 90° justo encima de ti (el cenit).<br><br><b>¿Para qué sirve?</b> Cerca del horizonte la luz atraviesa más "
+    "aire y el seeing medido sale peor. Con la altura, TurbuLENS calcula también el <b>seeing en el cenit</b>, que permite "
+    "comparar noches y estrellas distintas: ε<sub>cenit</sub> = ε · (cos z)<sup>3/5</sup>, con z = 90° − altura.<br><br>"
+    "<b>¿Cómo la obtengo?</b> En un programa o aplicación de planetario (por ejemplo Stellarium), con tu lugar de "
+    "observación y la fecha y hora de la grabación: busca la estrella y copia su «altitud» o «altura». Se puede escribir "
+    "con decimales (por ejemplo 63,25°).<br><br>Si no la conoces, deja la casilla sin marcar: el resto del análisis no cambia."
+)
+
+
 class ParamsPage(Page):
     title = "Parámetros"
     subtitle = "Datos de tu telescopio y de la máscara, y qué imágenes guardar"
@@ -598,7 +610,8 @@ class ParamsPage(Page):
         self.scale.setFixedWidth(120)
         self.scale.textChanged.connect(self._changed)
         self.alt_on = QCheckBox(tr("Conozco la altura de la estrella"))
-        self.alt = self._dspin(5, 90, 60, "°", 0)
+        self.alt = self._dspin(5, 90, 60, "°", 2)  # centésimas de grado
+        self.alt.setSingleStep(0.1)
         self.alt.setEnabled(False)
         self.alt_on.toggled.connect(lambda on: (self.alt.setEnabled(on), self._changed()))
         f = QGridLayout()
@@ -608,7 +621,7 @@ class ParamsPage(Page):
                                     ("Longitud de onda (λ)", self.lam), ("Escala de placa (″/px)", self.scale))):
             f.addWidget(label(t), r, 0)
             f.addWidget(w, r, 1, Qt.AlignRight)
-        f.addWidget(self.alt_on, 4, 0)
+        f.addLayout(hbox(self.alt_on, HelpButton(ALT_HELP), "stretch", spacing=6), 4, 0)
         f.addWidget(self.alt, 4, 1, Qt.AlignRight)
         tel.add(f)
         calc = Card(kind="panel2", margins=(12, 10, 12, 10))
@@ -630,10 +643,8 @@ class ParamsPage(Page):
         self.prof = QComboBox()
         self.prof.setMinimumWidth(160)
         self.prof.activated.connect(self._load_profile)
-        self.ex_btn = button("Usar valores de ejemplo de la clase", slot=self._example)
         tel.add(hbox(label("Perfil de equipo", "small"), self.prof, button("Guardar perfil", slot=self._save_profile),
                      button("Eliminar", slot=self._del_profile), "stretch"))
-        tel.add(self.ex_btn)
 
         sav = Card("Imágenes a guardar", help_text=SAVE_HELP)
         self.save_on = QCheckBox(tr("Guardar los cuadros como imágenes"))
@@ -703,7 +714,6 @@ class ParamsPage(Page):
         self.fmt.set_value(s.fmt)
         self.every.setValue(s.every_n)
         self.out.setText(s.out_dir)
-        self.ex_btn.setVisible(self.is_edu)
         self._reload_profiles()
         self._loading = False
         self._update_est()
@@ -751,22 +761,29 @@ class ParamsPage(Page):
     def _use_calc(self):
         self.scale.setText(fnum(self._calc_v, 3))
 
-    def _example(self):
-        self.D.setValue(2.5)
-        self.B.setValue(14)
-        self.lam.setValue(550)
-        self.scale.setText("1,0")
-
     def _pick_out(self):
-        d = QFileDialog.getExistingDirectory(self, "Carpeta de salida", self.out.text() or "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
+        d = choose_folder(self, "Carpeta de salida", self.out.text() or "")
         if d:
             self.out.setText(d)
 
-    # Perfiles de equipo (JSON en la carpeta de datos)
+    # Perfiles de equipo (un solo JSON para los dos modos)
     def _profiles_path(self):
-        from ...core.history import app_data_dir
+        root = self.s.history.root
+        path = os.path.join(root, "perfiles.json")
+        if not os.path.isfile(path):  # versiones anteriores: un archivo por modo; se unen la primera vez
+            import json
 
-        return os.path.join(self.s.history.root, f"perfiles_{self.s.mode}.json")
+            merged = {}
+            for mode in ("educativo", "analisis"):
+                try:
+                    with open(os.path.join(root, f"perfiles_{mode}.json"), encoding="utf-8") as f:
+                        merged.update(json.load(f))
+                except Exception:
+                    pass
+            if merged:
+                with open(path, "w", encoding="utf-8") as f:
+                    json.dump(merged, f, ensure_ascii=False, indent=1)
+        return path
 
     def _read_profiles(self) -> dict:
         import json
@@ -1012,7 +1029,7 @@ def export_panel(owner, on_export, include_report=True, title="Exportar"):
         "<li><b>Datos</b>: CSV (hojas de cálculo), Excel, JSON (programación), NumPy (Python) y tabla FITS (astronomía).</li>"
         "<li><b>Gráficas</b>: «PDF solo gráficas» reúne las gráficas sin texto; PNG y SVG guardan cada gráfica por separado.</li>"
         "<li><b>Informe</b>: PDF con el resumen, los parámetros y las gráficas.</li></ul>"
-        "Elige uno o varios formatos y pulsa Exportar."))
+        "Elige uno o varios formatos y pulsa «Seleccionar carpeta»: los archivos se guardan ahí con un nombre automático."))
     groups = [("Datos", DATA_FORMATS), ("Gráficas", CHART_FORMATS)]
     if include_report:
         groups.append(("Informe", REPORT_FORMATS))
@@ -1032,9 +1049,11 @@ def export_panel(owner, on_export, include_report=True, title="Exportar"):
     chips["Gráficas"].set_values(["pdfg"])
     card.add(grid)
     msg = label("", "small", wrap=True)
-    btn = button("Exportar…", "primary", lambda: on_export([k for c in chips.values() for k in c.values()], msg))
+    btn = button("Seleccionar carpeta…", "primary", lambda: on_export([k for c in chips.values() for k in c.values()], msg),
+                 tip="Elige la carpeta donde se guardan los archivos")
     open_b = button("Abrir carpeta", slot=lambda: card._folder and open_folder(card._folder))
     open_b.setVisible(False)
+    card.add(label(AUTO_NAME_NOTE, "small", wrap=True))
     card.add(hbox(btn, msg, open_b, "stretch"))
     card.chips = chips
     card._folder = None
@@ -1214,10 +1233,10 @@ class ResultsPage(Page):
             msg.setText("Elige al menos un formato.")
             return
         start = s.result.out_dir or os.path.dirname(s.info.path) if s.info else ""
-        folder = QFileDialog.getExistingDirectory(self, tr("Carpeta para exportar"), start, options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
+        folder = choose_folder(self, "Carpeta para exportar", start)
         if not folder:
             return
-        base = os.path.splitext(s.result.video.get("name", "turbulens"))[0][:40].replace(" ", "_")
+        base = free_base(folder, os.path.splitext(s.result.video.get("name", "turbulens"))[0][:40].replace(" ", "_"))
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             rec = s.record()
@@ -1237,7 +1256,7 @@ class HistoryPage(Page):
     title = "Historial"
     subtitle = ""
 
-    COLS = ["", "#", "Guardado", "Etiqueta", "Video", "Tramo", "Cuadros", "σ (px)", "Seeing (″)", "Escala (″/px)", "Notas"]
+    COLS = ["", "#", "Guardado", "Modo", "Etiqueta", "Video", "Tramo", "Cuadros", "σ (px)", "Seeing (″)", "Escala (″/px)", "Notas"]
 
     def __init__(self, main):
         super().__init__(main)
@@ -1281,8 +1300,8 @@ class HistoryPage(Page):
     def refresh(self):
         s = self.s
         self.h1.setText("Mis mediciones" if self.is_edu else "Historial de estadísticas")
-        self.sub.setText("Las mediciones del modo educativo se guardan aparte de las científicas." if self.is_edu else
-                         "Base de datos local de tus análisis científicos, para comparar noches y épocas del año.")
+        self.sub.setText("El mismo historial en los dos modos: aquí están los análisis guardados en el modo análisis y en el "
+                         "educativo, para comparar noches y épocas del año.")
         self.sub.setVisible(True)
         self._rows = s.history.list()
         has = bool(self._rows)
@@ -1296,7 +1315,8 @@ class HistoryPage(Page):
             chk.setCheckState(Qt.Checked)
             self.table.setItem(i, 0, chk)
             fps = r.get("fps") or 30
-            vals = [str(r["id"]), r.get("created") or "", r.get("label") or "", r.get("video_name") or "",
+            modo = {"analisis": tr("Análisis"), "educativo": tr("Educativo")}.get(r.get("modo") or "", "—")
+            vals = [str(r["id"]), r.get("created") or "", modo, r.get("label") or "", r.get("video_name") or "",
                     f"{fmt_time((r.get('start') or 0) / fps)}–{fmt_time((r.get('stop') or 0) / fps)}",
                     miles(r.get("n_used") or 0), fnum(r.get("std_sep_px"), 3), fnum(r.get("eps"), 2),
                     fnum(r.get("scale"), 3), r.get("notes") or ""]
@@ -1396,12 +1416,12 @@ class HistoryPage(Page):
         if not formats:
             msg.setText("Elige al menos un formato.")
             return
-        folder = QFileDialog.getExistingDirectory(self, tr("Carpeta para exportar"), "", options=dialog_options() | QFileDialog.Option.ShowDirsOnly)
+        folder = choose_folder(self, "Carpeta para exportar")
         if not folder:
             return
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
-            base = "mis_mediciones" if self.is_edu else "historial"
+            base = free_base(folder, "mis_mediciones" if self.is_edu else "historial")
             out = export_history_table(sel, formats, folder, base)
             out += reports.export_history_charts(sel, formats, folder, base)
         except Exception as exc:

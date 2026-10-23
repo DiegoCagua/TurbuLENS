@@ -7,7 +7,7 @@ Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C. Desarrol
 Técnicas Observacionales de la Maestría en Astronomía del Observatorio Astronómico Nacional.
 """
 
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 
 APP_NAME = "TurbuLENS"
 AFFILIATION = "Estudiante del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C."

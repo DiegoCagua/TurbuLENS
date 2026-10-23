@@ -15,6 +15,14 @@ from PySide6.QtWidgets import (
 
 from .theme import theme
 
+# Mientras se rehace la interfaz (cambio de idioma) aquí queda una función que deja girar el logo de carga.
+LOADING_TICK = None
+
+
+def loading_tick():
+    if LOADING_TICK is not None:
+        LOADING_TICK()
+
 
 def label(text: str = "", role: Optional[str] = None, wrap: bool = False, rich: bool = False) -> QLabel:
     lb = QLabel()
@@ -82,6 +90,7 @@ def _add(lay, it):
 class Card(QFrame):
     def __init__(self, title: str = "", kind: str = "true", parent=None, help_text: str = "", margins=(16, 14, 16, 14)):
         super().__init__(parent)
+        loading_tick()
         self.setProperty("card", kind)
         self.lay = QVBoxLayout(self)
         self.lay.setContentsMargins(*margins)
@@ -243,6 +252,44 @@ def app_icon(size: int = 64) -> QPixmap:
     return pm
 
 
+class SpinningLogo(QWidget):
+    """Logo de TurbuLENS que gira en sentido horario (pantalla de carga)."""
+
+    def __init__(self, size: int = 96, parent=None):
+        super().__init__(parent)
+        from PySide6.QtCore import QTimer
+
+        self.setFixedSize(size, size)
+        self._pm = app_icon(size * 2)
+        import time
+
+        self._t0 = time.monotonic()
+        self._angle = 0.0
+        self._timer = QTimer(self)
+        self._timer.setInterval(16)
+        self._timer.timeout.connect(self._step)
+        self._timer.start()
+
+    def _step(self):
+        import time
+
+        # Una vuelta cada 1,2 s según el reloj, aunque se dibuje con pocas pausas; positivo = horario.
+        self._angle = ((time.monotonic() - self._t0) * 300.0) % 360.0
+        self.update()
+
+    def paintEvent(self, ev):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        p.setRenderHint(QPainter.SmoothPixmapTransform)
+        s = self.width()
+        p.translate(s / 2, s / 2)
+        p.rotate(self._angle)
+        from PySide6.QtCore import QRectF
+
+        p.drawPixmap(QRectF(-s / 2, -s / 2, s, s), self._pm, QRectF(self._pm.rect()))
+        p.end()
+
+
 def sun_moon_icon(dark: bool, color: str, size: int = 22) -> QIcon:
     pm = QPixmap(size * 2, size * 2)
     pm.fill(Qt.transparent)
@@ -338,15 +385,116 @@ class FlowLayout(QLayout):
         return y + line_h - rect.y()
 
 
-def dialog_options():
-    """En Linux se usa el selector de archivos de Qt: no depende de GTK ni de los portales del escritorio."""
-    import sys
+# ------------------------------------------------- elegir archivos y carpetas
+def _file_dialog(parent, title: str, start: str = ""):
+    """El mismo selector en todo el programa y en todos los sistemas: el de la propia app (no el del sistema),
+    con el tema y el idioma de TurbuLENS y accesos rápidos a las carpetas habituales."""
+    import os
 
+    from PySide6.QtCore import QUrl
     from PySide6.QtWidgets import QFileDialog
 
-    if sys.platform.startswith("linux"):
-        return QFileDialog.Option.DontUseNativeDialog
-    return QFileDialog.Option(0)
+    from ..i18n import tr
+
+    dlg = QFileDialog(parent, tr(title))
+    dlg.setOption(QFileDialog.Option.DontUseNativeDialog, True)
+    dlg.setViewMode(QFileDialog.ViewMode.Detail)
+    home = os.path.expanduser("~")
+    places = [home] + [os.path.join(home, n) for n in ("Desktop", "Escritorio", "Documents", "Documentos", "Videos",
+                                                        "Vídeos", "Movies", "Downloads", "Descargas", "Pictures", "Imágenes")]
+    urls = [QUrl.fromLocalFile(p) for p in dict.fromkeys(places) if os.path.isdir(p)]
+    if os.name == "nt":
+        import string
+
+        urls += [QUrl.fromLocalFile(f"{d}:/") for d in string.ascii_uppercase if os.path.isdir(f"{d}:/")]
+    else:
+        urls.append(QUrl.fromLocalFile("/"))
+    dlg.setSidebarUrls(urls)
+    if start and os.path.isdir(start):
+        dlg.setDirectory(start)
+    elif start and os.path.isdir(os.path.dirname(start)):
+        dlg.setDirectory(os.path.dirname(start))
+    else:
+        dlg.setDirectory(home)
+    dlg.resize(900, 560)
+    # Textos propios en el idioma de la app (las traducciones de Qt de este diálogo están incompletas)
+    dlg.setLabelText(QFileDialog.DialogLabel.LookIn, tr("Buscar en:"))
+    dlg.setLabelText(QFileDialog.DialogLabel.FileType, tr("Tipo:"))
+    dlg.setLabelText(QFileDialog.DialogLabel.Reject, tr("Cancelar"))
+    from PySide6.QtWidgets import QTreeView
+
+    tv = dlg.findChild(QTreeView)
+    if tv is not None:
+        tv.header().resizeSection(0, 380)
+        tv.header().resizeSection(1, 90)
+        tv.header().resizeSection(3, 150)
+    return dlg
+
+
+def choose_file(parent, title: str, name_filter: str, start: str = "") -> str:
+    """Elegir un archivo existente (por ejemplo, el video)."""
+    from PySide6.QtWidgets import QFileDialog
+
+    from ..i18n import tr
+
+    dlg = _file_dialog(parent, title, start)
+    dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
+    dlg.setNameFilter(name_filter)
+    dlg.setLabelText(QFileDialog.DialogLabel.FileName, tr("Archivo:"))
+    dlg.setLabelText(QFileDialog.DialogLabel.Accept, tr("Abrir"))
+    if dlg.exec() and dlg.selectedFiles():
+        return dlg.selectedFiles()[0]
+    return ""
+
+
+def choose_folder(parent, title: str, start: str = "") -> str:
+    """Elegir una carpeta (salida de imágenes, exportaciones)."""
+    from PySide6.QtWidgets import QFileDialog
+
+    from PySide6.QtCore import QSettings
+
+    st = QSettings("TurbuLENS", "TurbuLENS")
+    from ..i18n import tr
+
+    dlg = _file_dialog(parent, title, start or st.value("ultima_carpeta", "", type=str))
+    dlg.setOption(QFileDialog.Option.ShowDirsOnly, True)
+    dlg.setFileMode(QFileDialog.FileMode.Directory)
+    dlg.setLabelText(QFileDialog.DialogLabel.FileName, tr("Carpeta:"))
+    dlg.setLabelText(QFileDialog.DialogLabel.Accept, tr("Seleccionar"))
+    if dlg.exec() and dlg.selectedFiles():
+        folder = dlg.selectedFiles()[0]
+        st.setValue("ultima_carpeta", folder)  # la próxima vez abre en la misma carpeta
+        return folder
+    return ""
+
+
+def free_name(folder: str, name: str) -> str:
+    """Ruta en ``folder`` para ``name`` sin sobrescribir: agrega _2, _3… si ya existe."""
+    import os
+
+    base, ext = os.path.splitext(name)
+    p, k = os.path.join(folder, name), 2
+    while os.path.exists(p):
+        p, k = os.path.join(folder, f"{base}_{k}{ext}"), k + 1
+    return p
+
+
+def free_base(folder: str, base: str) -> str:
+    """Prefijo de nombre que no choca con archivos existentes de la carpeta: «altair», «altair_2», …"""
+    import os
+
+    try:
+        names = os.listdir(folder)
+    except OSError:
+        return base
+    cand, k = base, 2
+    while any(n == cand or n.startswith(cand + "_") or n.startswith(cand + ".") for n in names):
+        cand, k = f"{base}_{k}", k + 1
+    return cand
+
+
+AUTO_NAME_NOTE = ("Solo eliges la carpeta: el nombre de los archivos es automático (el nombre del video o del historial "
+                  "más el tipo de archivo) y nunca se sobrescribe un archivo que ya exista.")
 
 
 def fullscreen_icon(color: str, exit_: bool = False, size: int = 20) -> QIcon:

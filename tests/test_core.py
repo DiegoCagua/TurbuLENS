@@ -172,10 +172,34 @@ def test_exports_and_history(tmp_path):
     h = History("analisis", root=str(tmp_path / "datos"))
     he = History("educativo", root=str(tmp_path / "datos"))
     rid = h.add({"label": "noche 1", "eps": d.eps, "std_sep_px": d.std_sep_px, "roi": [0, 0, 64, 64]}, meas=meas, arrays=d.arrays)
-    assert he.list() == []  # modos separados
+    assert [r["id"] for r in he.list()] == [rid]  # historial compartido entre los dos modos
+    assert he.list()[0]["modo"] == "analisis"
     assert h.list()[0]["label"] == "noche 1"
     assert h.load_arrays(rid)["mediciones"].size == n
     files = export.export_history_table(h.list(), ["csv", "xlsx", "json", "npz", "fits"], str(tmp_path / "hist"))
     assert len(files) == 5
     h.delete(rid)
     assert h.list() == []
+
+
+def test_history_migrates_old_per_mode_databases(tmp_path):
+    """Las bases de versiones anteriores (una por modo) se copian una sola vez al historial compartido."""
+    import sqlite3
+
+    from turbulens.core.history import FIELDS
+
+    root = tmp_path / "datos"
+    root.mkdir()
+    old_fields = [(n, t) for n, t in FIELDS if n != "modo"]
+    for mode, lab in (("analisis", "ciencia"), ("educativo", "clase")):
+        con = sqlite3.connect(root / f"{mode}.sqlite")
+        cols = ", ".join(f"{n} {t}" for n, t in old_fields)
+        con.execute(f"CREATE TABLE analyses (id INTEGER PRIMARY KEY AUTOINCREMENT, {cols})")
+        con.execute("INSERT INTO analyses (label, eps) VALUES (?, ?)", (lab, 1.2))
+        con.commit()
+        con.close()
+    h = History("analisis", root=str(root))
+    rows = {r["label"]: r["modo"] for r in h.list()}
+    assert rows == {"ciencia": "analisis", "clase": "educativo"}
+    h.close()
+    assert len(History("educativo", root=str(root)).list()) == 2  # no se copian dos veces

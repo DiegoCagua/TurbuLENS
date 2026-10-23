@@ -92,7 +92,7 @@ class StartPage(QWidget):
             cards.addWidget(c, 1)
         cards.addStretch(1)
         lay.addLayout(cards)
-        n = label("Cada modo guarda sus mediciones por separado: los datos de clase nunca se mezclan con los científicos.", "muted")
+        n = label("Los dos modos comparten el historial y los perfiles de equipo: lo que guardes en uno lo ves en el otro.", "muted")
         n.setAlignment(Qt.AlignCenter)
         lay.addWidget(n)
         lay.addStretch(1)

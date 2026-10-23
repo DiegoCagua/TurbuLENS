@@ -88,10 +88,10 @@ def test_open_and_process_video_in_each_mode(app, errors, tmp_path):
         w.go("resultados")
         w.page_by_key["resultados"].save()
         w.go("historial")
-        assert len(s.history.list()) == 1
-    # Modos separados
-    assert len(w.sessions["analisis"].history.list()) == 1
-    assert len(w.sessions["educativo"].history.list()) == 1
+        assert any(r["modo"] == mode for r in s.history.list())
+    # Historial compartido: los dos análisis se ven desde los dos modos
+    assert len(w.sessions["analisis"].history.list()) == 2
+    assert len(w.sessions["educativo"].history.list()) == 2
     w.go_start()
     assert not errors, errors[0]
     w.close()
@@ -129,3 +129,14 @@ def test_mi_video_in_lessons(app, errors, tmp_path):
     assert l1.data()["name"].startswith("Mi video") and l1.data()["sep"].size > 100
     assert not errors, errors[0]
     w.close()
+
+
+def test_one_file_chooser_everywhere():
+    """Todas las búsquedas de archivos y carpetas usan el mismo selector propio de la app."""
+    import pathlib
+
+    root = pathlib.Path(__file__).resolve().parents[1] / "turbulens" / "gui"
+    for p in root.rglob("*.py"):
+        src = p.read_text(encoding="utf-8")
+        for f in ("getOpenFileName", "getSaveFileName", "getExistingDirectory"):
+            assert f not in src, f"{p.name} usa {f}: debe usar choose_file / choose_folder"

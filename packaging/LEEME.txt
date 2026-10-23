@@ -1,4 +1,4 @@
-TurbuLENS 1.2.1
+TurbuLENS 1.2.2
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia
 Español · English · Português (cambia el idioma en «Acerca de»)
 
@@ -26,5 +26,5 @@ del Observatorio Astronómico Nacional.
 LICENCIA: PolyForm Noncommercial 1.0.0 (ver LICENSE.txt). Uso libre SIN fines
 comerciales. Toda copia o versión modificada debe conservar el crédito a los autores.
 Si usas TurbuLENS en un trabajo o publicación, cítalo:
-  Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). TurbuLENS (versión 1.2.1) [Software].
+  Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). TurbuLENS (versión 1.2.2) [Software].
   https://github.com/DiegoCagua/TurbuLENS

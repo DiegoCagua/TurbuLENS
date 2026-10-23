@@ -9,7 +9,7 @@ authors:
   - family-names: "Cruz Ospina"
     given-names: "Fredy Esteban"
     affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
-version: "1.2.1"
+version: "1.2.2"
 date-released: "2026-10-23"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"
