@@ -27,7 +27,6 @@ from ...core.video import VideoError, file_dialog_filter
 from ...core.writers import FORMATS, estimate_bytes
 from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
-from ..session import example_video
 from ..theme import theme
 from ..widgets import TRANSPORT_HELP, ask, ask_text, notify, dialog_options, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
@@ -76,11 +75,10 @@ class VideoPage(Page):
             "La app mide cada cuadro por separado y después usa estadística para resumir miles de mediciones en un número: el seeing."))
         self.drop = button("Suelta tu video aquí\no haz clic para buscarlo en tu computador", "drop", self.pick)
         self.drop.setMinimumHeight(230)
-        self.ex_btn = button("Usar video de ejemplo", slot=self.use_example)
         note = label("El video no se copia: se lee directamente desde su carpeta.", "muted")
         self.empty = QWidget()
         self.empty.setObjectName("transparent")
-        self.empty.setLayout(vbox(self.drop, hbox(self.ex_btn, note, "stretch")))
+        self.empty.setLayout(vbox(self.drop, hbox(note, "stretch")))
 
         self.preview = QLabel()
         self.preview.setAlignment(Qt.AlignCenter)
@@ -120,15 +118,6 @@ class VideoPage(Page):
         if path:
             self.open(path)
 
-    def use_example(self):
-        p = example_video()
-        if p:
-            self.open(p)
-        else:
-            notify(self, "Video de ejemplo",
-                                    "No se encontró la carpeta «ejemplos» junto al programa. "
-                                    "Copia ahí un video (por ejemplo el de Altair) para usarlo como ejemplo.")
-
     def open(self, path: str):
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -144,7 +133,6 @@ class VideoPage(Page):
         has = self.s.info is not None
         self.empty.setVisible(not has)
         self.loaded.setVisible(has)
-        self.ex_btn.setEnabled(example_video() is not None)
         if not has:
             return
         i = self.s.info

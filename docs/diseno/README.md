@@ -41,4 +41,8 @@ Fredy Esteban Cruz Ospina se suma como coautor en la aplicación, la licencia, l
 
 ## 6. Versión 1.2.0
 
-Tres idiomas (español, inglés y portugués) que se cambian desde *Acerca de* o la pantalla de inicio; los mismos botones `<<` `<` `>` `>>` y las mismas velocidades (0.25× a 32×) en toda la app; fórmulas en LaTeX en las lecciones; botón de maximizar en la barra de título; e instaladores para Windows, macOS y Linux.
+Tres idiomas (español, inglés y portugués) que se cambian desde *Acerca de* o la pantalla de inicio; los mismos botones `<<` `<` `>` `>>` y las mismas velocidades (0.25× a 32×) en toda la app; fórmulas en LaTeX en las lecciones; y botón de maximizar en la barra de título.
+
+## 7. Versión 1.2.1
+
+«Acerca de» del inicio abre una página completa (antes el texto se montaba sobre la pantalla), pantalla de carga al cambiar de idioma, la ficha «Mi video» de las lecciones funciona con el video procesado en cualquiera de los dos modos y se quitó el botón de video de ejemplo.

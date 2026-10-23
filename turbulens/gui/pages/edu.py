@@ -63,6 +63,16 @@ class EduData:
                 "name": tr("Mi video ({})").format(s.result.video.get('name'))}
 
 
+    @staticmethod
+    def own(main) -> dict | None:
+        """El video propio: el procesado en el modo educativo o, si no hay, el del modo análisis."""
+        for mode in ("educativo", "analisis"):
+            d = EduData.from_session(main.sessions[mode])
+            if d is not None:
+                return d
+        return None
+
+
 def seeing_example(sigma_px: float, scale: float = 1.0) -> float:
     kl, _ = k_coefficients(14 / 2.5)
     r0 = r0_from_variance((sigma_px * scale / 206264.806) ** 2, kl, 550e-9, 0.025)
@@ -248,21 +258,23 @@ class LessonPage(Page):
     # Datos activos
     def data(self) -> dict:
         if self.src.value() == "propio":
-            d = EduData.from_session(self.main.sessions["educativo"])
+            d = EduData.own(self.main)
             if d is not None:
                 return d
         return EduData.sample()
 
     def _src_changed(self):
-        if self.src.value() == "propio" and EduData.from_session(self.main.sessions["educativo"]) is None:
+        if self.src.value() == "propio" and EduData.own(self.main) is None:
+            self.src.blockSignals(True)
             self.src.set_value("ejemplo")
-            self.main.toast("Aún no has procesado un video en el modo educativo. Ve a «Tu propio video».")
+            self.src.blockSignals(False)
+            self.main.toast("Todavía no hay un video propio procesado. Procésalo en «TU VIDEO → 4 Procesar» "
+                            "y vuelve aquí para estudiar tus datos.")
         self.update_view()
 
     def refresh(self):
-        own = EduData.from_session(self.main.sessions["educativo"]) is not None
-        self.src.buttons["propio"].setEnabled(own)
-        if not own:
+        # La ficha «Mi video» siempre se puede pulsar: si aún no hay video, explica qué hacer.
+        if self.src.value() == "propio" and EduData.own(self.main) is None:
             self.src.set_value("ejemplo")
         self.update_view()
 

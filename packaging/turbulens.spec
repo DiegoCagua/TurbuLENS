@@ -87,6 +87,6 @@ else:
     if sys.platform == "darwin":
         app = BUNDLE(coll, name="TurbuLENS.app", icon=os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")
                      if os.path.exists(os.path.join(ROOT, "turbulens", "assets", "turbulens.icns")) else None,
-                     bundle_identifier="co.edu.unal.oan.turbulens",
+                     bundle_identifier="io.github.diegocagua.turbulens",
                      info_plist={"NSHighResolutionCapable": True, "CFBundleShortVersionString": VERSION, "CFBundleVersion": VERSION,
                                  "CFBundleDisplayName": "TurbuLENS", "LSApplicationCategoryType": "public.app-category.education"})

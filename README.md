@@ -9,19 +9,18 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-**Versión actual: 1.2.0.** TurbuLENS se instala como cualquier programa (queda en el menú y en el escritorio): **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
+**Versión actual: 1.2.1.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
 
-| Sistema | Descarga directa | Cómo se instala |
+| Sistema | Descarga directa | Se abre con |
 |---|---|---|
-| Windows 10/11 | [TurbuLENS-v1.2.0-Windows-x64-Instalador.exe](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Windows-x64-Instalador.exe) | Doble clic y *Siguiente*: menú Inicio y escritorio |
-| Windows portátil | [TurbuLENS-v1.2.0-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Windows-x64.zip) | Descomprimir y abrir `TurbuLENS.exe` |
-| Mac con Apple Silicon | [TurbuLENS-v1.2.0-macOS-AppleSilicon.dmg](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-macOS-AppleSilicon.dmg) | Arrastrar `TurbuLENS` a Aplicaciones |
-| Mac con Intel | [TurbuLENS-v1.2.0-macOS-Intel.dmg](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-macOS-Intel.dmg) | Arrastrar `TurbuLENS` a Aplicaciones |
-| Linux | [TurbuLENS-v1.2.0-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.0/TurbuLENS-v1.2.0-Linux-x64.tar.gz) | Descomprimir y `sh instalar.sh` (menú de aplicaciones) |
+| Windows 10/11 | [TurbuLENS-v1.2.1-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-Windows-x64.zip) | `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.2.1-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
+| Mac con Intel | [TurbuLENS-v1.2.1-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-macOS-Intel.zip) | `TurbuLENS.app` |
+| Linux | [TurbuLENS-v1.2.1-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.2.1/TurbuLENS-v1.2.1-Linux-x64.tar.gz) | `TurbuLENS` |
 
 Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
-> El programa aún no está firmado digitalmente. La primera vez, en Windows pulsa *Más información → Ejecutar de todas formas*; en Mac, clic derecho → *Abrir*. La publicación ya está preparada para firmar cuando haya certificados: ver [docs/firma_digital.md](docs/firma_digital.md).
+> La primera vez, Windows puede mostrar «Windows protegió su PC»: pulsa *Más información → Ejecutar de todas formas*. En Mac, abre la app con clic derecho → *Abrir*.
 
 ## Qué hace
 
@@ -85,7 +84,7 @@ python -m pytest                         # pruebas del motor
 pyinstaller packaging/turbulens.spec     # ejecutable para tu sistema
 ```
 
-Cada `git push` ejecuta las pruebas en GitHub Actions y compila y prueba los ejecutables de Windows, macOS y Linux. Cuando llega a `main` una versión nueva (`python scripts/nueva_version.py X.Y.Z`), se publica sola en *Releases* con el instalador de Windows, los .dmg de Mac y el paquete de Linux.
+Cada `git push` ejecuta las pruebas en GitHub Actions y compila y prueba los ejecutables de Windows, macOS y Linux. Cuando llega a `main` una versión nueva (`python scripts/nueva_version.py X.Y.Z`), se publica sola en *Releases* con los archivos de Windows, Mac y Linux.
 
 Los textos de la interfaz están en español en el código; las traducciones están en `turbulens/locales/en.json` y `pt.json` (clave = texto en español).
 
@@ -98,7 +97,7 @@ turbulens/
   reports.py   gráficas e informes de un análisis o del historial
 tests/         pruebas con videos sintéticos de valores conocidos
 docs/          método, análisis de los códigos originales, capturas y diseños de la interfaz
-packaging/     PyInstaller, instaladores (Windows, Mac, Linux), firma y notas de versión
+packaging/     PyInstaller y notas de versión
 ```
 
 ## Diseño
@@ -107,8 +106,9 @@ El diseño de la interfaz partió de 10 borradores y tres versiones preliminares
 
 ## Créditos
 
-**Autores:** Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del pregrado de Física de la Universidad Nacional de Colombia.
-Observatorio Astronómico Nacional · Universidad Nacional de Colombia.
+**Autores:** Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C.
+
+TurbuLENS se desarrolló para la asignatura **Técnicas Observacionales** de la Maestría en Astronomía del Observatorio Astronómico Nacional, Universidad Nacional de Colombia, Bogotá D.C.
 
 Basado en el protocolo *Determina la nitidez del cielo nocturno en tu lugar de observación* (ANDEAN ROAD, Oficina Regional Andina de la Astronomía para el Desarrollo, 2026) y en A. Tokovinin, *From differential image motion to seeing*, PASP 114, 1156 (2002), [arXiv:astro-ph/0111022](https://arxiv.org/abs/astro-ph/0111022).
 
@@ -118,14 +118,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow y openpyxl.
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores:
 
-> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.2.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). *TurbuLENS* (versión 1.2.1) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
   author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.2.0},
+  version   = {1.2.1},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

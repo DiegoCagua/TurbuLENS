@@ -95,3 +95,37 @@ def test_open_and_process_video_in_each_mode(app, errors, tmp_path):
     w.go_start()
     assert not errors, errors[0]
     w.close()
+
+
+def test_mi_video_in_lessons(app, errors, tmp_path):
+    """La ficha «Mi video» de las lecciones usa el video propio (del modo educativo o, si no hay, del de análisis)."""
+    from synthetic import make_video
+
+    w = make_window(tmp_path)
+    w.set_mode("educativo")
+    w.go("l1")
+    l1 = w.page_by_key["l1"]
+    QTest.mouseClick(l1.src.buttons["propio"], Qt.LeftButton)
+    QApplication.processEvents()
+    assert l1.src.value() == "ejemplo" and w.toast_lbl.isVisible()  # sin video: explica qué hacer
+    vid = str(tmp_path / "v.mkv")
+    make_video(vid, n=150, w=400, h=300)
+    w.set_mode("analisis")
+    w.page_by_key["video"].open(vid)
+    w.session.out_dir = str(tmp_path / "out")
+    for k in ("region", "parametros", "procesar"):
+        w.go(k)
+    pg = w.page_by_key["procesar"]
+    pg.start()
+    t0 = time.time()
+    while pg.thread is not None and time.time() - t0 < 120:
+        QApplication.processEvents()
+        time.sleep(0.02)
+    w.set_mode("educativo")
+    w.go("l1")
+    QTest.mouseClick(l1.src.buttons["propio"], Qt.LeftButton)
+    QApplication.processEvents()
+    assert l1.src.value() == "propio"
+    assert l1.data()["name"].startswith("Mi video") and l1.data()["sep"].size > 100
+    assert not errors, errors[0]
+    w.close()

@@ -23,24 +23,6 @@ def resource_path(*parts: str) -> str:
     return os.path.join(base, *parts)
 
 
-def example_video() -> Optional[str]:
-    """Busca un video de ejemplo junto al programa (carpeta «ejemplos»)."""
-    import sys
-
-    cands = []
-    exe_dir = os.path.dirname(sys.executable) if getattr(sys, "frozen", False) else None
-    roots = [exe_dir, os.getcwd(), os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))]
-    for r in roots:
-        if not r:
-            continue
-        d = os.path.join(r, "ejemplos")
-        if os.path.isdir(d):
-            for fn in sorted(os.listdir(d)):
-                if os.path.splitext(fn)[1].lower().lstrip(".") in ("mov", "mp4", "avi", "mkv", "ser"):
-                    cands.append(os.path.join(d, fn))
-    return cands[0] if cands else None
-
-
 class Session(QObject):
     video_changed = Signal()
     roi_changed = Signal()

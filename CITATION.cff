@@ -5,11 +5,11 @@ type: software
 authors:
   - family-names: "Cagua Lozada"
     given-names: "Diego Fernando"
-    affiliation: "Observatorio Astronómico Nacional, Universidad Nacional de Colombia"
+    affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
   - family-names: "Cruz Ospina"
     given-names: "Fredy Esteban"
-    affiliation: "Universidad Nacional de Colombia"
-version: "1.2.0"
+    affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
+version: "1.2.1"
 date-released: "2026-10-23"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"

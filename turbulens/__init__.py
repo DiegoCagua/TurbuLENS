@@ -2,18 +2,20 @@
 # Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """TurbuLENS: separa videos de un DIMM en imágenes, mide el seeing y enseña estadística.
 
-Observatorio Astronómico Nacional · Universidad Nacional de Colombia.
 Autores: Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del pregrado de Física,
-Universidad Nacional de Colombia.
+Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C. Desarrollada para la asignatura
+Técnicas Observacionales de la Maestría en Astronomía del Observatorio Astronómico Nacional.
 """
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 APP_NAME = "TurbuLENS"
-AUTHORS = [("Diego Fernando Cagua Lozada", "Estudiante del pregrado de Física · Universidad Nacional de Colombia"),
-           ("Fredy Esteban Cruz Ospina", "Estudiante del pregrado de Física · Universidad Nacional de Colombia")]
+AFFILIATION = "Estudiante del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C."
+AUTHORS = [("Diego Fernando Cagua Lozada", AFFILIATION), ("Fredy Esteban Cruz Ospina", AFFILIATION)]
 AUTHOR = "Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina"
-AUTHOR_ROLE = "Estudiantes del pregrado de Física · Universidad Nacional de Colombia"
+AUTHOR_ROLE = "Estudiantes del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C."
+COURSE = ("Desarrollada para la asignatura Técnicas Observacionales de la Maestría en Astronomía del "
+          "Observatorio Astronómico Nacional, Universidad Nacional de Colombia, Bogotá D.C.")
 INSTITUTION = "Observatorio Astronómico Nacional · Universidad Nacional de Colombia"
 REPO_URL = "https://github.com/DiegoCagua/TurbuLENS"
 LICENSE_NAME = "PolyForm Noncommercial 1.0.0"
@@ -44,7 +46,7 @@ def citation_bibtex() -> str:
 # Fuentes de datos para la escala de placa (se muestran en Parámetros y en Acerca de).
 SCALE_LINKS = [
     ("https://byronbayobservatory.com.au/astronomy-calculator",
-     "Dylan's Astronomy Setup Calculator: base de datos de 174 telescopios y 65 cámaras (focal y tamaño de píxel)"),
+     "Dylan's Astronomy Setup Calculator: base de datos de telescopios y cámaras (focal y tamaño de píxel)"),
     ("https://apotelyt.com/camera-specs/nikon-d5300-sensor-pixels",
      "Apotelyt: tamaño de píxel de cada cámara (ej. Nikon D5300: 3,91 µm; busca tu modelo)"),
 ]

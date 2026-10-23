@@ -50,16 +50,35 @@ class MainWindow(QMainWindow):
         self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint
                             | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.settings = QSettings("TurbuLENS", "TurbuLENS")
-        # Al cambiar de idioma se rehace la ventana pero se conservan los datos de trabajo de cada modo.
+        # Al cambiar de idioma se rehace la interfaz pero se conservan los datos de trabajo de cada modo.
         self.sessions = sessions or {"analisis": Session("analisis", data_root), "educativo": Session("educativo", data_root)}
         self.mode = "analisis"
         self.current = None
         self._busy = False
 
+        self._build_ui()
+        for s in self.sessions.values():
+            s.result_changed.connect(self._on_result)
+
+        from PySide6.QtGui import QKeySequence, QShortcut
+
+        QShortcut(QKeySequence(Qt.Key_F11), self, activated=self.toggle_fullscreen)
+        QShortcut(QKeySequence(Qt.Key_Escape), self, activated=lambda: self.isFullScreen() and self.toggle_fullscreen())
+        theme.changed.connect(self.apply_theme)
+        dark = self.settings.value("dark", True, type=bool)
+        theme.set_dark(dark)
+        self.apply_theme(theme.pal)
+
+    def _build_ui(self):
+        """Crea toda la interfaz (también al cambiar de idioma, en la misma ventana)."""
         self.root = QStackedWidget()
         self.setCentralWidget(self.root)
+        from .widgets import scroll as _scroll
+
         self.start = misc.StartPage(self)
-        self.root.addWidget(self.start)
+        start_sa = _scroll(self.start)  # con desplazamiento: en pantallas bajas nada se monta encima de nada
+        start_sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.root.addWidget(start_sa)
 
         shell = QWidget()
         sl = QVBoxLayout(shell)
@@ -79,7 +98,6 @@ class MainWindow(QMainWindow):
         self.side_lay = QVBoxLayout(inner)
         self.side_lay.setContentsMargins(10, 8, 10, 10)
         self.side_lay.setSpacing(2)
-        from .widgets import scroll as _scroll
         sa = _scroll(inner)
         sa.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         sbl.addWidget(sa)
@@ -88,11 +106,14 @@ class MainWindow(QMainWindow):
         body.addWidget(self.pages, 1)
         sl.addLayout(body, 1)
         self.root.addWidget(shell)
-        self.toast_lbl = QLabel(self)
-        self.toast_lbl.setVisible(False)
-        self.toast_lbl.setWordWrap(True)
+        self.root.addWidget(misc.StartAbout(self))  # «Acerca de» desde la pantalla de inicio
+        if getattr(self, "toast_lbl", None) is None:  # el aviso breve se crea una sola vez
+            self.toast_lbl = QLabel(self)
+            self.toast_lbl.setVisible(False)
+            self.toast_lbl.setWordWrap(True)
 
         self.page_by_key = {}
+        self.nav_buttons = {}
         for key, cls in [("video", analysis.VideoPage), ("region", analysis.RegionPage),
                          ("parametros", analysis.ParamsPage), ("procesar", analysis.ProcessPage),
                          ("resultados", analysis.ResultsPage), ("historial", analysis.HistoryPage),
@@ -101,17 +122,6 @@ class MainWindow(QMainWindow):
             self._add_page(key, cls(self))
         for i, cls in enumerate(edu.LESSONS, start=1):
             self._add_page(f"l{i}", cls(self))
-        for s in self.sessions.values():
-            s.result_changed.connect(self._on_result)
-
-        from PySide6.QtGui import QKeySequence, QShortcut
-
-        QShortcut(QKeySequence(Qt.Key_F11), self, activated=self.toggle_fullscreen)
-        QShortcut(QKeySequence(Qt.Key_Escape), self, activated=lambda: self.isFullScreen() and self.toggle_fullscreen())
-        theme.changed.connect(self.apply_theme)
-        dark = self.settings.value("dark", True, type=bool)
-        theme.set_dark(dark)
-        self.apply_theme(theme.pal)
 
     # --------------------------------------------------------------- partes
     def _header(self):
@@ -190,6 +200,9 @@ class MainWindow(QMainWindow):
         self.root.setCurrentIndex(1)
         self.go("bienvenida" if mode == "educativo" else "video")
 
+    def show_start_about(self):
+        self.root.setCurrentIndex(2)
+
     def go_start(self):
         if self._busy:
             self.toast("Espera a que termine el procesamiento o cancélalo.")
@@ -226,7 +239,8 @@ class MainWindow(QMainWindow):
         self.toast_lbl.move((self.width() - self.toast_lbl.width()) // 2, self.height() - self.toast_lbl.height() - 24)
         self.toast_lbl.raise_()
         self.toast_lbl.setVisible(True)
-        QTimer.singleShot(3800, lambda: self.toast_lbl.setVisible(False))
+        lb = self.toast_lbl
+        QTimer.singleShot(3800, lb, lambda: lb.setVisible(False))  # se cancela solo si la ventana se cierra
 
     # ------------------------------------------------------------------ tema
     def apply_theme(self, pal: dict):
@@ -238,6 +252,12 @@ class MainWindow(QMainWindow):
         qp.setColor(QPalette.Link, QColor(pal["accent"]))
         qp.setColor(QPalette.LinkVisited, QColor(pal["accent"]))
         app.setPalette(qp)
+        # Los textos con enlaces guardan el color con que se crearon: se vuelven a poner para que tomen el del tema.
+        for lb in self.findChildren(QLabel):
+            t = lb.text()
+            if "<a " in t:
+                lb.clear()  # con el mismo texto Qt no lo vuelve a dibujar
+                lb.setText(t)
         self.logo.setPixmap(app_icon(34))
         self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
         self.theme_b.setToolTip("Cambiar a tema claro" if theme.dark else "Cambiar a tema oscuro")
@@ -247,8 +267,10 @@ class MainWindow(QMainWindow):
             p.update()
 
     # ---------------------------------------------------------------- idioma
+    LOADING = {"es": "Cambiando el idioma…", "en": "Changing the language…", "pt": "Mudando o idioma…"}
+
     def change_language(self, code: str):
-        """Cambia el idioma de toda la interfaz (se rehace la ventana conservando los datos)."""
+        """Cambia el idioma de toda la interfaz en la misma ventana, conservando los datos y la pantalla."""
         from .. import i18n
 
         if code == i18n.lang() or getattr(self, "_switching", False):
@@ -256,10 +278,73 @@ class MainWindow(QMainWindow):
         if self._busy:
             self.toast("Espera a que termine el procesamiento o cancélalo.")
             return False
-        self.settings.setValue("lang", code)
         self._switching = True  # una sola reconstrucción aunque la señal llegue dos veces
-        QTimer.singleShot(0, lambda: _rebuild_window(self, code))
+        self.settings.setValue("lang", code)
+        self._show_loading(self.LOADING.get(code, self.LOADING["es"]))
+        QTimer.singleShot(40, lambda: self._apply_language(code))
         return True
+
+    def _show_loading(self, text: str):
+        """Pantalla de carga: se ve de inmediato y tapa la ventana mientras se rehace la interfaz."""
+        pal = theme.pal
+        ov = QFrame(self)
+        ov.setObjectName("loading")
+        ov.setStyleSheet(f"QFrame#loading {{ background: {pal['bg']}; }}")
+        lay = QVBoxLayout(ov)
+        lay.addStretch(1)
+        logo = QLabel()
+        logo.setPixmap(app_icon(84))
+        logo.setAlignment(Qt.AlignCenter)
+        lay.addWidget(logo)
+        t = QLabel()
+        t.setText(text)
+        t.setAlignment(Qt.AlignCenter)
+        t.setStyleSheet(f"font-size: 22px; font-weight: 600; color: {pal['text']}; background: transparent;")
+        lay.addWidget(t)
+        from PySide6.QtWidgets import QProgressBar
+
+        bar = QProgressBar()
+        bar.setRange(0, 0)  # barra «ocupada»
+        bar.setFixedWidth(260)
+        bar.setTextVisible(False)
+        lay.addWidget(bar, 0, Qt.AlignHCenter)
+        lay.addStretch(1)
+        ov.setGeometry(self.rect())
+        ov.show()
+        ov.raise_()
+        self._loading = ov
+        ov.repaint()
+        QApplication.processEvents()
+
+    def _apply_language(self, code: str):
+        from .. import i18n
+        from . import i18n_qt
+
+        try:
+            i18n.load(code)
+            i18n_qt.load_qt_translations(QApplication.instance())
+            idx, mode, cur = self.root.currentIndex(), self.mode, self.current
+            self._build_ui()
+            self.apply_theme(theme.pal)
+            if idx == 1:
+                self.set_mode(mode)
+                if cur:
+                    self.go(cur)
+            else:
+                self.root.setCurrentIndex(idx)
+        finally:
+            self._switching = False
+            ov = getattr(self, "_loading", None)
+            if ov is not None:
+                ov.raise_()
+                QTimer.singleShot(150, ov.deleteLater)  # deja ver la interfaz nueva ya dibujada
+                self._loading = None
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        ov = getattr(self, "_loading", None)
+        if ov is not None:
+            ov.setGeometry(self.rect())
 
     def closeEvent(self, ev):
         pg = self.page_by_key.get("procesar")
@@ -269,41 +354,6 @@ class MainWindow(QMainWindow):
                 pg.thread.quit()
                 pg.thread.wait(3000)
         super().closeEvent(ev)
-
-
-def _rebuild_window(old: "MainWindow", code: str) -> "MainWindow":
-    from .. import i18n
-    from . import i18n_qt
-
-    i18n.load(code)
-    app = QApplication.instance()
-    i18n_qt.load_qt_translations(app)
-    import warnings
-
-    with warnings.catch_warnings():  # PySide avisa si la conexión ya no existe: no importa
-        warnings.simplefilter("ignore", RuntimeWarning)
-        for sig, slot in [(s.result_changed, old._on_result) for s in old.sessions.values()] + [
-                (theme.changed, old.apply_theme), (theme.changed, old.start.on_theme)]:
-            try:
-                sig.disconnect(slot)
-            except (RuntimeError, TypeError):
-                pass
-    new = MainWindow(data_root=old.data_root, sessions=old.sessions)
-    if old.root.currentIndex() == 1:
-        new.set_mode(old.mode)
-        if old.current:
-            new.go(old.current)
-    if old.isFullScreen():
-        new.showFullScreen()
-    elif old.isMaximized():
-        new.showMaximized()
-    else:
-        new.setGeometry(old.geometry())
-        new.show()
-    app._turbulens_window = new  # mantener la referencia
-    old.hide()
-    old.deleteLater()
-    return new
 
 
 def main(argv=None) -> int:
@@ -317,11 +367,10 @@ def main(argv=None) -> int:
         try:
             import ctypes
 
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("UNAL.OAN.TurbuLENS")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("DiegoCagua.TurbuLENS")
         except Exception:
             pass
     app = QApplication(argv)
-    app.setDesktopFileName("turbulens")  # Linux: enlaza la ventana con turbulens.desktop (icono del menú)
     i18n_qt.load_qt_translations(app)
     app.setApplicationName(APP_NAME)
     app.setApplicationDisplayName(APP_NAME)
@@ -332,7 +381,6 @@ def main(argv=None) -> int:
     f.setPointSizeF(10)
     app.setFont(f)
     w = MainWindow()
-    app._turbulens_window = w
     w.showMaximized()  # abre ocupando toda la pantalla
     if len(argv) > 1 and os.path.isfile(argv[1]):
         w.set_mode("analisis")

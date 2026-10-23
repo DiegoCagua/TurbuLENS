@@ -9,7 +9,7 @@ import turbulens
 
 ROOT = Path(__file__).resolve().parents[1]
 V = turbulens.__version__
-SISTEMAS = ["Windows-x64-Instalador.exe", "Windows-x64.zip", "macOS-AppleSilicon.dmg", "macOS-Intel.dmg", "Linux-x64.tar.gz"]
+SISTEMAS = ["Windows-x64.zip", "macOS-AppleSilicon.zip", "macOS-Intel.zip", "Linux-x64.tar.gz"]
 
 
 def leer(rel):

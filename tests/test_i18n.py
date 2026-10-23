@@ -95,7 +95,7 @@ def _visible_tops():
     return [w for w in QApplication.topLevelWidgets() if w.isVisible()]
 
 
-def test_language_switch_keeps_one_window_and_answers(app, tmp_path):
+def test_language_switch_in_same_window_keeps_answers(app, tmp_path):
     from turbulens import i18n
     from turbulens.gui.app import MainWindow
 
@@ -104,7 +104,6 @@ def test_language_switch_keeps_one_window_and_answers(app, tmp_path):
     sys.excepthook = lambda t, v, tb: errs.append("".join(traceback.format_exception(t, v, tb)))
     try:
         w = MainWindow(data_root=str(tmp_path / "datos"))
-        app._turbulens_window = w
         w.show()
         w.set_mode("educativo")
         w.go("quiz")
@@ -112,28 +111,30 @@ def test_language_switch_keeps_one_window_and_answers(app, tmp_path):
         quiz.pick(0, 1)
         quiz.pick(0, 2)  # no se puede cambiar
         assert quiz.items[0]["ans"] == 1
-        # Cambio desde «Acerca de»: la ficha emite dos señales y solo debe rehacerse una ventana
+        # Cambio desde «Acerca de»: la ficha emite dos señales y solo debe rehacerse una vez la interfaz
         w.go("acerca")
         import time
 
+        old_page = w.page_by_key["resultados"]
         t0 = time.time()
         w.page_by_key["acerca"].lang.set_value("en")
-        _pump(400)
-        assert time.time() - t0 < 20  # rehacer la ventana debe ser rápido
-        w2 = app._turbulens_window
-        assert i18n.lang() == "en" and w2 is not w
-        assert w2.page_by_key["resultados"].h1.text() == "Results"
-        assert w2.page_by_key["quiz"].items[0]["ans"] == 1  # la respuesta sigue registrada
-        assert len([t for t in _visible_tops() if isinstance(t, MainWindow)]) == 1
-        w2.change_language("pt")
-        _pump(400)
-        w3 = app._turbulens_window
-        assert w3.page_by_key["historial"].h1.text() == "Histórico"
-        w3.change_language("es")
-        _pump(400)
-        w4 = app._turbulens_window
-        assert len(_visible_tops()) == 1
-        w4.close()
+        assert w._loading is not None and w._loading.isVisible()  # pantalla de carga inmediata
+        _pump(500)
+        assert time.time() - t0 < 20
+        assert i18n.lang() == "en" and w.page_by_key["resultados"] is not old_page
+        assert w.current == "acerca" and w.mode == "educativo"  # misma pantalla y mismo modo
+        assert w.page_by_key["resultados"].h1.text() == "Results"
+        assert w.page_by_key["quiz"].items[0]["ans"] == 1  # la respuesta sigue registrada
+        assert w._loading is None
+        w.change_language("pt")
+        _pump(500)
+        assert w.page_by_key["historial"].h1.text() == "Histórico"
+        w.go_start()
+        w.start.lang_c.setCurrentIndex(0)  # desde el inicio, de vuelta al español
+        _pump(500)
+        assert i18n.lang() == "es" and w.root.currentIndex() == 0
+        assert _visible_tops() == [w]
+        w.close()
     finally:
         sys.excepthook = old_hook
     assert not errs, errs[0]

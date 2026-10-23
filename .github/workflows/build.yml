@@ -76,7 +76,7 @@ jobs:
           sudo apt-get remove -y libxcb-cursor0
           ! ldconfig -p | grep -q libxcb-cursor.so.0
           xvfb-run -a dist/TurbuLENS --prueba-ventana
-      - name: Versión portátil (zip / tar.gz)
+      - name: Empaquetar
         shell: bash
         run: |
           mkdir -p paquete
@@ -84,58 +84,23 @@ jobs:
           cp LICENSE paquete/LICENSE.txt
           cp THIRD_PARTY_NOTICES.md paquete/
           N="TurbuLENS-${GITHUB_REF_NAME//\//-}-${{ matrix.nombre }}"
-          echo "N=$N" >> "$GITHUB_ENV"
           if [ "$RUNNER_OS" = "Windows" ]; then
-            pwsh packaging/windows/firmar.ps1 dist/TurbuLENS.exe
             cp dist/TurbuLENS.exe paquete/
             7z a "$N.zip" ./paquete/*
-          elif [ "$RUNNER_OS" = "Linux" ]; then
+          elif [ "$RUNNER_OS" = "macOS" ]; then
+            cp -R dist/TurbuLENS.app paquete/
+            ditto -c -k --keepParent paquete "$N.zip"
+          else
             cp dist/TurbuLENS paquete/ && chmod +x paquete/TurbuLENS
-            cp packaging/linux/instalar.sh paquete/ && chmod +x paquete/instalar.sh
-            cp turbulens/assets/turbulens_256.png paquete/turbulens.png
             tar czf "$N.tar.gz" -C paquete .
           fi
-        env:
-          WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
-          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
-      - name: Instalador de Windows (menú Inicio y escritorio)
-        if: runner.os == 'Windows'
-        shell: bash
-        env:
-          WINDOWS_CERT_PFX: ${{ secrets.WINDOWS_CERT_PFX }}
-          WINDOWS_CERT_PASSWORD: ${{ secrets.WINDOWS_CERT_PASSWORD }}
-          QT_QPA_PLATFORM: offscreen
-        run: |
-          # Versión en carpeta (abre más rápido que el .exe único) para el instalador
-          TURBULENS_ONEFILE=0 pyinstaller --noconfirm --distpath dist_dir packaging/turbulens.spec
-          dist_dir/TurbuLENS/TurbuLENS.exe --autoprueba
-          pwsh packaging/windows/firmar.ps1 dist_dir/TurbuLENS/TurbuLENS.exe
-          ISCC="/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
-          if [ ! -f "$ISCC" ]; then choco install innosetup -y --no-progress; fi
-          V=$(python -c "import turbulens;print(turbulens.__version__)")
-          "$ISCC" "//DMyVersion=$V" "//DSourceDir=$(cygpath -w "$PWD/dist_dir/TurbuLENS")" \
-            "//DOutputName=$N-Instalador" packaging/windows/turbulens.iss
-          mv instalador/*.exe .
-          pwsh packaging/windows/firmar.ps1 "$N-Instalador.exe"
-      - name: Firma y .dmg de macOS
-        if: runner.os == 'macOS'
-        env:
-          APPLE_CERT_P12: ${{ secrets.APPLE_CERT_P12 }}
-          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
-        run: packaging/macos/empaquetar.sh dist/TurbuLENS.app "$N.dmg"
-      - run: ls -la
-        shell: bash
+          ls -la
       - uses: actions/upload-artifact@v4
         with:
           name: TurbuLENS-${{ matrix.nombre }}
           path: |
             TurbuLENS-*.zip
             TurbuLENS-*.tar.gz
-            TurbuLENS-*.exe
-            TurbuLENS-*.dmg
 
   lanzamiento:
     # Publica la versión de turbulens/__init__.py cuando llega a main y todo pasó (si aún no existe).
@@ -184,16 +149,11 @@ jobs:
         run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --autoprueba
       - name: Prueba con ventana real
         run: dist/TurbuLENS.app/Contents/MacOS/TurbuLENS --prueba-ventana
-      - name: Firma, .dmg y subida al lanzamiento
-        env:
-          GH_TOKEN: "${{ github.token }}"
-          TAG: "${{ needs.lanzamiento.outputs.tag }}"
-          APPLE_CERT_P12: ${{ secrets.APPLE_CERT_P12 }}
-          APPLE_CERT_PASSWORD: ${{ secrets.APPLE_CERT_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          APPLE_APP_PASSWORD: ${{ secrets.APPLE_APP_PASSWORD }}
+      - name: Subir al lanzamiento
+        env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.lanzamiento.outputs.tag }}" }
         run: |
-          N="TurbuLENS-$TAG-macOS-Intel.dmg"
-          packaging/macos/empaquetar.sh dist/TurbuLENS.app "$N"
+          mkdir paquete && cp packaging/LEEME.txt paquete/ && cp LICENSE paquete/LICENSE.txt && cp THIRD_PARTY_NOTICES.md paquete/
+          cp -R dist/TurbuLENS.app paquete/
+          N="TurbuLENS-$TAG-macOS-Intel.zip"
+          ditto -c -k --keepParent paquete "$N"
           gh release upload "$TAG" "$N" -R "$GITHUB_REPOSITORY" --clobber

@@ -7,7 +7,7 @@ from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
 
-from ... import (APP_NAME, AUTHOR, AUTHOR_ROLE, AUTHORS, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
+from ... import (APP_NAME, COURSE, AUTHOR, AUTHOR_ROLE, AUTHORS, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
                  SCALE_LINKS, citation_apa, citation_bibtex)
 from ..theme import theme
 from ... import i18n
@@ -96,13 +96,9 @@ class StartPage(QWidget):
         n.setAlignment(Qt.AlignCenter)
         lay.addWidget(n)
         lay.addStretch(1)
-        self.about_lbl = label("", "small")
-        self.about_lbl.setAlignment(Qt.AlignCenter)
-        self.about_lbl.setVisible(False)
         foot = hbox("stretch", label(tr("Uso no comercial · versión {}").format(__version__), "small"),
-                    button("Acerca de", slot=self._about), "stretch")
+                    button("Acerca de", slot=self.main.show_start_about), "stretch")
         lay.addLayout(foot)
-        lay.addWidget(self.about_lbl)
         theme.changed.connect(self.on_theme)
         self.on_theme(theme.pal)
 
@@ -113,19 +109,28 @@ class StartPage(QWidget):
             self.lang_c.setCurrentIndex([c for c, _ in i18n.LANGUAGES].index(i18n.lang()))
             self.lang_c.blockSignals(False)
 
-    def _about(self):
-        autores = "<br>".join(f"<b>{n}</b>" + (f" · {tr(r)}" if r else "") for n, r in AUTHORS)
-        self.about_lbl.setText(f"{autores}<br>" + tr("Autores de {}").format(APP_NAME) + "<br>"
-                               + tr("Licencia {} (uso no comercial, con crédito a los autores)").format(LICENSE_NAME)
-                               + f" · <a href='{REPO_URL}'>{REPO_URL}</a>")
-        self.about_lbl.setTextFormat(Qt.RichText)
-        self.about_lbl.setOpenExternalLinks(True)
-        self.about_lbl.setVisible(not self.about_lbl.isVisible())
-
     def on_theme(self, pal):
         self.logo.setPixmap(app_icon(84))
         self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
         self.theme_b.setToolTip("Tema claro" if theme.dark else "Tema oscuro")
+
+
+class StartAbout(QWidget):
+    """«Acerca de» abierto desde la pantalla de inicio: página completa con un botón para volver."""
+
+    def __init__(self, main):
+        super().__init__()
+        lay = QVBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(0)
+        bar = QFrame()
+        bar.setObjectName("header")
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(18, 10, 18, 10)
+        bl.addWidget(button("← Volver al inicio", slot=main.go_start))
+        bl.addStretch(1)
+        lay.addWidget(bar)
+        lay.addWidget(AboutPage(main), 1)
 
 
 class AboutPage(Page):
@@ -150,6 +155,7 @@ class AboutPage(Page):
                     "modo educativo para aprender estadística.").format(APP_NAME)),
             ("Autores", "<br><br>".join(f"<b>{n}</b>" + (f"<br>{tr(r)}" if r else "") for n, r in AUTHORS)),
             ("Institución", INSTITUTION),
+            ("Asignatura", tr(COURSE)),
             ("Licencia", f"<b>{LICENSE_NAME}</b>. {tr(LICENSE_SUMMARY)}<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
             ("Referencias", refs),
             ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl"),
