@@ -35,8 +35,8 @@ class Page(QWidget):
         self.h1 = label(self.title, "h1")
         col.addWidget(self.h1)
         self.sub = label(self.subtitle, "muted", wrap=True)
-        if self.subtitle:
-            col.addWidget(self.sub)
+        col.addWidget(self.sub)  # siempre dentro del diseño: un QLabel suelto se abriría como ventana aparte
+        self.sub.setVisible(bool(self.subtitle))
         head.addLayout(col, 1)
         if self.help_text:
             hb = HelpButton(self.help_text)

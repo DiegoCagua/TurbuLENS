@@ -364,3 +364,153 @@ def fullscreen_icon(color: str, exit_: bool = False, size: int = 20) -> QIcon:
             p.drawLine(int(cx), int(cy), int(cx), int(cy + dy * L))
     p.end()
     return QIcon(pm)
+
+
+# ------------------------------------------------------- reproducción (común)
+# Las mismas velocidades y los mismos botones en toda la aplicación.
+# La velocidad es relativa al video real: 1.0× = el video a su velocidad original.
+PLAYBACK_SPEEDS = [("0.25×", 0.25), ("0.5×", 0.5), ("1.0×", 1.0), ("2.0×", 2.0), ("4.0×", 4.0),
+                   ("8.0×", 8.0), ("16.0×", 16.0), ("32.0×", 32.0)]
+TRANSPORT_TIPS = {
+    "<<": "Reproducir hacia atrás a velocidad constante (presiona otra vez para detener)",
+    "<": "Un cuadro hacia atrás",
+    ">": "Un cuadro hacia adelante",
+    ">>": "Reproducir hacia adelante a velocidad constante (presiona otra vez para detener)",
+}
+TRANSPORT_HELP = ("<ul style='margin-left:-16px'><li><b>&lt;&lt;</b> y <b>&gt;&gt;</b> reproducen hacia atrás o hacia "
+                  "adelante a velocidad constante; presiónalos otra vez para detener.</li><li><b>&lt;</b> y <b>&gt;</b> "
+                  "mueven exactamente un cuadro.</li><li>La lista elige la velocidad respecto al video real: "
+                  "<b>1.0×</b> es la velocidad original, <b>2.0×</b> el doble, <b>0.5×</b> la mitad.</li></ul>")
+
+
+def speed_combo(default: float = 1.0):
+    from PySide6.QtWidgets import QComboBox
+
+    c = QComboBox()
+    for t, v in PLAYBACK_SPEEDS:
+        c.addItem(t, v)
+    c.setCurrentIndex([v for _, v in PLAYBACK_SPEEDS].index(default))
+    c.setToolTip("Velocidad de reproducción respecto al video real")
+    return c
+
+
+def transport_buttons(on_rew, on_prev, on_next, on_ff):
+    """Devuelve los botones << < > >> con el mismo aspecto y comportamiento en toda la app."""
+    rew = button("<<", "transport", on_rew, checkable=True, tip=TRANSPORT_TIPS["<<"])
+    prev = button("<", "transport", on_prev, tip=TRANSPORT_TIPS["<"])
+    nxt = button(">", "transport", on_next, tip=TRANSPORT_TIPS[">"])
+    ff = button(">>", "transport", on_ff, checkable=True, tip=TRANSPORT_TIPS[">>"])
+    return rew, prev, nxt, ff
+
+
+class FormulaLabel(QWidget):
+    """Fórmula en LaTeX (imagen pregenerada con scripts/formulas.py); sigue el tema y el idioma y se
+    reduce para caber en el ancho disponible sin cortarse."""
+
+    DPR = 2.2
+
+    def __init__(self, name: str, parent=None):
+        super().__init__(parent)
+        self.name = name
+        self._img = None
+        sp = QSizePolicy(QSizePolicy.Ignored, QSizePolicy.Preferred)
+        sp.setHeightForWidth(True)
+        self.setSizePolicy(sp)
+        self.setMinimumWidth(60)
+        theme.changed.connect(lambda *_: self._load())
+        self._load()
+
+    def _load(self):
+        import os
+        import sys
+
+        from PySide6.QtGui import QImage
+
+        from .. import i18n
+
+        base = getattr(sys, "_MEIPASS", None) or os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        t = "dark" if theme.dark else "light"
+        path = os.path.join(base, "assets", "formulas", f"{self.name}_{i18n.lang()}_{t}.png")
+        if not os.path.isfile(path):
+            path = os.path.join(base, "assets", "formulas", f"{self.name}_es_{t}.png")
+        self._img = QImage(path)
+        self.updateGeometry()
+        self.update()
+
+    def _natural(self):
+        if self._img is None or self._img.isNull():
+            return 1.0, 1.0
+        return self._img.width() / self.DPR, self._img.height() / self.DPR
+
+    def hasHeightForWidth(self):
+        return True
+
+    def heightForWidth(self, w):
+        nw, nh = self._natural()
+        return int(nh * min(1.0, max(w, 1) / nw)) + 2
+
+    def sizeHint(self):
+        nw, nh = self._natural()
+        return QSize(int(nw), int(nh) + 2)
+
+    def paintEvent(self, ev):
+        if self._img is None or self._img.isNull():
+            return
+        nw, nh = self._natural()
+        k = min(1.0, self.width() / nw)
+        p = QPainter(self)
+        p.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        from PySide6.QtCore import QRectF
+
+        p.drawImage(QRectF(0, 0, nw * k, nh * k), self._img)
+        p.end()
+
+
+def ask(parent, title: str, text: str) -> bool:
+    """Pregunta Sí / No con los botones en el idioma de la app (no en inglés)."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from ..i18n import tr
+
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Question)
+    box.setWindowTitle(tr(title))
+    box.setText(tr(text))
+    yes = box.addButton(tr("Sí"), QMessageBox.YesRole)
+    no = box.addButton(tr("No"), QMessageBox.NoRole)
+    box.setDefaultButton(no)
+    box.exec()
+    return box.clickedButton() is yes
+
+
+def notify(parent, title: str, text: str, kind: str = "info") -> None:
+    """Aviso con el botón «Aceptar» en el idioma de la app."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from ..i18n import tr
+
+    box = QMessageBox(parent)
+    box.setIcon({"info": QMessageBox.Information, "warning": QMessageBox.Warning,
+                 "error": QMessageBox.Critical}.get(kind, QMessageBox.Information))
+    box.setWindowTitle(tr(title))
+    box.setText(tr(text))
+    box.addButton(tr("Aceptar"), QMessageBox.AcceptRole)
+    box.exec()
+
+
+def ask_text(parent, title: str, label_text: str, text: str = "", multiline: bool = False):
+    """Pide un texto con los botones «Aceptar» y «Cancelar» en el idioma de la app. Devuelve (texto, ok)."""
+    from PySide6.QtWidgets import QInputDialog
+
+    from ..i18n import tr
+
+    dlg = QInputDialog(parent)
+    dlg.setWindowTitle(tr(title))
+    dlg.setLabelText(tr(label_text))
+    dlg.setOkButtonText(tr("Aceptar"))
+    dlg.setCancelButtonText(tr("Cancelar"))
+    if multiline:
+        dlg.setOption(QInputDialog.UsePlainTextEditForTextInput, True)
+    dlg.setTextValue(text)
+    ok = dlg.exec() == QInputDialog.Accepted
+    return dlg.textValue(), ok

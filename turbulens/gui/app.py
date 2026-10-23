@@ -17,7 +17,7 @@ from .. import APP_NAME, INSTITUTION, __version__
 from .pages import analysis, edu, misc
 from .session import Session, resource_path
 from .theme import qss, theme
-from .widgets import app_icon, button, fullscreen_icon, label, sun_moon_icon
+from .widgets import app_icon, button, label, sun_moon_icon
 
 NAV_ANALISIS = [
     ("FLUJO DE ANÁLISIS", [("video", "Video"), ("region", "Recorte y tramo"), ("parametros", "Parámetros"),
@@ -43,7 +43,10 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(QIcon(resource_path("assets", "turbulens_256.png")))
         self.resize(1400, 880)
-        self.setMinimumSize(1100, 700)
+        # Tamaño mínimo pequeño: si es mayor que la pantalla, algunos escritorios ocultan el botón de maximizar.
+        self.setMinimumSize(880, 560)
+        self.setWindowFlags(Qt.Window | Qt.WindowTitleHint | Qt.WindowSystemMenuHint | Qt.WindowMinimizeButtonHint
+                            | Qt.WindowMaximizeButtonHint | Qt.WindowCloseButtonHint)
         self.settings = QSettings("TurbuLENS", "TurbuLENS")
         self.sessions = {"analisis": Session("analisis", data_root), "educativo": Session("educativo", data_root)}
         self.mode = "analisis"
@@ -125,12 +128,6 @@ class MainWindow(QMainWindow):
         self.mode_chip = label("", "chip")
         lay.addWidget(self.mode_chip)
         lay.addWidget(button("Cambiar de modo", slot=self.go_start))
-        self.full_b = QToolButton()
-        self.full_b.setProperty("kind", "theme")
-        self.full_b.setCursor(Qt.PointingHandCursor)
-        self.full_b.setToolTip("Pantalla completa (F11)")
-        self.full_b.clicked.connect(self.toggle_fullscreen)
-        lay.addWidget(self.full_b)
         self.theme_b = QToolButton()
         self.theme_b.setProperty("kind", "theme")
         self.theme_b.setCursor(Qt.PointingHandCursor)
@@ -143,12 +140,7 @@ class MainWindow(QMainWindow):
             self.showMaximized()
         else:
             self.showFullScreen()
-        self._full_icon()
 
-    def _full_icon(self):
-        fs = self.isFullScreen()
-        self.full_b.setIcon(fullscreen_icon(theme.pal["text"], exit_=fs))
-        self.full_b.setToolTip("Salir de pantalla completa (F11 o Esc)" if fs else "Pantalla completa (F11)")
 
     def _add_page(self, key, page):
         self.page_by_key[key] = page
@@ -239,7 +231,6 @@ class MainWindow(QMainWindow):
         self.logo.setPixmap(app_icon(34))
         self.theme_b.setIcon(sun_moon_icon(theme.dark, pal["text"]))
         self.theme_b.setToolTip("Cambiar a tema claro" if theme.dark else "Cambiar a tema oscuro")
-        self._full_icon()
         self.settings.setValue("dark", theme.dark)
         for p in self.page_by_key.values():
             p.on_theme(pal)

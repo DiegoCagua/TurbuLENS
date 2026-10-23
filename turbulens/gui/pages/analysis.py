@@ -29,7 +29,7 @@ from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
 from ..session import example_video
 from ..theme import theme
-from ..widgets import dialog_options, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
+from ..widgets import TRANSPORT_HELP, ask, ask_text, notify, dialog_options, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
 
 
@@ -124,7 +124,7 @@ class VideoPage(Page):
         if p:
             self.open(p)
         else:
-            QMessageBox.information(self, "Video de ejemplo",
+            notify(self, "Video de ejemplo",
                                     "No se encontró la carpeta «ejemplos» junto al programa. "
                                     "Copia ahí un video (por ejemplo el de Altair) para usarlo como ejemplo.")
 
@@ -134,7 +134,7 @@ class VideoPage(Page):
             self.s.open_video(path)
         except (VideoError, Exception) as exc:
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self, "No se pudo abrir el video", str(exc))
+            notify(self, "No se pudo abrir el video", str(exc), "warning")
             return
         QApplication.restoreOverrideCursor()
         self.refresh()
@@ -199,8 +199,8 @@ TRAMO_HELP = (
     "cualquier momento con nubes o golpes. Se recomiendan al menos 15 a 20 segundos estables.<br><br>"
     "<b>Línea de tiempo:</b> arrastra las barras de <b>Entrada</b> y <b>Salida</b>; haz clic en otro punto para ver ese cuadro."
     "<br><br><b>Botones:</b><ul style='margin-left:-16px'>"
-    "<li><b>&lt;&lt;</b> y <b>&gt;&gt;</b> reproducen hacia atrás o hacia adelante a velocidad constante (elige la "
-    "velocidad en la lista). Presiónalos otra vez para detener.</li>"
+    "<li><b>&lt;&lt;</b> y <b>&gt;&gt;</b> reproducen hacia atrás o hacia adelante a velocidad constante; la lista elige "
+    "la velocidad respecto al video real (<b>1.0×</b> es la original). Presiónalos otra vez para detener.</li>"
     "<li><b>&lt;</b> y <b>&gt;</b> mueven exactamente un cuadro.</li>"
     "<li><b>[ Entrada</b> y <b>Salida ]</b> marcan el inicio y el fin del tramo en el cuadro que estás viendo.</li>"
     "<li><b>Ir a</b>: escribe un número de cuadro (por ejemplo 1820) o un tiempo (por ejemplo 01:05.5).</li></ul>"
@@ -213,7 +213,6 @@ class RegionPage(Page):
     subtitle = "Dónde mirar en cada cuadro y qué parte del video usar"
     scrollable = False
 
-    SPEEDS = [("2×", 2), ("4×", 4), ("8×", 8), ("16×", 16), ("32×", 32)]
 
     def __init__(self, main):
         super().__init__(main)
@@ -286,18 +285,12 @@ class RegionPage(Page):
         self.lay.addLayout(hbox(label("Tramo", "h2"), HelpButton(TRAMO_HELP), "stretch", self.span_lbl, spacing=8))
         self.lay.addWidget(self.timeline)
 
-        self.b_rew = button("<<", "transport", self._rew, checkable=True, tip="Reproducir hacia atrás")
-        self.b_prev = button("<", "transport", lambda: self.step(-1), tip="Cuadro anterior")
-        self.b_next = button(">", "transport", lambda: self.step(1), tip="Cuadro siguiente")
-        self.b_ff = button(">>", "transport", self._ff, checkable=True, tip="Reproducir hacia adelante")
+        self.b_rew, self.b_prev, self.b_next, self.b_ff = transport_buttons(
+            self._rew, lambda: self.step(-1), lambda: self.step(1), self._ff)
         self.pos_lbl = label("00:00.0 · 0", "mono")
         self.pos_lbl.setMinimumWidth(130)
         self.pos_lbl.setAlignment(Qt.AlignCenter)
-        self.speed = QComboBox()
-        for t, v in self.SPEEDS:
-            self.speed.addItem(t, v)
-        self.speed.setCurrentIndex(2)
-        self.speed.setToolTip("Velocidad de reproducción")
+        self.speed = speed_combo(8.0)
         self.goto = QLineEdit()
         self.goto.setPlaceholderText("cuadro o mm:ss.s")
         self.goto.setFixedWidth(130)
@@ -339,14 +332,31 @@ class RegionPage(Page):
         s = self.s
         idx = int(min(max(idx, 0), s.info.n_frames - 1))
         s.frame = idx
+        prev_idx = getattr(self, "_shown_idx", None)
         arr = s.frame_image(idx)
         self._arr = arr
+        self._shown_idx = idx
+        if s.track and prev_idx is not None and prev_idx != idx:
+            self._follow_star(arr)
         self.canvas.track_roi = s.tracked_roi_at(idx)
         self.canvas.overlay = f"Zoom {self.canvas.zoom:g}× · cuadro {miles(idx)} · {fmt_time(idx / s.info.fps)}"
         self.canvas.set_frame(arr)
         self.timeline.set_state(s.tin, s.tout, idx)
         self.pos_lbl.setText(f"{fmt_time(idx / s.info.fps)} · {miles(idx)}")
         self._update_zoomview()
+
+    def _follow_star(self, arr):
+        """«Seguir a la estrella»: recentra la región sobre la imagen doble en el cuadro que se muestra."""
+        x, y, w, h = self.s.roi
+        try:
+            cx, cy = pipeline.find_star(arr, near=(x + w / 2, y + h / 2), radius=int(max(48, 1.5 * max(w, h))))
+        except Exception:
+            return
+        roi = self.canvas._clamp_roi(cx - w / 2, cy - h / 2, w, h)
+        if roi != tuple(self.s.roi):
+            self.s.set_roi(roi, frame=self.s.frame)
+            self.canvas.set_roi(roi, recenter=True)
+            self._sync_spins()
 
     def _update_zoomview(self):
         if getattr(self, "_arr", None) is None:
@@ -490,7 +500,7 @@ class RegionPage(Page):
         now = time.perf_counter()
         dt = min(0.25, now - self._last_t)
         self._last_t = now
-        sp = self.speed.currentData() or 8
+        sp = self.speed.currentData() or 1.0
         self._play_pos += self._play_dir * sp * self.s.info.fps * dt
         n = self.s.info.n_frames
         if self._play_pos <= 0 or self._play_pos >= n - 1:
@@ -621,9 +631,11 @@ class ParamsPage(Page):
         for w in (self.pix, self.focal):
             w.valueChanged.connect(self._calc)
         tel.add(calc)
-        tel.add(label("Consulta la escala de tu equipo: "
-                      "<a href='https://astronomy.tools/calculators/ccd'>calculadora por telescopio y cámara (astronomy.tools)</a>"
-                      " · <a href='https://skiesandscopes.com/pixel-scale-calculator/'>cómo se calcula (Skies &amp; Scopes)</a>",
+        from ... import SCALE_LINKS
+
+        links = "<br>".join(f"• <a href='{u}'>{t}</a>" for u, t in SCALE_LINKS)
+        tel.add(label("<b>Datos para tu equipo:</b> la focal del telescopio está en la etiqueta del tubo (por ejemplo "
+                      "«D = 203 mm, F = 2032 mm») y el tamaño de píxel en la ficha de la cámara.<br>" + links,
                       "small", wrap=True, rich=True))
         self.prof = QComboBox()
         self.prof.setMinimumWidth(160)
@@ -784,7 +796,7 @@ class ParamsPage(Page):
     def _save_profile(self):
         import json
 
-        name, ok = QInputDialog.getText(self, "Guardar perfil", "Nombre del perfil (ej. «Celestron 8 + Nikon D5300»):")
+        name, ok = ask_text(self, "Guardar perfil", "Nombre del perfil (ej. «Celestron 8 + Nikon D5300»):")
         if not ok or not name.strip():
             return
         d = self._read_profiles()
@@ -931,7 +943,7 @@ class ProcessPage(Page):
             try:
                 os.makedirs(s.out_dir, exist_ok=True)
             except OSError as exc:
-                QMessageBox.warning(self, "Carpeta de salida", f"No se pudo crear la carpeta:\n{exc}")
+                notify(self, "Carpeta de salida", f"No se pudo crear la carpeta:\n{exc}", "warning")
                 return
         # Lector propio para el hilo (el de la vista previa sigue libre)
         from ...core.video import VideoReader
@@ -994,7 +1006,7 @@ class ProcessPage(Page):
     def _failed(self, msg):
         self._finish_thread()
         self.state.setText("Ocurrió un error")
-        QMessageBox.critical(self, "Error al procesar", msg)
+        notify(self, "Error al procesar", msg, "error")
 
     def cancel(self):
         if self.worker is not None:
@@ -1030,8 +1042,17 @@ def export_panel(owner, on_export, include_report=True, title="Exportar"):
     card.add(grid)
     msg = label("", "small", wrap=True)
     btn = button("Exportar…", "primary", lambda: on_export([k for c in chips.values() for k in c.values()], msg))
-    card.add(hbox(btn, msg, "stretch"))
+    open_b = button("Abrir carpeta", slot=lambda: card._folder and open_folder(card._folder))
+    open_b.setVisible(False)
+    card.add(hbox(btn, msg, open_b, "stretch"))
     card.chips = chips
+    card._folder = None
+
+    def show_open(folder):
+        card._folder = folder
+        open_b.setVisible(True)
+
+    card.show_open = show_open
     return card
 
 
@@ -1213,12 +1234,11 @@ class ResultsPage(Page):
             out += reports.export_analysis_charts(self.specs, formats, folder, base, rec)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self, "Exportar", f"No se pudo exportar:\n{exc}")
+            notify(self, "Exportar", f"No se pudo exportar:\n{exc}", "warning")
             return
         QApplication.restoreOverrideCursor()
-        msg.setText(f"{len(out)} archivo(s) en {folder}")
-        if QMessageBox.question(self, "Exportado", f"Se crearon {len(out)} archivos.\n¿Abrir la carpeta?") == QMessageBox.Yes:
-            open_folder(folder)
+        msg.setText(f"Listo: {len(out)} archivo(s) en {folder}")
+        self.exp.show_open(folder)
 
 
 # =============================================================================
@@ -1330,7 +1350,7 @@ class HistoryPage(Page):
             return
         arrs = self.s.history.load_arrays(r["id"])
         if not arrs or "mediciones" not in arrs:
-            QMessageBox.information(self, "Historial", "No se encontraron las mediciones por cuadro de este análisis.")
+            notify(self, "Historial", "No se encontraron las mediciones por cuadro de este análisis.")
             return
         import json
 
@@ -1358,10 +1378,10 @@ class HistoryPage(Page):
         r = self._current()
         if not r:
             return
-        lab, ok = QInputDialog.getText(self, "Etiqueta", "Etiqueta:", text=r.get("label") or "")
+        lab, ok = ask_text(self, "Etiqueta", "Etiqueta:", r.get("label") or "")
         if not ok:
             return
-        notes, ok = QInputDialog.getMultiLineText(self, "Notas", "Notas (condiciones, viento, nubes, equipo):", r.get("notes") or "")
+        notes, ok = ask_text(self, "Notas", "Notas (condiciones, viento, nubes, equipo):", r.get("notes") or "", multiline=True)
         if not ok:
             return
         self.s.history.update_notes(r["id"], notes, lab)
@@ -1371,7 +1391,7 @@ class HistoryPage(Page):
         sel = self._selected()
         if not sel:
             return
-        if QMessageBox.question(self, "Eliminar", f"¿Eliminar {len(sel)} análisis del historial?") != QMessageBox.Yes:
+        if not ask(self, "Eliminar", f"¿Eliminar {len(sel)} análisis del historial?"):
             return
         for r in sel:
             self.s.history.delete(r["id"])
@@ -1395,9 +1415,8 @@ class HistoryPage(Page):
             out += reports.export_history_charts(sel, formats, folder, base)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
-            QMessageBox.warning(self, "Exportar", f"No se pudo exportar:\n{exc}")
+            notify(self, "Exportar", f"No se pudo exportar:\n{exc}", "warning")
             return
         QApplication.restoreOverrideCursor()
-        msg.setText(f"{len(out)} archivo(s) en {folder}")
-        if QMessageBox.question(self, "Exportado", f"Se crearon {len(out)} archivos.\n¿Abrir la carpeta?") == QMessageBox.Yes:
-            open_folder(folder)
+        msg.setText(f"Listo: {len(out)} archivo(s) en {folder}")
+        self.exp.show_open(folder)

@@ -3,15 +3,17 @@
 """TurbuLENS: separa videos de un DIMM en imágenes, mide el seeing y enseña estadística.
 
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia.
-Autores: Diego Fernando Cagua Lozada (estudiante del pregrado de Física) y Fredy Esteban Cruz Ospina.
+Autores: Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del pregrado de Física,
+Universidad Nacional de Colombia.
 """
 
 __version__ = "1.1.2"
 
 APP_NAME = "TurbuLENS"
-AUTHORS = [("Diego Fernando Cagua Lozada", "Estudiante del pregrado de Física"), ("Fredy Esteban Cruz Ospina", "")]
+AUTHORS = [("Diego Fernando Cagua Lozada", "Estudiante del pregrado de Física · Universidad Nacional de Colombia"),
+           ("Fredy Esteban Cruz Ospina", "Estudiante del pregrado de Física · Universidad Nacional de Colombia")]
 AUTHOR = "Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina"
-AUTHOR_ROLE = "Estudiante del pregrado de Física"
+AUTHOR_ROLE = "Estudiantes del pregrado de Física · Universidad Nacional de Colombia"
 INSTITUTION = "Observatorio Astronómico Nacional · Universidad Nacional de Colombia"
 REPO_URL = "https://github.com/DiegoCagua/TurbuLENS"
 LICENSE_NAME = "PolyForm Noncommercial 1.0.0"
@@ -35,3 +37,11 @@ def citation_apa() -> str:
 
 def citation_bibtex() -> str:
     return CITATION_BIBTEX.format(v=__version__)
+
+# Fuentes de datos para la escala de placa (se muestran en Parámetros y en Acerca de).
+SCALE_LINKS = [
+    ("https://byronbayobservatory.com.au/astronomy-calculator",
+     "Dylan's Astronomy Setup Calculator: base de datos de 174 telescopios y 65 cámaras (focal y tamaño de píxel)"),
+    ("https://apotelyt.com/camera-specs/nikon-d5300-sensor-pixels",
+     "Apotelyt: tamaño de píxel de cada cámara (ej. Nikon D5300: 3,91 µm; busca tu modelo)"),
+]

@@ -16,9 +16,11 @@ import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
 from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QRadialGradient
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QFileDialog, QGridLayout, QHBoxLayout, QLabel, QPushButton, QSizePolicy, QSlider, QSpinBox,
-    QVBoxLayout, QWidget,
+    QCheckBox, QComboBox, QFileDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QPushButton, QSizePolicy, QSlider,
+    QSpinBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
+
+import os
 
 from ... import charts
 from ...charts import ChartSpec, Series, histogram_spec
@@ -26,7 +28,7 @@ from ...core import stats
 from ...core.dimm import DimmParams, k_coefficients, r0_from_variance, seeing_from_r0
 from ..session import resource_path
 from ..theme import theme
-from ..widgets import dialog_options, Card, ChipGroup, HelpButton, button, hbox, label, vbox
+from ..widgets import FormulaLabel, dialog_options, Card, ChipGroup, HelpButton, button, hbox, label, vbox
 from .base import Page
 
 
@@ -79,15 +81,22 @@ class MiniQuiz(Card):
             self.add(b)
         self.fb = label("", wrap=True)
         self.add(self.fb)
+        self.answered = False
 
     def pick(self, i):
+        if self.answered:  # solo se puede responder una vez por sesión
+            return
+        self.answered = True
+        for b in self.btns:
+            b.setCursor(Qt.ArrowCursor)
         for j, b in enumerate(self.btns):
             b.setProperty("state", "ok" if j == self.ok else ("bad" if j == i else ""))
             b.style().unpolish(b)
             b.style().polish(b)
         pal = theme.pal
         right = i == self.ok
-        self.fb.setText(self.good if right else self.bad)
+        self.fb.setText((self.good if right else self.bad) + "<br><span style='font-weight:400'>Respuesta registrada: "
+                        "solo se puede responder una vez por sesión.</span>")
         self.fb.setStyleSheet(f"color:{pal['good'] if right else pal['bad']}; font-weight:600;")
 
 
@@ -133,6 +142,7 @@ class LessonPage(Page):
     text = ""
     tryit: list[str] = []
     quiz = None  # (pregunta, opciones, correcta, bien, mal)
+    formulas: list = []  # [(nombre de la fórmula, texto corto)] mostradas en LaTeX
 
     def __init__(self, main):
         super().__init__(main)
@@ -152,6 +162,12 @@ class LessonPage(Page):
         tl = label(self.text, wrap=True, rich=True)
         tl.setStyleSheet("font-size:15px; line-height:150%;")
         tc.add(tl)
+        for name, cap in self.formulas:
+            fb = Card(kind="panel2", margins=(12, 10, 12, 10))
+            if cap:
+                fb.add(label(cap, "small"))
+            fb.add(FormulaLabel(name))
+            tc.add(fb)
         if self.tryit:
             tc.add(label("Pruébalo", "h2"))
             tc.add(label("".join(f"• {t}<br>" for t in self.tryit), wrap=True, rich=True))
@@ -177,7 +193,51 @@ class LessonPage(Page):
         row.addWidget(lw, 2)
         row.addLayout(right, 3)
         self.lay.addLayout(row)
+        self.table_data = None
         self.build()
+        self.export_msg = label("", "small")
+        self.controls.add(hbox(label("Guardar los datos que ves:", "small"),
+                               button("CSV…", slot=lambda: self.export("csv")),
+                               button("Excel…", slot=lambda: self.export("xlsx")), self.export_msg, "stretch"))
+
+    def export(self, fmt):
+        """Guarda en CSV o Excel exactamente los datos de la gráfica actual."""
+        if not self.table_data:
+            d = self.data()
+            self.table_data = (["tiempo_s", "distancia_px"], [d["t"], d["sep"]])
+        headers, cols = self.table_data
+        ext = "csv" if fmt == "csv" else "xlsx"
+        name = f"turbulens_{self.__class__.__name__[2:].lower()}.{ext}"
+        flt = "CSV (*.csv)" if fmt == "csv" else "Excel (*.xlsx)"
+        p, _ = QFileDialog.getSaveFileName(self, "Guardar datos", name, flt, options=dialog_options())
+        if not p:
+            return
+        if not p.lower().endswith("." + ext):
+            p += "." + ext
+        cols = [np.asarray(c) for c in cols]
+        rows = [[(round(float(c[i]), 6) if np.issubdtype(c.dtype, np.floating) else int(c[i])) for c in cols]
+                for i in range(len(cols[0]))]
+        from ... import citation_apa
+
+        try:
+            if fmt == "csv":
+                import csv
+
+                with open(p, "w", newline="", encoding="utf-8") as fh:
+                    w = csv.writer(fh)
+                    w.writerow(headers)
+                    w.writerows(rows)
+                    w.writerow([])
+                    w.writerow(["Generado con TurbuLENS · " + citation_apa()])
+            else:
+                from ...core.export import write_xlsx
+
+                write_xlsx(p, [(self.title[:31] or "Datos", headers, rows),
+                               ("Créditos", ["TurbuLENS"], [[citation_apa()]])])
+        except Exception as exc:
+            self.export_msg.setText(f"No se pudo guardar: {exc}")
+            return
+        self.export_msg.setText(f"Guardado: {os.path.basename(p)} ({len(rows)} filas)")
 
     # Datos activos
     def data(self) -> dict:
@@ -256,22 +316,37 @@ class L1Datos(LessonPage):
         self.n = slider(20, 2000, 240, 10)
         self.n_lbl = label("", "mono")
         self.ctl("Cuadros mostrados", self.n, self.n_lbl)
-        self.first = label("", "mono", wrap=True)
-        self.controls.add(label("Los primeros datos:", "small"), self.first)
+        self.tbl = QTableWidget(0, 3)
+        self.tbl.setHorizontalHeaderLabels(["Cuadro", "Tiempo (s)", "Distancia (px)"])
+        self.tbl.verticalHeader().setVisible(False)
+        self.tbl.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.tbl.setAlternatingRowColors(True)
+        self.tbl.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.tbl.setMinimumHeight(190)
+        self.tbl.setMaximumHeight(230)
+        self.controls.add(label("Tabla de los datos mostrados:", "small"), self.tbl)
 
     def update_view(self, *a):
         d = self.data()
         n = min(self.n.value(), d["sep"].size)
         self.n_lbl.setText(str(n))
         t, x = d["t"][:n], d["sep"][:n]
+        self.table_data = (["cuadro", "tiempo_s", "distancia_px"], [np.arange(n), t, x])
         self.show_chart(ChartSpec(title="Distancia entre los dos puntos, cuadro a cuadro", xlabel="Tiempo (s)",
                                   ylabel="Distancia (px)", legend=False,
                                   series=[Series("line", x=t, y=x, color="accent", width=1.2, alpha=0.6),
                                           Series("scatter", x=t, y=x, color="accent", size=2.2)]))
-        self.first.setText("   ".join(f"{v:.2f}".replace(".", ",") for v in d["sep"][:10]) + " …")
-        s = stats.summarize(d["sep"])
-        self.read.set([("Datos en total", f"{s.n:,}".replace(",", ".")), ("Mínimo", f(s.min, 2) + " px"),
-                       ("Máximo", f(s.max, 2) + " px")])
+        self.tbl.setRowCount(n)
+        for i in range(n):
+            for j, v in enumerate((str(i), f(float(t[i]), 3), f(float(x[i]), 3))):
+                it = QTableWidgetItem(v)
+                it.setTextAlignment(Qt.AlignCenter)
+                self.tbl.setItem(i, j, it)
+        s = stats.summarize(x)  # solo los datos mostrados
+        self.read.set([("Datos mostrados", f"{s.n:,}".replace(",", ".")), ("Mínimo", f(s.min, 2) + " px"),
+                       ("Máximo", f(s.max, 2) + " px"), ("Media", f(s.mean, 3) + " px"),
+                       ("Duración", f(float(t[-1] - t[0]) if n > 1 else 0.0, 2) + " s"),
+                       ("Datos disponibles", f"{d['sep'].size:,}".replace(",", "."))])
 
 
 class L2Histograma(LessonPage):
@@ -287,6 +362,7 @@ class L2Histograma(LessonPage):
     tryit = ["Usa muy pocos intervalos: se pierde el detalle.",
              "Usa muchísimos: aparecen huecos y picos que son solo ruido.",
              "Busca un número intermedio en el que se vea una forma clara."]
+    formulas = [("frecuencia", "Frecuencia relativa del intervalo k")]
     quiz = ("¿Qué pasa si usas demasiados intervalos con pocos datos?",
             ["El histograma se ve más preciso", "Aparecen huecos y picos sin significado", "Las barras se vuelven más altas"], 1,
             "Correcto: cada intervalo tiene tan pocos datos que la forma se vuelve dentada.",
@@ -307,6 +383,8 @@ class L2Histograma(LessonPage):
         edges = stats.nice_bins(x, nb)
         counts, _ = np.histogram(x, edges)
         y = counts / max(1, x.size) if self.rel.isChecked() else counts
+        self.table_data = (["desde_px", "hasta_px", "frecuencia", "frecuencia_relativa"],
+                           [edges[:-1], edges[1:], counts, counts / max(1, x.size)])
         self.show_chart(ChartSpec(title="Histograma de la distancia", xlabel="Distancia (px)",
                                   ylabel="Frecuencia relativa" if self.rel.isChecked() else "Cuadros", legend=False,
                                   series=[Series("bars", x=edges, y=y, color="accent")], ymin_zero=True))
@@ -320,8 +398,8 @@ class L3MediaMediana(LessonPage):
     number = 3
     title = "Media y mediana"
     subtitle = "Dos formas de encontrar el valor «típico»"
-    text = ("La <b>media</b> (promedio) suma todos los datos y divide entre cuántos son:<br>"
-            "<span style='font-family:monospace'>x̄ = (x₁ + x₂ + … + x_N) / N</span><br><br>"
+    formulas = [("media", "Media")]
+    text = ("La <b>media</b> (promedio) suma todos los datos y divide entre cuántos son (fórmula abajo).<br><br>"
             "La <b>mediana</b> es el dato del medio cuando los ordenamos de menor a mayor: la mitad de los datos queda "
             "por debajo y la otra mitad por encima.<br><br>"
             "Si los datos son simétricos, media y mediana casi coinciden. Si hay datos muy raros, la media se deja "
@@ -347,6 +425,7 @@ class L3MediaMediana(LessonPage):
         k = self.bad.value()
         rng = np.random.default_rng(1)
         x = np.concatenate([x, rng.uniform(0.2, 1.5, k)])
+        self.table_data = (["dato", "distancia_px", "es_dato_raro"], [np.arange(x.size), x, np.r_[np.zeros(n, int), np.ones(k, int)]])
         self.n_lbl.setText(str(n))
         self.bad_lbl.setText(str(k))
         s = stats.summarize(x)
@@ -362,12 +441,11 @@ class L4Dispersion(LessonPage):
     title = "Dispersión: varianza y desviación estándar"
     subtitle = "Qué tan separados están los datos de la media"
     text = ("Dos grupos pueden tener la misma media y ser muy distintos: uno con datos apretados y otro muy disperso. "
-            "La <b>desviación estándar</b> σ mide la distancia típica de los datos a la media:<br>"
-            "<span style='font-family:monospace'>σ = √( Σ (xᵢ − x̄)² / (N − 1) )</span><br>"
-            "La <b>varianza</b> es σ².<br><br>"
+            "La <b>desviación estándar</b> σ mide la distancia típica de los datos a la media. La <b>varianza</b> es σ².<br><br>"
             "<b>Aquí está la clave del experimento:</b> si el aire estuviera quieto, la distancia entre los dos puntos "
             "sería siempre igual y σ sería cero. La turbulencia hace que la distancia cambie; <b>σ mide la turbulencia</b>. "
             "Con σ y la física del instrumento se calcula el seeing.")
+    formulas = [("desviacion", "Desviación estándar"), ("seeing", "Del σ al seeing (modelo de Tokovinin, 2002)")]
     tryit = ["Mueve «Turbulencia»: la campana se ensancha o se angosta.",
              "Fíjate en que la media no cambia, pero σ y el seeing sí."]
     quiz = ("Si cada desviación (xᵢ − x̄) se duplica, la desviación estándar…", ["Se duplica", "Se cuadruplica", "No cambia"], 0,
@@ -387,6 +465,7 @@ class L4Dispersion(LessonPage):
         x0 = d["sep"]
         m = float(np.mean(x0))
         x = m + k * (x0 - m)
+        self.table_data = (["cuadro", "distancia_real_px", "distancia_con_turbulencia_px"], [np.arange(x.size), x0, x])
         s = stats.summarize(x)
         lim = (m - 4 * 2.5 * np.std(x0), m + 4 * 2.5 * np.std(x0))
         sp = histogram_spec(x, bins=60, title="La banda sombreada es x̄ ± σ", xlabel="Distancia (px)", normal=True,
@@ -406,6 +485,7 @@ class L5Normal(LessonPage):
             "<br>• cerca del 68 % de los datos está a menos de 1 σ de la media,<br>• cerca del 95 % a menos de 2 σ,"
             "<br>• casi todos (99,7 %) a menos de 3 σ.<br><br>"
             "Compara los porcentajes de tus datos reales con los de la teoría.")
+    formulas = [("normal", "Distribución normal (campana de Gauss)")]
     tryit = ["Activa las bandas de 1, 2 y 3 σ.", "¿Se parece la curva teórica a las barras reales?"]
     quiz = ("Aproximadamente, ¿qué porcentaje de los datos cae a menos de 2 σ de la media?", ["50 %", "68 %", "95 %"], 2,
             "¡Exacto! Alrededor del 95 %.", "Revisa la regla 68–95–99,7.")
@@ -419,6 +499,7 @@ class L5Normal(LessonPage):
     def update_view(self, *a):
         d = self.data()
         x = d["sep"]
+        self.table_data = (["cuadro", "distancia_px"], [np.arange(x.size), x])
         s = stats.summarize(x)
         k = self.k.currentIndex() + 1
         sp = histogram_spec(x, bins=50, title="Datos reales y curva normal teórica", xlabel="Distancia (px)",
@@ -436,10 +517,10 @@ class L6Muestras(LessonPage):
     subtitle = "¿Cuántos cuadros necesito para confiar en el resultado?"
     text = ("Si tomamos solo unos pocos cuadros al azar, su media cambia cada vez. Si repetimos eso miles de veces, las "
             "medias también forman una campana (es el <b>teorema del límite central</b>).<br><br>"
-            "El ancho de esa campana de medias es el <b>error estándar de la media</b>:<br>"
-            "<span style='font-family:monospace'>error = σ / √n</span><br><br>"
+            "El ancho de esa campana de medias es el <b>error estándar de la media</b> (fórmula abajo).<br><br>"
             "Por eso grabamos miles de cuadros: con <b>4 veces más</b> cuadros el error se reduce a la <b>mitad</b>; con "
             "100 veces más, a la décima parte.")
+    formulas = [("error", "Error estándar de la media")]
     tryit = ["Pon un tamaño de muestra pequeño (5) y luego grande (500).",
              "Compara el error predicho σ/√n con la dispersión real de las 1.000 medias."]
     quiz = ("Si usas 4 veces más cuadros, el error de la media…", ["Se multiplica por 4", "Se reduce a la mitad", "No cambia"], 1,
@@ -462,6 +543,7 @@ class L6Muestras(LessonPage):
         n = self.n.value()
         self.n_lbl.setText(str(n))
         means = stats.sample_means(x, n, repeats=1000, seed=self.seed)
+        self.table_data = (["muestra", f"media_de_{n}_cuadros_px"], [np.arange(1, means.size + 1), means])
         s = stats.summarize(x)
         sm = stats.summarize(means)
         lim = (s.mean - 4 * s.std / math.sqrt(2), s.mean + 4 * s.std / math.sqrt(2))
@@ -482,6 +564,7 @@ class L7Atipicos(LessonPage):
             "68 datos malos entre 8.484, la desviación estándar <b>casi se duplicó</b> y el seeing salía peor de lo real."
             "<br><br>TurbuLENS detecta esos cuadros y además aplica un <b>recorte robusto</b>: descarta los datos que se "
             "alejan más de 5 «σ robustas» de la mediana (usa la MAD, que no se deja arrastrar por los extremos).")
+    formulas = [("mad", "Desviación robusta (no se deja arrastrar por los atípicos)")]
     tryit = ["Agrega detecciones fallidas y mira cuánto crece σ.", "Activa la limpieza: σ vuelve a su valor real."]
     quiz = ("Unos pocos datos falsos cercanos a 0 px hacen que σ…", ["Aumente mucho", "Disminuya", "No cambie"], 0,
             "Exacto: como están muy lejos de la media, pesan muchísimo en la suma de cuadrados.",
@@ -505,6 +588,7 @@ class L7Atipicos(LessonPage):
             keep = stats.sigma_clip_mask(x, 5.0)
             removed = int((~keep).sum())
             x = x[keep]
+        self.table_data = (["dato", "distancia_px"], [np.arange(x.size), x])
         s = stats.summarize(x)
         s0 = stats.summarize(d["sep"])
         sp = histogram_spec(x, bins=70, title="Histograma (los atípicos aparecen a la izquierda)", xlabel="Distancia (px)",
@@ -524,6 +608,7 @@ class L8Correlacion(LessonPage):
             "• r ≈ 0: no hay relación lineal.<br><br>"
             "La atmósfera tiene «memoria» corta: un cuadro se parece al siguiente (r alto) pero no a uno de medio segundo "
             "después. Así se ve que la turbulencia cambia en milisegundos.")
+    formulas = [("correlacion", "Coeficiente de correlación de Pearson")]
     tryit = ["Compara «un cuadro y el siguiente» con «medio segundo después».",
              "Mira el movimiento longitudinal contra el transversal."]
     quiz = ("Si r está muy cerca de 0, significa que…", ["Las variables son iguales", "No hay relación lineal entre ellas",
@@ -550,6 +635,7 @@ class L8Correlacion(LessonPage):
             x, y = sep[:-lag], sep[lag:]
             xl, yl = "Distancia en el cuadro i (px)", f"Distancia en el cuadro i + {lag} (px)"
         r = stats.pearson_r(x, y)
+        self.table_data = (["punto", xl, yl], [np.arange(x.size), x, y])
         step = max(1, x.size // 2500)
         self.show_chart(ChartSpec(title="Diagrama de dispersión", xlabel=xl, ylabel=yl, legend=False,
                                   series=[Series("scatter", x=x[::step], y=y[::step], color="accent", alpha=0.35, size=2.0)]))
@@ -563,7 +649,7 @@ class L9Laboratorio(LessonPage):
     text = ("Combina todo lo aprendido. Elige la variable, cuántos cuadros usar y cómo ver el histograma.<br><br>"
             "<b>Separación</b>: la distancia entre los dos puntos.<br><b>Longitudinal</b>: el movimiento a lo largo de la "
             "línea que une los dos orificios.<br><b>Transversal</b>: el movimiento perpendicular.<br><br>"
-            "Puedes guardar los datos en CSV para seguir analizándolos en una hoja de cálculo.")
+            "Puedes guardar los datos en CSV o Excel para seguir analizándolos en una hoja de cálculo.")
     tryit = ["¿Tienen la misma σ el movimiento longitudinal y el transversal?",
              "¿Con cuántos cuadros se estabiliza la media?"]
 
@@ -583,7 +669,6 @@ class L9Laboratorio(LessonPage):
         self.band = QCheckBox("Banda ± σ")
         self.ctl("Mostrar", self.curve)
         self.ctl("", self.band)
-        self.controls.add(button("Guardar estos datos (CSV)…", slot=self._csv))
 
     def _x(self):
         d = self.data()
@@ -592,7 +677,8 @@ class L9Laboratorio(LessonPage):
         return d[key][:n], d["t"][:n]
 
     def update_view(self, *a):
-        x, _ = self._x()
+        x, t = self._x()
+        self.table_data = (["tiempo_s", self.var.currentText().lower() + "_px"], [t, x])
         self.n_lbl.setText(str(x.size))
         self.b_lbl.setText(str(self.bins.value()))
         sp = histogram_spec(x, bins=self.bins.value(), title=f"{self.var.currentText()}: histograma", xlabel="px",
@@ -603,16 +689,6 @@ class L9Laboratorio(LessonPage):
         self.read.set([("N", str(s.n)), ("Media", f(s.mean)), ("Mediana", f(s.median)), ("σ", f(s.std)),
                        ("Error de la media", f(s.sem, 4)), ("Rango", f"{f(s.min, 2)} – {f(s.max, 2)}")])
 
-    def _csv(self):
-        x, t = self._x()
-        p, _ = QFileDialog.getSaveFileName(self, "Guardar datos", "datos_turbulens.csv", "CSV (*.csv)", options=dialog_options())
-        if not p:
-            return
-        with open(p, "w", encoding="utf-8") as fh:
-            fh.write("tiempo_s,valor_px\n")
-            for a, b in zip(t, x):
-                fh.write(f"{a:.4f},{b:.5f}\n")
-        self.main.toast("Datos guardados.")
 
 
 # ------------------------------------------------------------------- quiz
@@ -669,13 +745,18 @@ class QuizPage(Page):
             self.items.append({"btns": bs, "fb": fb, "ok": ok, "why": why, "ans": None})
             grid.addWidget(c, k // 2, k % 2)
         self.lay.addLayout(grid)
-        self.lay.addLayout(hbox(button("Reiniciar respuestas", slot=self.reset), "stretch"))
+        self.lay.addWidget(label("Cada pregunta se puede responder una sola vez por sesión: piensa bien antes de elegir.",
+                                 "muted", wrap=True))
         self.lay.addStretch(1)
         self._score()
 
     def pick(self, k, i):
         it = self.items[k]
+        if it["ans"] is not None:  # ya respondida: no se puede cambiar
+            return
         it["ans"] = i
+        for b in it["btns"]:
+            b.setCursor(Qt.ArrowCursor)
         pal = theme.pal
         for j, b in enumerate(it["btns"]):
             b.setProperty("state", "ok" if j == it["ok"] else ("bad" if j == i else ""))
@@ -684,16 +765,6 @@ class QuizPage(Page):
         right = i == it["ok"]
         it["fb"].setText(("¡Correcto! " if right else "No exactamente. ") + it["why"])
         it["fb"].setStyleSheet(f"color:{pal['good'] if right else pal['bad']}; font-weight:600;")
-        self._score()
-
-    def reset(self):
-        for it in self.items:
-            it["ans"] = None
-            it["fb"].setText("")
-            for b in it["btns"]:
-                b.setProperty("state", "")
-                b.style().unpolish(b)
-                b.style().polish(b)
         self._score()
 
     def _score(self):
@@ -850,7 +921,7 @@ class AstroSim(Page):
         self.t = slider(5, 100, 35)
         self.t.valueChanged.connect(self._turb)
         ctl.add(hbox(label("Turbulencia"), self.t))
-        self.pause = button("Pausa", slot=self._pause, checkable=True)
+        self.pause = button("❚❚  Pausa", "toggle", self._pause, checkable=True, tip="Pausar o continuar la simulación")
         ctl.add(hbox(self.pause, button("Reiniciar datos", slot=self._reset), "stretch"))
         right.addWidget(ctl)
         cc = Card(margins=(8, 8, 8, 8))
@@ -875,17 +946,21 @@ class AstroSim(Page):
         self.timer.timeout.connect(self._tick)
 
     def _turb(self, v):
-        self.sim.turb = v / 100
-        self._reset()
+        self.sim.turb = v / 100  # los datos se conservan: solo se borran con «Reiniciar datos»
 
     def _pause(self):
         if self.pause.isChecked():
             self.timer.stop()
-        elif self.isVisible():
-            self.timer.start()
+            self.pause.setText("▶  Continuar")
+        else:
+            self.pause.setText("❚❚  Pausa")
+            if self.isVisible():
+                self.timer.start()
 
     def _reset(self):
         self.data = []
+        self.chart.set_spec(ChartSpec(title="Distancias medidas por el simulador"))
+        self.read.set([("Mediciones", "0"), ("σ", "—"), ("Seeing (ilustrativo)", "—")])
 
     def _tick(self):
         self.data.append(self.sim.step())

@@ -103,7 +103,7 @@ El diseño de la interfaz partió de 10 borradores y tres versiones preliminares
 
 ## Créditos
 
-**Autores:** Diego Fernando Cagua Lozada (estudiante del pregrado de Física) y Fredy Esteban Cruz Ospina.
+**Autores:** Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del pregrado de Física de la Universidad Nacional de Colombia.
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia.
 
 Basado en el protocolo *Determina la nitidez del cielo nocturno en tu lugar de observación* (ANDEAN ROAD, Oficina Regional Andina de la Astronomía para el Desarrollo, 2026) y en A. Tokovinin, *From differential image motion to seeing*, PASP 114, 1156 (2002), [arXiv:astro-ph/0111022](https://arxiv.org/abs/astro-ph/0111022).

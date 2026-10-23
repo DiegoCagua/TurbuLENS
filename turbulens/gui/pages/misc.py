@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QFrame, QGridLayout, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
 
 from ... import (APP_NAME, AUTHOR, AUTHOR_ROLE, AUTHORS, INSTITUTION, LICENSE_NAME, LICENSE_SUMMARY, REPO_URL, __version__,
-                 citation_apa, citation_bibtex)
+                 SCALE_LINKS, citation_apa, citation_bibtex)
 from ..theme import theme
 from ..widgets import Card, app_icon, button, hbox, label, sun_moon_icon
 from .base import Page
@@ -123,7 +123,8 @@ class AboutPage(Page):
             ("Institución", INSTITUTION),
             ("Licencia", f"<b>{LICENSE_NAME}</b>. {LICENSE_SUMMARY}<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
             ("Referencias", "<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion "
-                            "to seeing. PASP 114, 1156</a><br>Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)"),
+                            "to seeing. PASP 114, 1156</a><br>Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)<br>"
+                            + "<br>".join(f"<a href='{u}'>{t}</a>" for u, t in SCALE_LINKS)),
             ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl"),
             ("Versión", __version__),
         ]

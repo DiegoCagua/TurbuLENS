@@ -14,7 +14,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QSizePolicy, QS
 
 from .canvas import fmt_time, to_qimage
 from .theme import theme
-from .widgets import button, label
+from .widgets import button, label, speed_combo, transport_buttons
 
 
 class CentroidView(QWidget):
@@ -125,9 +125,7 @@ class CentroidView(QWidget):
 
 
 class CentroidPlayer(QWidget):
-    """Reproductor de la animación de centroides, con controles."""
-
-    SPEEDS = [("Lento", 6), ("Normal", 15), ("Rápido", 30), ("Muy rápido", 60)]
+    """Reproductor de la animación de centroides: mismos botones y velocidades que en Recorte y tramo."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -138,27 +136,27 @@ class CentroidPlayer(QWidget):
         self.meas = None
         self.used = None
         self.fps_video = 30.0
+        self.step_frames = 1
         self.i = 0
+        self._dir = 0
+        self._pos_f = 0.0
+        self._last = 0.0
         lay = QVBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(8)
         lay.addWidget(self.view, 1)
-        self.play_b = button("▶", "transport", self.toggle, checkable=True, tip="Reproducir / pausar")
-        self.prev_b = button("<", "transport", lambda: self.step(-1), tip="Cuadro anterior de la muestra")
-        self.next_b = button(">", "transport", lambda: self.step(1), tip="Cuadro siguiente de la muestra")
+        self.rew_b, self.prev_b, self.next_b, self.ff_b = transport_buttons(
+            lambda: self._play(-1 if self.rew_b.isChecked() else 0), lambda: self.step(-1),
+            lambda: self.step(1), lambda: self._play(1 if self.ff_b.isChecked() else 0))
         self.slider = QSlider(Qt.Horizontal)
         self.slider.valueChanged.connect(self._seek)
-        self.speed = QComboBox()
-        for t, v in self.SPEEDS:
-            self.speed.addItem(t, v)
-        self.speed.setCurrentIndex(1)
-        self.speed.currentIndexChanged.connect(self._speed)
+        self.speed = speed_combo(1.0)
         self.trail = QCheckBox("Rastro")
         self.trail.setChecked(True)
         self.trail.toggled.connect(self._trail)
         row = QHBoxLayout()
         row.setSpacing(6)
-        for w in (self.play_b, self.prev_b, self.slider, self.next_b):
+        for w in (self.rew_b, self.prev_b, self.slider, self.next_b, self.ff_b):
             row.addWidget(w, 1 if w is self.slider else 0)
         lay.addLayout(row)
         row2 = QHBoxLayout()
@@ -172,17 +170,15 @@ class CentroidPlayer(QWidget):
         self.info.setWordWrap(True)
         lay.addWidget(self.info)
         self.timer = QTimer(self)
-        self.timer.timeout.connect(lambda: self.step(1, loop=True))
-        self._speed()
+        self.timer.setInterval(30)
+        self.timer.timeout.connect(self._tick)
 
     def set_data(self, frames, rows, meas, used, fps):
-        self.timer.stop()
-        self.play_b.setChecked(False)
-        self.play_b.setText("▶")
+        self.stop()
         self.frames, self.rows, self.meas, self.used = frames, rows, meas, used
         self.fps_video = fps or 30.0
         ok = frames is not None and rows is not None and len(rows) > 0
-        for w in (self.play_b, self.prev_b, self.next_b, self.slider):
+        for w in (self.rew_b, self.prev_b, self.next_b, self.ff_b, self.slider):
             w.setEnabled(ok)
         if not ok:
             self.view.img = None
@@ -193,42 +189,59 @@ class CentroidPlayer(QWidget):
         self.slider.setRange(0, len(rows) - 1)
         self.slider.setValue(0)
         self.slider.blockSignals(False)
-        step = int(np.median(np.diff(meas["frame"][rows]))) if len(rows) > 1 else 1
-        self.info.setText(f"Muestra de {len(rows)} cuadros (uno de cada {max(1, step)}). Naranja: primer punto · "
+        self.step_frames = max(1, int(np.median(np.diff(meas["frame"][rows])))) if len(rows) > 1 else 1
+        self.info.setText(f"Muestra de {len(rows)} cuadros (uno de cada {self.step_frames}). Naranja: primer punto · "
                           "segundo color: segundo punto · línea: la distancia que se mide en cada cuadro.")
         self.i = 0
         self._show()
-
-    def _speed(self):
-        self.timer.setInterval(int(1000 / (self.speed.currentData() or 15)))
 
     def _trail(self, on):
         self.view.show_trail = on
         self.view.update()
 
-    def toggle(self):
+    def _play(self, direction):
         if self.frames is None:
-            self.play_b.setChecked(False)
-            return
-        if self.play_b.isChecked():
-            self.play_b.setText("❚❚")
-            self.timer.start()
-        else:
-            self.play_b.setText("▶")
+            direction = 0
+        self._dir = direction
+        self.rew_b.setChecked(direction < 0)
+        self.ff_b.setChecked(direction > 0)
+        if direction == 0:
             self.timer.stop()
+            return
+        import time
+
+        self._pos_f = float(self.i)
+        self._last = time.perf_counter()
+        self.timer.start()
 
     def stop(self):
-        self.timer.stop()
-        self.play_b.setChecked(False)
-        self.play_b.setText("▶")
+        self._play(0)
 
-    def step(self, d, loop=False):
+    def _tick(self):
+        import time
+
+        now = time.perf_counter()
+        dt = min(0.25, now - self._last)
+        self._last = now
+        sp = self.speed.currentData() or 1.0
+        # Avanza al ritmo del video real × velocidad (la muestra tiene un cuadro de cada «step_frames»).
+        self._pos_f += self._dir * sp * self.fps_video * dt / self.step_frames
+        n = len(self.rows)
+        if self._pos_f <= 0 or self._pos_f >= n - 1:
+            self._pos_f = min(max(self._pos_f, 0), n - 1)
+            self._goto(int(round(self._pos_f)))
+            self.stop()
+            return
+        self._goto(int(self._pos_f))
+
+    def step(self, d):
         if self.frames is None:
             return
+        self.stop()
+        self._goto(self.i + d)
+
+    def _goto(self, i):
         n = len(self.rows)
-        i = self.i + d
-        if loop:
-            i %= n
         self.i = int(min(max(i, 0), n - 1))
         self.slider.blockSignals(True)
         self.slider.setValue(self.i)
@@ -236,6 +249,7 @@ class CentroidPlayer(QWidget):
         self._show()
 
     def _seek(self, v):
+        self.stop()
         self.i = int(v)
         self._show()
 

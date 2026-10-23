@@ -92,6 +92,7 @@ QPushButton[kind="big"]:hover {{ border-color: {p['accent']}; }}
 QPushButton[kind="drop"] {{ background: {p['panel']}; border: 2px dashed {p['border2']}; border-radius: 22px; font-size: 18px; }}
 QPushButton[kind="drop"]:hover {{ border-color: {p['accent']}; }}
 QPushButton[kind="transport"] {{ font-family: "Consolas", "Menlo", "DejaVu Sans Mono", monospace; font-weight: 600; padding: 4px 8px; min-width: 30px; }}
+QPushButton[kind="toggle"]:checked {{ background: {p['accent']}; color: {p['onAccent']}; border-color: {p['accent']}; }}
 QPushButton[kind="transport"]:checked {{ background: {p['accent']}; color: {p['onAccent']}; border-color: {p['accent']}; }}
 QPushButton[kind="option"] {{ text-align: left; padding: 10px 14px; }}
 QPushButton[kind="option"][state="ok"] {{ border: 2px solid {p['good']}; }}
@@ -110,9 +111,10 @@ QComboBox QAbstractItemView {{ background: {p['panel']}; color: {p['text']}; sel
 QSpinBox::up-button, QSpinBox::down-button, QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {{ width: 16px; border: none; background: transparent; }}
 QCheckBox::indicator {{ width: 18px; height: 18px; border-radius: 4px; border: 1px solid {p['border2']}; background: {p['panel2']}; }}
 QCheckBox::indicator:checked {{ background: {p['accent']}; border-color: {p['accent']}; }}
+QSlider:horizontal {{ min-height: 26px; background: transparent; }}
 QSlider::groove:horizontal {{ height: 6px; background: {p['border']}; border-radius: 3px; }}
 QSlider::sub-page:horizontal {{ background: {p['accent']}; border-radius: 3px; }}
-QSlider::handle:horizontal {{ background: {p['accent']}; width: 16px; height: 16px; margin: -6px 0; border-radius: 8px; }}
+QSlider::handle:horizontal {{ background: {p['accent']}; border: 2px solid {p['panel']}; width: 14px; height: 14px; margin: -6px 0; border-radius: 9px; }}
 QProgressBar {{ background: {p['panel2']}; border: none; border-radius: 6px; height: 12px; text-align: center; color: {p['text']}; }}
 QProgressBar::chunk {{ background: {p['accent']}; border-radius: 6px; }}
 QTableWidget {{ background: {p['panel']}; alternate-background-color: {p['panel2']}; gridline-color: {p['border']}; border: 1px solid {p['border']}; border-radius: 10px; }}
