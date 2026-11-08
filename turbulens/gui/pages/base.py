@@ -36,7 +36,10 @@ class Page(QWidget):
         col.addWidget(self.h1)
         self.sub = label(self.subtitle, "muted", wrap=True)
         col.addWidget(self.sub)  # siempre dentro del diseño: un QLabel suelto se abriría como ventana aparte
-        self.sub.setVisible(bool(self.subtitle))
+        if not self.subtitle:
+            # Solo se oculta. setVisible(True) sobre un widget que todavía no tiene padre lo abre como una ventana
+            # propia por un instante: eran las ventanas que aparecían en Windows al iniciar y al cambiar de idioma.
+            self.sub.setVisible(False)
         head.addLayout(col, 1)
         if self.help_text:
             hb = HelpButton(self.help_text)

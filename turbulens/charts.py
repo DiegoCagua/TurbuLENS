@@ -410,7 +410,7 @@ def _credit(p, rect, scale, pal):
     f.setPointSizeF(7.5 * scale)
     p.setFont(f)
     p.setPen(_col(pal, "muted"))
-    p.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, "TurbuLENS · D. F. Cagua Lozada y F. E. Cruz Ospina · github.com/DiegoCagua/TurbuLENS")
+    p.drawText(rect, Qt.AlignRight | Qt.AlignVCenter, "TurbuLENS · D. F. Cagua Lozada, F. E. Cruz Ospina y S. J. Pinto Sanabria · github.com/DiegoCagua/TurbuLENS")
 
 
 # ------------------------------------------------------------ constructores

@@ -154,6 +154,7 @@ def test_no_popup_windows_while_processing(app, tmp_path):
     w.set_mode("analisis")
     w.page_by_key["video"].open(vid)
     w.session.out_dir = str(tmp_path / "out")
+    w.session.params.scale_arcsec_px = 1.0
     for k in ("region", "parametros", "procesar"):
         w.go(k)
         _pump(50)
@@ -166,4 +167,33 @@ def test_no_popup_windows_while_processing(app, tmp_path):
         w.go(k)
         _pump(150)
         assert _visible_tops() == [w], [type(t).__name__ for t in _visible_tops()]
+    w.close()
+
+
+def test_no_stray_windows_on_start_and_language_change(app, tmp_path):
+    """Ningún widget sin padre se hace visible (en Windows eso abre ventanas sueltas por un instante)."""
+    from PySide6.QtWidgets import QDialog, QMainWindow, QMenu, QWidget
+
+    from turbulens.gui.app import MainWindow
+
+    shown = []
+    orig = QWidget.setVisible
+
+    def spy(self, vis):
+        if vis and self.parent() is None and not isinstance(self, (QMainWindow, QDialog, QMenu)):
+            shown.append(type(self).__name__)
+        return orig(self, vis)
+
+    QWidget.setVisible = spy
+    try:
+        w = MainWindow(data_root=str(tmp_path / "datos"))
+        w.show()
+        _pump(200)
+        w.change_language("en")
+        _pump(600)
+        w.change_language("es")
+        _pump(600)
+    finally:
+        QWidget.setVisible = orig
+    assert shown == [], shown
     w.close()

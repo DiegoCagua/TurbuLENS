@@ -47,6 +47,11 @@ SUMMARY_LABELS = [
     ("eps", "Seeing (″)"),
     ("eps_zenith", "Seeing en el cenit (″)"),
     ("r0_cm", "Parámetro de Fried r0 (cm)"),
+    ("corr_lt", "Correlación r longitudinal–transversal"),
+    ("corr_spots_l", "Correlación r entre los dos spots (longitudinal)"),
+    ("corr_spots_t", "Correlación r entre los dos spots (transversal)"),
+    ("sigma_ratio", "Cociente σt/σl medido"),
+    ("sigma_ratio_expected", "Cociente σt/σl esperado √(Kt/Kl)"),
     ("calidad", "Calidad del cielo"),
     ("D_cm", "Diámetro de orificio (cm)"),
     ("B_cm", "Separación de orificios (cm)"),
@@ -83,7 +88,7 @@ def summary_record(res, dimm: DimmResult, params: DimmParams) -> dict:
     d["notas"] = list(res.notes)
     from .. import __version__, citation_apa
 
-    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina · https://github.com/DiegoCagua/TurbuLENS"
+    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria · https://github.com/DiegoCagua/TurbuLENS"
     d["como_citar"] = citation_apa()
     return d
 

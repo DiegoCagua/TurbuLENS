@@ -82,6 +82,12 @@ class DimmResult:
     eps_zenith: float = float("nan")
     airmass: float = float("nan")
     corr_lt: float = float("nan")
+    # Correlación entre el movimiento de los dos spots (sin la deriva lenta), a lo largo y perpendicular a la línea de base
+    corr_spots_l: float = float("nan")
+    corr_spots_t: float = float("nan")
+    # Cociente σt/σl medido y el esperado por la teoría para esta máscara: √(Kt/Kl)
+    sigma_ratio: float = float("nan")
+    sigma_ratio_expected: float = float("nan")
     # Arreglos por cuadro (no se guardan en la tabla del historial)
     arrays: dict = field(default_factory=dict, repr=False)
 
@@ -99,6 +105,34 @@ def quality_label(eps: float) -> str:
     if eps <= 3.0:
         return "Aceptable"
     return "Muy turbulento"
+
+
+def _detrend(t: np.ndarray, x: np.ndarray, window_s: float = 1.0) -> np.ndarray:
+    """Quita la deriva lenta (promedio móvil de ``window_s`` segundos)."""
+    if x.size < 5:
+        return x - np.mean(x)
+    dt = np.median(np.diff(t)) if t.size > 1 else 1.0
+    k = int(max(3, min(x.size, round(window_s / max(dt, 1e-6)))))
+    ker = np.ones(k) / k
+    pad = np.pad(x, (k // 2, k - 1 - k // 2), mode="edge")
+    return x - np.convolve(pad, ker, mode="valid")
+
+
+def _spot_correlations(meas, used, sgn, ux, uy) -> tuple[float, float]:
+    """Correlación r entre el movimiento del spot A y el del spot B (longitudinal y transversal)."""
+    if used.sum() < 10:
+        return float("nan"), float("nan")
+    flip = sgn < 0  # en esos cuadros los spots venían en el otro orden
+    ax = np.where(flip, meas["x2"], meas["x1"])[used].astype(np.float64)
+    ay = np.where(flip, meas["y2"], meas["y1"])[used].astype(np.float64)
+    bx = np.where(flip, meas["x1"], meas["x2"])[used].astype(np.float64)
+    by = np.where(flip, meas["y1"], meas["y2"])[used].astype(np.float64)
+    t = meas["t"][used].astype(np.float64)
+    al, bl = ax * ux + ay * uy, bx * ux + by * uy
+    at, bt = -ax * uy + ay * ux, -bx * uy + by * ux
+    rl = stats.pearson_r(_detrend(t, al), _detrend(t, bl))
+    rt = stats.pearson_r(_detrend(t, at), _detrend(t, bt))
+    return rl, rt
 
 
 def analyze(meas: np.ndarray, params: DimmParams, clip_k: float = 5.0) -> DimmResult:
@@ -148,6 +182,12 @@ def analyze(meas: np.ndarray, params: DimmParams, clip_k: float = 5.0) -> DimmRe
         corr_lt=stats.pearson_r(lon[used], tra[used]),
     )
     res.arrays = {"sep": sep, "dx": dx, "dy": dy, "lon": lon, "tra": tra, "used": used, "detected": det}
+    if math.isfinite(sl) and sl > 0:
+        res.sigma_ratio = st / sl
+    if params.valid_geometry():
+        kl, kt = k_coefficients(params.B_cm / params.D_cm)
+        res.sigma_ratio_expected = math.sqrt(kt / kl)
+    res.corr_spots_l, res.corr_spots_t = _spot_correlations(meas, used, sgn if det.sum() >= 2 else np.ones(n), ux, uy)
 
     scale = params.scale_arcsec_px
     if scale and scale > 0 and params.valid_geometry():

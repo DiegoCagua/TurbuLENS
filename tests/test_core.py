@@ -239,3 +239,37 @@ def test_finds_star_from_far_or_tiny_region(tmp_path, roi):
     assert res.options.roi[2] >= 24
     sep = np.hypot(res.meas["x1"][v] - res.meas["x2"][v], res.meas["y1"][v] - res.meas["y2"][v])
     assert abs(np.median(sep) - 13.0) < 0.3
+
+
+def test_report_pdf_explains_correlation(tmp_path):
+    """El informe PDF trae la sección que explica r (bug #4) con los valores del análisis."""
+    import os
+
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+    pytest.importorskip("PySide6")
+    from PySide6.QtWidgets import QApplication
+
+    QApplication.instance() or QApplication([])
+    from synthetic import make_video  # noqa: F401
+    from turbulens import reports
+    from turbulens.core.dimm import DimmParams, analyze
+
+    rng = np.random.default_rng(3)
+    n = 600
+    meas = np.zeros(n, dtype=[("t", "f8"), ("x1", "f8"), ("y1", "f8"), ("x2", "f8"), ("y2", "f8"), ("valid", "?")])
+    meas["t"] = np.arange(n) / 30
+    common = rng.normal(0, 1.0, (n, 2))
+    meas["x1"] = 100 + common[:, 0] + rng.normal(0, 0.5, n)
+    meas["y1"] = 100 + common[:, 1] + rng.normal(0, 0.5, n)
+    meas["x2"] = 140 + common[:, 0] + rng.normal(0, 0.5, n)
+    meas["y2"] = 100 + common[:, 1] + rng.normal(0, 0.5, n)
+    meas["valid"] = True
+    p = DimmParams(D_cm=4.2, B_cm=14.4, scale_arcsec_px=1.0)
+    d = analyze(meas, p)
+    assert abs(d.corr_lt) < 0.2 and d.corr_spots_l > 0.5
+    rec = dict(d.summary_dict())
+    rec.update(p.to_dict())
+    title, text = reports.correlation_explanation(rec)
+    assert "r" in title and "Pearson" in text and "Diagnóstico" in text
+    out = reports.export_analysis_charts(reports.analysis_charts(d, meas["t"], 30), ["pdf"], str(tmp_path), "x", rec)
+    assert os.path.getsize(out[0]) > 5000

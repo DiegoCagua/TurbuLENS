@@ -112,7 +112,48 @@ def write_charts_pdf(path: str, specs: list[ChartSpec]) -> None:
     p.end()
 
 
-def write_report_pdf(path: str, title: str, rows: list[tuple[str, str]], specs: list[ChartSpec], notes: str = "") -> None:
+def correlation_explanation(rec: dict) -> tuple[str, str]:
+    """Título y texto de la sección «Cómo leer la correlación r» del informe, con los valores del análisis."""
+    def f(key, d=2):
+        v = rec.get(key)
+        return num(v, d) if isinstance(v, (int, float)) and math.isfinite(v) else "—"
+
+    r_lt = rec.get("corr_lt")
+    ratio, exp = rec.get("sigma_ratio"), rec.get("sigma_ratio_expected")
+    issues = []
+    if isinstance(r_lt, (int, float)) and math.isfinite(r_lt) and abs(r_lt) >= 0.2:
+        issues.append(tr("|r| longitudinal–transversal alto ({})").format(f("corr_lt")))
+    if all(isinstance(v, (int, float)) and math.isfinite(v) for v in (ratio, exp)) and exp > 0 and abs(ratio / exp - 1) > 0.25:
+        issues.append(tr("σt/σl lejos del valor teórico ({} frente a {})").format(f("sigma_ratio"), f("sigma_ratio_expected")))
+    verdict = (tr("los datos son coherentes con turbulencia atmosférica.") if not issues else
+               tr("revisa el tramo: ") + "; ".join(issues) + ".")
+    B, D = rec.get("B_cm"), rec.get("D_cm")
+    bd = num(B / D, 2) if B and D else "—"
+    text = "\n\n".join([
+        tr("Qué es r. En cada cuadro el DIMM mide el vector que une los dos spots, y su movimiento se separa en una "
+           "componente longitudinal (a lo largo de la línea que une los orificios) y una transversal (perpendicular). "
+           "El coeficiente de correlación de Pearson, r = Σ(xᵢ − x̄)(yᵢ − ȳ) / √[Σ(xᵢ − x̄)² · Σ(yᵢ − ȳ)²], va de −1 a 1 y "
+           "dice si dos movimientos tienden a variar juntos (r > 0), en sentidos opuestos (r < 0) o sin relación (r ≈ 0)."),
+        tr("r longitudinal–transversal = {}. La turbulencia mueve las dos componentes de forma independiente, así que lo "
+           "esperado es un valor cercano a 0 (|r| < 0,2). Un |r| grande, positivo o negativo, delata un efecto que no es "
+           "turbulencia: vibración o viento en una sola dirección, cambios de foco, una línea de base mal estimada o spots "
+           "confundidos. El signo solo depende de cómo quedaron orientados los ejes; lo que importa es su tamaño.").format(f("corr_lt")),
+        tr("r entre los dos spots = {} (longitudinal) y {} (transversal), tras quitar la deriva lenta. Mide cuánto se mueven "
+           "juntas las dos imágenes. Cerca de 1: domina el movimiento común (vibración del telescopio o seguimiento); el DIMM "
+           "lo cancela al medir la diferencia, así que el seeing sigue siendo válido, pero si es muy grande puede emborronar los "
+           "spots. Entre 0 y 1: lo normal, porque los dos orificios ven parte de la misma turbulencia. Cerca de 0: cada orificio "
+           "ve turbulencia independiente. Negativo: los spots se acercan y se alejan de forma opuesta (cambios de foco o de "
+           "escala) o hubo errores de detección.").format(f("corr_spots_l"), f("corr_spots_t")),
+        tr("Comprobación adicional: el cociente σt/σl medido es {} y el teórico para esta máscara (B/D = {}) es √(Kt/Kl) = {}. "
+           "Si se parecen, la turbulencia se comporta como predice el modelo de Tokovinin.").format(
+            f("sigma_ratio"), bd, f("sigma_ratio_expected")),
+        tr("Diagnóstico: ") + verdict,
+    ])
+    return tr("Cómo leer la correlación r"), text
+
+
+def write_report_pdf(path: str, title: str, rows: list[tuple[str, str]], specs: list[ChartSpec], notes: str = "",
+                     sections: list[tuple[str, str]] | None = None) -> None:
     w = _pdf(path)
     p = QPainter(w)
     page = w.pageLayout().paintRectPixels(w.resolution())
@@ -142,7 +183,31 @@ def write_report_pdf(path: str, title: str, rows: list[tuple[str, str]], specs: 
     if notes:
         y += 16
         p.setPen(QColor(PRINT_PALETTE["muted"]))
-        p.drawText(QRectF(0, y, W, 200), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, notes)
+        r = p.boundingRect(QRectF(0, y, W, 2000), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, notes)
+        p.drawText(QRectF(0, y, W, r.height() + 4), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, notes)
+        y += r.height() + 8
+    bottom = page.height() - 60
+    for head, body in sections or []:
+        fb = QFont(f)
+        fb.setPointSizeF(12)
+        fb.setBold(True)
+        fn = QFont(f)
+        fn.setPointSizeF(9)
+        p.setFont(fn)
+        rb = p.boundingRect(QRectF(0, 0, W, 5000), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, body)
+        if y + 50 + rb.height() > bottom:  # no cabe: a una página nueva
+            w.newPage()
+            _footer(p, w)
+            y = 0
+        y += 18
+        p.setFont(fb)
+        p.setPen(QColor(PRINT_PALETTE["text"]))
+        p.drawText(QRectF(0, y, W, 36), Qt.AlignLeft | Qt.AlignVCenter, head)
+        y += 40
+        p.setFont(fn)
+        p.drawText(QRectF(0, y, W, rb.height() + 6), Qt.TextWordWrap | Qt.AlignLeft | Qt.AlignTop, body)
+        y += rb.height() + 8
+        p.setFont(f)
     _charts_pages(p, w, specs, first_new_page=True)
     p.end()
 
@@ -190,7 +255,7 @@ def export_analysis_charts(specs: list[ChartSpec], formats: Iterable[str], folde
         q = rec.get("calidad") or quality_label(rec.get("eps") or float("nan"))
         notes = tr("Seeing calculado con el modelo de Tokovinin (2002) a partir de la varianza del movimiento diferencial. "
                    "Calidad del cielo: {}.").format(tr(q))
-        write_report_pdf(pth, tr("Informe de seeing"), summary_rows(rec), specs, notes)
+        write_report_pdf(pth, tr("Informe de seeing"), summary_rows(rec), specs, notes, sections=[correlation_explanation(rec)])
         out.append(pth)
     return out
 

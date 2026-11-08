@@ -76,6 +76,7 @@ def test_open_and_process_video_in_each_mode(app, errors, tmp_path):
         s = w.session
         assert s.info is not None and s.info.n_frames == 180
         s.out_dir = str(tmp_path / f"out_{mode}")
+        s.params.scale_arcsec_px = 1.0
         for key in ("region", "parametros", "procesar"):
             w.go(key)
         pg = w.page_by_key["procesar"]
@@ -113,6 +114,7 @@ def test_mi_video_in_lessons(app, errors, tmp_path):
     w.set_mode("analisis")
     w.page_by_key["video"].open(vid)
     w.session.out_dir = str(tmp_path / "out")
+    w.session.params.scale_arcsec_px = 1.0
     for k in ("region", "parametros", "procesar"):
         w.go(k)
     pg = w.page_by_key["procesar"]
@@ -142,3 +144,23 @@ def test_one_file_chooser_everywhere():
         src = p.read_text(encoding="utf-8")
         for f in ("getOpenFileName", "getSaveFileName", "getExistingDirectory", "DontUseNativeDialog"):
             assert f not in src, f"{p.name} usa {f}: debe usar choose_file / choose_folder"
+
+
+def test_processing_blocked_without_scale(app, errors, tmp_path):
+    """Sin escala de placa no se puede procesar: aviso visible y botón desactivado (antes se perdía el seeing)."""
+    from synthetic import make_video
+
+    vid = str(tmp_path / "v.mkv")
+    make_video(vid, n=40, w=320, h=240)
+    w = make_window(tmp_path)
+    w.set_mode("analisis")
+    w.page_by_key["video"].open(vid)
+    w.session.params.scale_arcsec_px = None
+    w.go("procesar")
+    pg = w.page_by_key["procesar"]
+    assert not pg.start_b.isEnabled()
+    assert not pg.scale_warn.isHidden()
+    w.session.params.scale_arcsec_px = 0.6
+    w.go("procesar")
+    assert pg.start_b.isEnabled() and pg.scale_warn.isHidden()
+    w.close()

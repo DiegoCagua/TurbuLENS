@@ -28,7 +28,7 @@ from ...core.writers import FORMATS, estimate_bytes
 from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
 from ..theme import theme
-from ..widgets import LENGTH_CM, LENGTH_MM, LENGTH_UM, WAVE_NM, DecSpin, UnitSpin, AUTO_NAME_NOTE, TRANSPORT_HELP, ask, ask_text, choose_file, choose_folder, free_base, notify, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
+from ..widgets import LENGTH_CM, LENGTH_MM, LENGTH_UM, SENSOR_MM, WAVE_NM, DecSpin, UnitSpin, AUTO_NAME_NOTE, TRANSPORT_HELP, ask, ask_text, choose_file, choose_folder, free_base, notify, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
 from ...i18n import integer, localize_number_text, num, tr
 
@@ -613,6 +613,29 @@ ALT_HELP = (
 )
 
 
+# Cámaras frecuentes: ancho del sensor (mm) y tamaño de píxel (µm). «native»: graba video con los píxeles reales.
+CAMERAS = [
+    ("—", None),
+    ("Nikon D5300 / D5600 (APS-C)", {"sensor_mm": 23.5, "pixel_um": 3.91}),
+    ("Nikon D3300 / D3400 / D3500", {"sensor_mm": 23.5, "pixel_um": 3.91}),
+    ("Canon T5i / 700D", {"sensor_mm": 22.3, "pixel_um": 4.30}),
+    ("Canon T6 / T7 / 2000D", {"sensor_mm": 22.3, "pixel_um": 3.72}),
+    ("QHY174M-GPS", {"sensor_mm": 11.25, "pixel_um": 5.86, "native": True}),
+    ("ZWO ASI174MM", {"sensor_mm": 11.25, "pixel_um": 5.86, "native": True}),
+    ("ZWO ASI120MM", {"sensor_mm": 4.8, "pixel_um": 3.75, "native": True}),
+    ("ZWO ASI290MM", {"sensor_mm": 5.6, "pixel_um": 2.9, "native": True}),
+]
+VIDEO_PIXEL_HELP = (
+    "<b>¿Grabaste en video con una cámara de fotos o un celular?</b><br>La cámara <b>reduce</b> la imagen del sensor "
+    "para el video: una Nikon D5600 tiene 6000 píxeles de ancho, pero su video de 1920 px usa toda esa anchura, así que "
+    "cada píxel del video abarca unos 3 píxeles del sensor.<br><br>Por eso, para un video, el tamaño de píxel que vale "
+    "es el <b>efectivo</b>:<br><b>píxel efectivo = ancho del sensor ÷ ancho del video</b><br>"
+    "(Nikon D5600: 23,5 mm ÷ 1920 px = 12,2 µm, no 3,9 µm).<br><br>Si usas el píxel del sensor, la escala sale unas 3 "
+    "veces más pequeña y el seeing sale mucho mejor de lo que es (por ejemplo 1″ en vez de 3,5″).<br><br>"
+    "Las cámaras astronómicas (QHY, ZWO) graban con los píxeles reales del sensor: para ellas desmarca «Grabé en video» "
+    "o elige la cámara en la lista. El ancho del video se toma del archivo cargado.<br><br>"
+    "Lo más exacto es medir la escala con una estrella doble de separación conocida grabada con el mismo equipo."
+)
 PROFILE_HELP = (
     "<b>Perfiles de equipo</b><br>Guardan D, B, λ, la escala de placa, el tamaño de píxel y la focal de un montaje, para "
     "no escribirlos cada vez. Son los mismos en el modo análisis y en el educativo.<ul style='margin-left:-16px'>"
@@ -680,14 +703,37 @@ class ParamsPage(Page):
         f.addWidget(self.alt, 4, 1, Qt.AlignRight)
         tel.add(f)
         calc = Card(kind="panel2", margins=(12, 10, 12, 10))
-        self.pix = UnitSpin(LENGTH_UM, 0.5, 50, 4.3, "µm", width=86, settings_key="pixel")
-        self.focal = UnitSpin(LENGTH_MM, 50, 20000, 1000, "mm", width=86, settings_key="focal")
+        self.cam = QComboBox()
+        for name, data in CAMERAS:
+            self.cam.addItem(name, data)
+        self.cam.activated.connect(self._camera)
+        self.is_video = QCheckBox(tr("Grabé en video"))
+        self.is_video.setChecked(True)
+        self.is_video.toggled.connect(self._calc)
+        self.pix = UnitSpin(LENGTH_UM, 0.5, 50, 3.91, "µm", width=86, settings_key="pixel")
+        self.sensor = UnitSpin(SENSOR_MM, 1, 60, 23.5, "mm", width=86, settings_key="sensor")
+        self.vid_w = QSpinBox()
+        self.vid_w.setRange(64, 20000)
+        self.vid_w.setValue(1920)
+        self.vid_w.setSuffix(" px")
+        self.vid_w.setFixedWidth(104)
+        self.focal = UnitSpin(LENGTH_MM, 50, 20000, 2032, "mm", width=86, settings_key="focal")
         self.calc_lbl = label("", "mono")
+        self.calc_how = label("", "small", wrap=True)
+        self.photo_row = QWidget()
+        self.photo_row.setLayout(hbox(label("Píxel del sensor", "small"), self.pix, "stretch"))
+        self.video_row = QWidget()
+        self.video_row.setLayout(hbox(label("Ancho del sensor", "small"), self.sensor, label("Ancho del video", "small"),
+                                      self.vid_w, "stretch"))
         calc.add(label("¿No conoces la escala? Calcúlala:", "small"),
-                 hbox(label("Píxel", "small"), self.pix, label("Focal", "small"), self.focal, "stretch"),
+                 hbox(label("Cámara", "small"), self.cam, 1, self.is_video, HelpButton(VIDEO_PIXEL_HELP), "stretch"),
+                 self.photo_row, self.video_row,
+                 hbox(label("Focal del telescopio", "small"), self.focal, "stretch"),
+                 self.calc_how,
                  hbox(self.calc_lbl, "stretch", button("Usar", slot=self._use_calc)))
-        for w in (self.pix, self.focal):
+        for w in (self.pix, self.focal, self.sensor):
             w.valueChanged.connect(self._calc)
+        self.vid_w.valueChanged.connect(self._calc)
         tel.add(calc)
         from ... import SCALE_LINKS
 
@@ -793,6 +839,9 @@ class ParamsPage(Page):
         self.fmt.set_value(s.fmt)
         self.every.setValue(s.every_n)
         self.out.setText(s.out_dir)
+        if s.info is not None:
+            self.vid_w.setValue(int(s.info.width))  # el ancho del video se toma del archivo
+        self._calc()
         self.cal_on.setChecked(bool(s.cal.get("on")))
         for k, e in self.cal_rows.items():
             e.setText(s.cal.get(k) or "")
@@ -873,9 +922,33 @@ class ParamsPage(Page):
             self.cal_msg.setText(tr("No coincide con el video:") + f" {exc}")
             self.cal_msg.setStyleSheet(f"color:{theme.pal['bad']}; font-weight:600;")
 
-    def _calc(self):
-        v = 206.265 * self.pix.value() / self.focal.value()
+    def _camera(self, *_):
+        data = self.cam.currentData()
+        if not data:
+            return
+        self.sensor.setValue(data["sensor_mm"])
+        self.pix.setValue(data["pixel_um"])
+        if data.get("native"):
+            self.is_video.setChecked(False)  # graba con los píxeles reales del sensor
+        self._calc()
+
+    def _effective_pixel(self) -> float:
+        if self.is_video.isChecked():
+            return self.sensor.value() * 1000.0 / max(1, self.vid_w.value())
+        return self.pix.value()
+
+    def _calc(self, *_):
+        video = self.is_video.isChecked()
+        self.photo_row.setVisible(not video)
+        self.video_row.setVisible(video)
+        px = self._effective_pixel()
+        v = 206.265 * px / self.focal.value()
         self.calc_lbl.setText(f"= {fnum(v, 3)} ″/px")
+        if video:
+            self.calc_how.setText(tr("Píxel efectivo del video = {} mm ÷ {} px = {} µm · escala = 206,265 × píxel (µm) ÷ focal (mm)")
+                                  .format(fnum(self.sensor.value(), 2), self.vid_w.value(), fnum(px, 2)))
+        else:
+            self.calc_how.setText(tr("Escala = 206,265 × píxel (µm) ÷ focal (mm)"))
         self._calc_v = v
 
     def _use_calc(self):
@@ -923,7 +996,8 @@ class ParamsPage(Page):
     def _current_profile(self) -> dict:
         p = self.s.params
         return {"D_cm": p.D_cm, "B_cm": p.B_cm, "lambda_nm": p.lambda_nm, "scale": p.scale_arcsec_px,
-                "pixel_um": self.pix.value(), "focal_mm": self.focal.value()}
+                "pixel_um": self.pix.value(), "focal_mm": self.focal.value(), "sensor_mm": self.sensor.value(),
+                "video": self.is_video.isChecked()}
 
     def _write_profiles(self, d: dict):
         import json
@@ -993,6 +1067,10 @@ class ParamsPage(Page):
             self.pix.setValue(v["pixel_um"])
         if v.get("focal_mm"):
             self.focal.setValue(v["focal_mm"])
+        if v.get("sensor_mm"):
+            self.sensor.setValue(v["sensor_mm"])
+        if "video" in v:
+            self.is_video.setChecked(bool(v["video"]))
         self._calc()
         sc = v.get("scale")
         self.scale.setText("" if not sc else fnum(sc, 3))
@@ -1284,6 +1362,20 @@ def open_folder(path):
     QDesktopServices.openUrl(QUrl.fromLocalFile(path))
 
 
+CORR_HELP = (
+    "<b>¿Qué es r?</b><br>El coeficiente de correlación de Pearson (de −1 a 1) dice si dos movimientos varían juntos "
+    "(r &gt; 0), en sentidos opuestos (r &lt; 0) o sin relación (r ≈ 0). El movimiento diferencial se separa en una componente "
+    "<b>longitudinal</b> (a lo largo de la línea que une los orificios) y una <b>transversal</b> (perpendicular)."
+    "<ul style='margin-left:-16px'>"
+    "<li><b>r longitudinal–transversal</b>: debe estar cerca de 0 (|r| &lt; 0,2). Un |r| grande delata algo que no es "
+    "turbulencia: vibración o viento en una dirección, cambios de foco o spots confundidos.</li>"
+    "<li><b>r entre los dos spots</b>: cerca de 1, domina el movimiento común (vibración o seguimiento), que el DIMM cancela; "
+    "entre 0 y 1 es lo normal; cerca de 0, cada orificio ve turbulencia independiente; negativo, cambios de foco o errores "
+    "de detección.</li>"
+    "<li><b>σt/σl</b>: si se parece al teórico √(Kt/Kl), la turbulencia se comporta como predice el modelo.</li></ul>"
+    "El informe PDF incluye esta explicación con los valores de tu análisis.")
+
+
 class ResultsPage(Page):
     title = "Resultados"
     subtitle = ""
@@ -1357,7 +1449,8 @@ class ResultsPage(Page):
         ct.add(self.c_t, hbox(label("Una subida aislada de σ suele ser un golpe al telescopio o una ráfaga de viento.", "small"),
                               "stretch", button("Ajustar el tramo y procesar de nuevo", slot=lambda: self.main.go("region"))))
         cs = Card(margins=(8, 8, 8, 8))
-        cs.add(self.c_sc)
+        self.corr_lbl = label("", "small", wrap=True)
+        cs.add(self.c_sc, hbox(self.corr_lbl, "stretch", HelpButton(CORR_HELP)))
         r2.addWidget(ct, 3)
         r2.addWidget(cs, 2)
         b.addLayout(r2)
@@ -1418,6 +1511,9 @@ class ResultsPage(Page):
         self.note.setVisible(bool(notes))
         self.note_lbl.setText("<br>".join(notes))
         self.specs = reports.analysis_charts(d, r.meas["t"], fps)
+        self.corr_lbl.setText(tr("r longitudinal–transversal = {} · r entre spots = {} / {} · σt/σl = {} (teórico {})").format(
+            fnum(d.corr_lt, 2), fnum(d.corr_spots_l, 2), fnum(d.corr_spots_t, 2), fnum(d.sigma_ratio, 2),
+            fnum(d.sigma_ratio_expected, 2)))
         if getattr(self, "_player_src", None) is not r:
             self._player_src = r
             self.player.set_data(r.preview_frames, r.preview_rows, r.meas, d.arrays.get("used"), fps)
