@@ -132,11 +132,13 @@ def test_mi_video_in_lessons(app, errors, tmp_path):
 
 
 def test_one_file_chooser_everywhere():
-    """Todas las búsquedas de archivos y carpetas usan el mismo selector propio de la app."""
+    """Todas las búsquedas de archivos y carpetas pasan por choose_file / choose_folder (el selector del sistema)."""
     import pathlib
 
     root = pathlib.Path(__file__).resolve().parents[1] / "turbulens" / "gui"
     for p in root.rglob("*.py"):
+        if p.name == "widgets.py":
+            continue
         src = p.read_text(encoding="utf-8")
-        for f in ("getOpenFileName", "getSaveFileName", "getExistingDirectory"):
+        for f in ("getOpenFileName", "getSaveFileName", "getExistingDirectory", "DontUseNativeDialog"):
             assert f not in src, f"{p.name} usa {f}: debe usar choose_file / choose_folder"

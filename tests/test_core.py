@@ -203,3 +203,39 @@ def test_history_migrates_old_per_mode_databases(tmp_path):
     assert rows == {"ciencia": "analisis", "clase": "educativo"}
     h.close()
     assert len(History("educativo", root=str(root)).list()) == 2  # no se copian dos veces
+
+
+@pytest.mark.parametrize("ring,sep", [(0.0, 13.0), (12.0, 43.0), (18.0, 60.0)])
+def test_large_and_ring_shaped_spots(ring, sep):
+    """Spots grandes o desenfocados en forma de anillo: la separación medida es la real (antes fallaba)."""
+    rng = np.random.default_rng(7)
+    size = int(sep + 4 * max(ring, 3) + 40)
+    errs = []
+    for _ in range(12):
+        c = np.array([size / 2, size / 2]) + rng.uniform(-2, 2, 2)
+        u = np.array([math.cos(0.4), math.sin(0.4)]) * sep / 2
+        p1, p2 = c - u, c + u
+        img = render_pair(size, size, p1, p2, sigma_psf=2.0 if ring else 1.3, rng=rng, ring=ring)
+        d = detect_pairs(img[None])
+        assert d["valid"][0]
+        errs.append(math.hypot(d["x1"][0] - d["x2"][0], d["y1"][0] - d["y2"][0]) - sep)
+    assert abs(np.mean(errs)) < 0.15
+    # Una sola estrella en anillo no se parte en dos spots falsos
+    img = render_pair(size, size, p1, p1, sigma_psf=2.0, rng=rng, ring=ring or 6.0)
+    assert not detect_pairs(img[None])["valid"][0]
+
+
+@pytest.mark.parametrize("roi", [(20, 20, 48, 48), (0, 0, 16, 16)])
+def test_finds_star_from_far_or_tiny_region(tmp_path, roi):
+    """La región puede empezar lejos de la estrella o ser diminuta: se ubica y se ajusta al comenzar."""
+    path = str(tmp_path / "v.mkv")
+    p1, p2 = make_video(path, n=160, w=480, h=320, start=(300.0, 200.0), drift=(-3.0, -2.0))
+    from turbulens.core.video import VideoReader
+
+    with VideoReader(path) as r:
+        res = pipeline.run(r, pipeline.ProcessOptions(roi=roi, start=0, stop=159, save_images=False))
+    v = res.meas["valid"]
+    assert v.mean() > 0.95
+    assert res.options.roi[2] >= 24
+    sep = np.hypot(res.meas["x1"][v] - res.meas["x2"][v], res.meas["y1"][v] - res.meas["y2"][v])
+    assert abs(np.median(sep) - 13.0) < 0.3

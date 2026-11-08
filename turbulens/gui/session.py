@@ -44,6 +44,10 @@ class Session(QObject):
         self.frame = 0
         self.params = DimmParams()
         self.track = True
+        self.auto_size = True
+        # Calibración opcional con dark / flat / bias maestros (rutas de archivos de imagen)
+        self.cal = {"on": False, "dark": "", "flat": "", "bias": ""}
+        self._cal_cache: dict = {}
         self.save_images = True
         self.fmt = "PNG"
         self.every_n = 1
@@ -52,6 +56,36 @@ class Session(QObject):
         self.dimm: Optional[DimmResult] = None
         self.saved_id: Optional[int] = None
         self.history = History(mode, root=data_root)
+
+    # ------------------------------------------------------- calibración
+    def calibration_active(self) -> bool:
+        return bool(self.cal.get("on")) and any(self.cal.get(k) for k in ("dark", "flat", "bias"))
+
+    def calibration_arrays(self) -> Optional[dict]:
+        """Maestros cargados para el procesamiento (``None`` si la calibración está apagada)."""
+        if not self.calibration_active():
+            return None
+        from ..core.imageio import read_image
+
+        out = {}
+        for k in ("dark", "flat", "bias"):
+            p = self.cal.get(k)
+            if not p:
+                continue
+            key = (p, os.path.getmtime(p))
+            if self._cal_cache.get(k, (None,))[0] != key:
+                self._cal_cache[k] = (key, read_image(p))
+            arr = self._cal_cache[k][1]
+            if self.info is not None and arr.shape != (self.info.height, self.info.width):
+                raise ValueError(f"{k}: {arr.shape[1]} × {arr.shape[0]} px, pero el video mide "
+                                 f"{self.info.width} × {self.info.height} px")
+            out[k] = arr
+        if "flat" in out:
+            f = out["flat"]
+            med = float(np.median(f[f > 0])) if np.any(f > 0) else 1.0
+            if abs(med - 1.0) > 0.05:  # flat sin normalizar: se normaliza
+                out["flat"] = np.where(f > 0.05 * med, f / med, 1.0).astype(np.float32)
+        return out
 
     # ------------------------------------------------------------ video
     def open_video(self, path: str) -> None:

@@ -28,7 +28,7 @@ from ...core.writers import FORMATS, estimate_bytes
 from ... import reports
 from ..canvas import RoiCanvas, Timeline, fmt_time, to_qimage
 from ..theme import theme
-from ..widgets import AUTO_NAME_NOTE, TRANSPORT_HELP, ask, ask_text, choose_file, choose_folder, free_base, notify, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
+from ..widgets import LENGTH_CM, LENGTH_MM, LENGTH_UM, WAVE_NM, DecSpin, UnitSpin, AUTO_NAME_NOTE, TRANSPORT_HELP, ask, ask_text, choose_file, choose_folder, free_base, notify, speed_combo, transport_buttons, Card, ChipGroup, HelpButton, Kpi, button, hbox, label, vbox
 from .base import Page
 from ...i18n import integer, localize_number_text, num, tr
 
@@ -180,8 +180,18 @@ REGION_HELP = (
 )
 TRACK_HELP = (
     "<b>Seguir a la estrella</b><br>Si el telescopio no tiene motor de seguimiento, la estrella se desplaza por la imagen "
-    "durante el video. Con esta opción la región se recentra sola en cada bloque de cuadros, así nunca se pierde la "
-    "estrella y todas las imágenes guardadas quedan centradas en ella."
+    "durante el video. Con esta opción:<ul style='margin-left:-16px'>"
+    "<li>Antes de empezar, TurbuLENS ubica la estrella aunque la región haya quedado lejos de ella.</li>"
+    "<li>La región se recentra <b>en cada cuadro</b>, así nunca se pierde la estrella y todas las imágenes guardadas "
+    "quedan centradas en ella.</li>"
+    "<li>Si la estrella desaparece unos cuadros (una nube, un golpe), se vuelve a buscar en todo el cuadro.</li></ul>"
+    "Al reproducir el video aquí, la región sigue a la estrella en vivo."
+)
+AUTOSIZE_HELP = (
+    "<b>Tamaño automático</b><br>Al procesar, TurbuLENS mide en los primeros cuadros la separación de los dos spots, su "
+    "tamaño y cuánto se mueven, y ajusta el tamaño de la región para que quepan con margen para el fondo.<br><br>"
+    "Así no falla si la región quedó muy pequeña (los spots se saldrían) ni pesa de más si quedó muy grande. "
+    "Desactívalo solo si quieres un tamaño exacto."
 )
 TRAMO_HELP = (
     "<b>Tramo: la parte del video que se usa</b><br>Quita el inicio y el final si moviste el telescopio al grabar, y "
@@ -224,10 +234,14 @@ class RegionPage(Page):
         self.track = QCheckBox(tr("Seguir a la estrella"))
         self.track.setChecked(True)
         self.track.toggled.connect(self._track)
+        self.auto_size = QCheckBox(tr("Tamaño automático"))
+        self.auto_size.setChecked(True)
+        self.auto_size.toggled.connect(self._auto_size)
         self.status = label("", "small")
         bar = hbox(label("Región", "h2"), HelpButton(REGION_HELP), 10, label("Zoom", "small"), self.zoom_chips,
                    button("◎ Ajustar a la estrella", slot=self.autofit, tip="Busca la imagen doble y ajusta la región"),
-                   self.size_box, self.track, HelpButton(TRACK_HELP), "stretch", spacing=8)
+                   self.size_box, self.track, HelpButton(TRACK_HELP), self.auto_size, HelpButton(AUTOSIZE_HELP),
+                   "stretch", spacing=8)
         self.lay.addLayout(bar)
 
         # Lienzo + columna derecha
@@ -314,6 +328,7 @@ class RegionPage(Page):
         self.timeline.set_video(s.info.n_frames, s.info.fps)
         self.canvas.set_roi(s.roi, recenter=True)
         self.track.setChecked(s.track)
+        self.auto_size.setChecked(s.auto_size)
         self._show_frame(s.frame)
         self._sync_spins()
         self._update_span()
@@ -368,7 +383,13 @@ class RegionPage(Page):
         except Exception:
             ok, m = False, 0
         pal = theme.pal
-        if w * h > 0.5 * self.s.info.width * self.s.info.height:
+        if min(w, h) < pipeline.MIN_ROI or (not ok and min(w, h) < 40):
+            if self.s.auto_size:
+                txt, col = "Región muy pequeña: al procesar se agrandará sola (tamaño automático).", pal["warn"]
+            else:
+                txt, col = (tr("Región muy pequeña: los dos spots no caben. Agrándala o activa «Tamaño automático» "
+                               "(mínimo {} px).").format(pipeline.MIN_ROI), pal["bad"])
+        elif w * h > 0.5 * self.s.info.width * self.s.info.height:
             txt, col = "Región muy grande: archivos pesados. Pulsa «Ajustar a la estrella».", pal["warn"]
         elif not ok:
             txt, col = "No se ven los dos puntos en este cuadro: mueve o agranda la región.", pal["bad"]
@@ -446,6 +467,10 @@ class RegionPage(Page):
 
     def _track(self, on):
         self.s.track = bool(on)
+
+    def _auto_size(self, on):
+        self.s.auto_size = bool(on)
+        self._update_zoomview()
 
     # -------------------------------------------------------------- tiempo
     def _frame_from_timeline(self, f):
@@ -588,6 +613,26 @@ ALT_HELP = (
 )
 
 
+PROFILE_HELP = (
+    "<b>Perfiles de equipo</b><br>Guardan D, B, λ, la escala de placa, el tamaño de píxel y la focal de un montaje, para "
+    "no escribirlos cada vez. Son los mismos en el modo análisis y en el educativo.<ul style='margin-left:-16px'>"
+    "<li><b>Elegir</b> un perfil de la lista carga sus valores (si ya procesaste, los resultados se recalculan solos).</li>"
+    "<li><b>Guardar como nuevo…</b> crea un perfil con los valores que ves.</li>"
+    "<li><b>Actualizar</b> reescribe el perfil elegido con los valores que ves: así se edita un perfil.</li>"
+    "<li><b>Renombrar…</b> y <b>Eliminar</b> cambian el nombre o lo borran.</li></ul>"
+)
+CAL_HELP = (
+    "<b>Dark y flat</b><br>Corrigen defectos de la cámara y del telescopio antes de medir:<ul style='margin-left:-16px'>"
+    "<li><b>Dark</b>: video o fotos con la tapa puesta, con la misma exposición y temperatura. Se resta: quita el "
+    "ruido térmico y los píxeles calientes.</li>"
+    "<li><b>Flat</b>: imagen de una fuente uniforme (cielo del atardecer, pantalla blanca). Se divide: corrige el "
+    "viñeteo y el polvo.</li>"
+    "<li><b>Bias</b>: lectura con exposición nula. Solo hace falta si no tienes dark.</li></ul>"
+    "Los maestros (la combinación de muchas tomas) se crean en el modo <b>Imágenes</b>. Deben medir lo mismo que el "
+    "video (mismo ancho y alto)."
+)
+
+
 class ParamsPage(Page):
     title = "Parámetros"
     subtitle = "Datos de tu telescopio y de la máscara, y qué imágenes guardar"
@@ -597,21 +642,31 @@ class ParamsPage(Page):
         self.lay.addWidget(self.edu_tip(
             "<b>¿Para qué sirven?</b> La app mide en <b>píxeles</b>. Con estos datos convierte píxeles en un ángulo del "
             "cielo (segundos de arco) y aplica el modelo físico del DIMM para obtener el seeing."))
+        self.done_info = Card(kind="soft", margins=(14, 12, 14, 12))
+        self.done_info.add(hbox(label("<b>Ya hay resultados de este video.</b> Los cambios de D, B, λ, escala y altura se "
+                                      "aplican al instante en Resultados: no hace falta volver a procesar ni generar las "
+                                      "imágenes otra vez.", wrap=True, rich=True), 1,
+                                button("Ver resultados →", "primary", lambda: self.main.go("resultados"))))
+        self.lay.addWidget(self.done_info)
         grid = QGridLayout()
         grid.setHorizontalSpacing(16)
         grid.setVerticalSpacing(16)
 
         tel = Card("Telescopio y máscara", help_text=PARAMS_HELP)
-        self.D = self._dspin(0.1, 100, 2.5, " cm", 2)
-        self.B = self._dspin(0.2, 300, 14.0, " cm", 2)
-        self.lam = self._dspin(300, 1100, 550, " nm", 0)
+        self.D = UnitSpin(LENGTH_CM, 0.1, 100, 2.5, "cm", settings_key="D")
+        self.B = UnitSpin(LENGTH_CM, 0.2, 300, 14.0, "cm", settings_key="B")
+        self.lam = UnitSpin(WAVE_NM, 300, 1100, 550, "nm", settings_key="lambda")
+        for w in (self.D, self.B, self.lam):
+            w.valueChanged.connect(self._changed)
         self.scale = QLineEdit()
         self.scale.setPlaceholderText("ej. 1,0")
-        self.scale.setFixedWidth(120)
+        self.scale.setFixedWidth(172)
+        self.scale.setToolTip("Puedes escribir el decimal con punto o con coma")
         self.scale.textChanged.connect(self._changed)
         self.alt_on = QCheckBox(tr("Conozco la altura de la estrella"))
         self.alt = self._dspin(5, 90, 60, "°", 2)  # centésimas de grado
         self.alt.setSingleStep(0.1)
+        self.alt.setFixedWidth(172)
         self.alt.setEnabled(False)
         self.alt_on.toggled.connect(lambda on: (self.alt.setEnabled(on), self._changed()))
         f = QGridLayout()
@@ -625,12 +680,12 @@ class ParamsPage(Page):
         f.addWidget(self.alt, 4, 1, Qt.AlignRight)
         tel.add(f)
         calc = Card(kind="panel2", margins=(12, 10, 12, 10))
-        self.pix = self._dspin(0.5, 50, 4.3, " µm", 2)
-        self.focal = self._dspin(50, 20000, 1000, " mm", 0)
+        self.pix = UnitSpin(LENGTH_UM, 0.5, 50, 4.3, "µm", width=86, settings_key="pixel")
+        self.focal = UnitSpin(LENGTH_MM, 50, 20000, 1000, "mm", width=86, settings_key="focal")
         self.calc_lbl = label("", "mono")
         calc.add(label("¿No conoces la escala? Calcúlala:", "small"),
-                 hbox(label("Píxel", "small"), self.pix, label("Focal", "small"), self.focal, self.calc_lbl, "stretch",
-                      button("Usar", slot=self._use_calc)))
+                 hbox(label("Píxel", "small"), self.pix, label("Focal", "small"), self.focal, "stretch"),
+                 hbox(self.calc_lbl, "stretch", button("Usar", slot=self._use_calc)))
         for w in (self.pix, self.focal):
             w.valueChanged.connect(self._calc)
         tel.add(calc)
@@ -641,10 +696,16 @@ class ParamsPage(Page):
                          "«D = 203 mm, F = 2032 mm») y el tamaño de píxel en la ficha de la cámara.<br>") + links,
                       "small", wrap=True, rich=True))
         self.prof = QComboBox()
-        self.prof.setMinimumWidth(160)
+        self.prof.setMinimumWidth(200)
         self.prof.activated.connect(self._load_profile)
-        tel.add(hbox(label("Perfil de equipo", "small"), self.prof, button("Guardar perfil", slot=self._save_profile),
-                     button("Eliminar", slot=self._del_profile), "stretch"))
+        self.prof_msg = label("", "small")
+        tel.add(label("Perfil de equipo", "h2"),
+                hbox(self.prof, HelpButton(PROFILE_HELP), "stretch"),
+                hbox(button("Guardar como nuevo…", slot=self._save_profile, tip="Guarda los valores actuales con un nombre nuevo"),
+                     button("Actualizar", slot=self._update_profile, tip="Reescribe el perfil elegido con los valores actuales"),
+                     button("Renombrar…", slot=self._rename_profile),
+                     button("Eliminar", slot=self._del_profile), "stretch"),
+                self.prof_msg)
 
         sav = Card("Imágenes a guardar", help_text=SAVE_HELP)
         self.save_on = QCheckBox(tr("Guardar los cuadros como imágenes"))
@@ -668,10 +729,28 @@ class ParamsPage(Page):
                 label("Carpeta de salida", "small"),
                 hbox(self.out, button("Cambiar…", slot=self._pick_out)),
                 estc)
+        cal = Card("Calibración con dark y flat", help_text=CAL_HELP)
+        self.cal_on = QCheckBox(tr("Restar el dark y dividir por el flat antes de medir"))
+        self.cal_on.toggled.connect(self._cal_changed)
+        self.cal_rows = {}
+        for k, t in (("dark", "Dark maestro"), ("flat", "Flat maestro"), ("bias", "Bias maestro (opcional)")):
+            e = QLineEdit()
+            e.setReadOnly(True)
+            e.setPlaceholderText("—")
+            self.cal_rows[k] = e
+            cal.add(label(t, "small"), hbox(e, 1, button("Elegir…", slot=lambda *_, k=k: self._pick_cal(k)),
+                                            button("Quitar", slot=lambda *_, k=k: self._clear_cal(k))))
+        self.cal_msg = label("", "small", wrap=True)
+        cal.lay.insertWidget(1, self.cal_on)
+        cal.add(self.cal_msg, label("Los maestros se crean en el modo «Imágenes» (pantalla de inicio).", "small", wrap=True))
         sav.lay.addStretch(1)
+        right = QVBoxLayout()
+        right.setSpacing(16)
+        right.addWidget(sav)
+        right.addWidget(cal)
 
         grid.addWidget(tel, 0, 0)
-        grid.addWidget(sav, 0, 1)
+        grid.addLayout(right, 0, 1)
         grid.setColumnStretch(0, 1)
         grid.setColumnStretch(1, 1)
         self.lay.addLayout(grid)
@@ -682,7 +761,7 @@ class ParamsPage(Page):
         self._calc()
 
     def _dspin(self, lo, hi, val, suffix, dec):
-        sp = QDoubleSpinBox()
+        sp = DecSpin()
         sp.setRange(lo, hi)
         sp.setDecimals(dec)
         sp.setValue(val)
@@ -692,7 +771,7 @@ class ParamsPage(Page):
         return sp
 
     def _scale_value(self):
-        t = self.scale.text().strip().replace(",", ".")
+        t = self.scale.text().strip().replace(",", ".").replace("″", "").replace('"', "").strip()
         try:
             v = float(t)
             return v if v > 0 else None
@@ -714,9 +793,14 @@ class ParamsPage(Page):
         self.fmt.set_value(s.fmt)
         self.every.setValue(s.every_n)
         self.out.setText(s.out_dir)
+        self.cal_on.setChecked(bool(s.cal.get("on")))
+        for k, e in self.cal_rows.items():
+            e.setText(s.cal.get(k) or "")
         self._reload_profiles()
         self._loading = False
         self._update_est()
+        self._cal_status()
+        self.done_info.setVisible(s.result is not None)
 
     def _changed(self, *a):
         if self._loading:
@@ -752,6 +836,42 @@ class ParamsPage(Page):
         b = estimate_bytes(s.fmt, nsave, s.roi[2], s.roi[3], s.info.bit_depth)
         self.est.setText(tr("Se guardarán <b>{}</b> imágenes de {} × {} px · espacio aproximado: <b>{}</b>").format(
             miles(nsave), s.roi[2], s.roi[3], human_bytes(b) if nsave else tr("0 (solo análisis)")))
+
+    # Calibración
+    def _cal_changed(self, *a):
+        self.s.cal["on"] = self.cal_on.isChecked()
+        self._cal_status()
+
+    def _pick_cal(self, k):
+        from ...core.imageio import IMAGE_EXTS
+
+        flt = tr("Imágenes") + " (" + " ".join("*" + e for e in IMAGE_EXTS) + f");;{tr('Todos los archivos')} (*)"
+        p = choose_file(self, "Elegir imagen maestra", flt)
+        if p:
+            self.s.cal[k] = p
+            self.cal_rows[k].setText(p)
+            self.cal_on.setChecked(True)
+            self._cal_status()
+
+    def _clear_cal(self, k):
+        self.s.cal[k] = ""
+        self.cal_rows[k].setText("")
+        self._cal_status()
+
+    def _cal_status(self):
+        s = self.s
+        if not s.calibration_active():
+            self.cal_msg.setText("Sin calibración: se mide sobre el video tal cual." if not s.cal.get("on") else
+                                 "Elige al menos un dark o un flat.")
+            self.cal_msg.setStyleSheet("")
+            return
+        try:
+            s.calibration_arrays()
+            self.cal_msg.setText("✓ " + tr("Se aplicará en cada cuadro antes de medir."))
+            self.cal_msg.setStyleSheet(f"color:{theme.pal['good']}; font-weight:600;")
+        except Exception as exc:
+            self.cal_msg.setText(tr("No coincide con el video:") + f" {exc}")
+            self.cal_msg.setStyleSheet(f"color:{theme.pal['bad']}; font-weight:600;")
 
     def _calc(self):
         v = 206.265 * self.pix.value() / self.focal.value()
@@ -800,19 +920,63 @@ class ParamsPage(Page):
         for k in sorted(self._read_profiles()):
             self.prof.addItem(k, k)
 
-    def _save_profile(self):
+    def _current_profile(self) -> dict:
+        p = self.s.params
+        return {"D_cm": p.D_cm, "B_cm": p.B_cm, "lambda_nm": p.lambda_nm, "scale": p.scale_arcsec_px,
+                "pixel_um": self.pix.value(), "focal_mm": self.focal.value()}
+
+    def _write_profiles(self, d: dict):
         import json
 
-        name, ok = ask_text(self, "Guardar perfil", "Nombre del perfil (ej. «Celestron 8 + Nikon D5300»):")
-        if not ok or not name.strip():
-            return
-        d = self._read_profiles()
-        p = self.s.params
-        d[name.strip()] = {"D_cm": p.D_cm, "B_cm": p.B_cm, "lambda_nm": p.lambda_nm, "scale": p.scale_arcsec_px}
         with open(self._profiles_path(), "w", encoding="utf-8") as f:
             json.dump(d, f, ensure_ascii=False, indent=1)
+
+    def _say(self, text: str):
+        self.prof_msg.setText(text)
+        self.prof_msg.setStyleSheet(f"color:{theme.pal['good']}; font-weight:600;")
+
+    def _save_profile(self):
+        name, ok = ask_text(self, "Guardar perfil", "Nombre del perfil (ej. «Celestron 8 + Nikon D5300»):")
+        name = name.strip()
+        if not ok or not name:
+            return
+        d = self._read_profiles()
+        if name in d and not ask(self, "Guardar perfil", tr("Ya existe un perfil llamado «{}». ¿Reemplazarlo?").format(name)):
+            return
+        d[name] = self._current_profile()
+        self._write_profiles(d)
         self._reload_profiles()
-        self.prof.setCurrentIndex(self.prof.findData(name.strip()))
+        self.prof.setCurrentIndex(self.prof.findData(name))
+        self._say(tr("Perfil «{}» guardado ✓").format(name))
+
+    def _update_profile(self):
+        k = self.prof.currentData()
+        if not k:
+            self._say("")
+            notify(self, "Actualizar perfil", "Primero elige en la lista el perfil que quieres reescribir.")
+            return
+        d = self._read_profiles()
+        d[k] = self._current_profile()
+        self._write_profiles(d)
+        self._say(tr("Perfil «{}» actualizado con los valores actuales ✓").format(k))
+
+    def _rename_profile(self):
+        k = self.prof.currentData()
+        if not k:
+            notify(self, "Renombrar perfil", "Primero elige en la lista el perfil que quieres renombrar.")
+            return
+        name, ok = ask_text(self, "Renombrar perfil", "Nombre nuevo:", text=k)
+        name = name.strip()
+        if not ok or not name or name == k:
+            return
+        d = self._read_profiles()
+        if name in d and not ask(self, "Renombrar perfil", tr("Ya existe un perfil llamado «{}». ¿Reemplazarlo?").format(name)):
+            return
+        d[name] = d.pop(k)
+        self._write_profiles(d)
+        self._reload_profiles()
+        self.prof.setCurrentIndex(self.prof.findData(name))
+        self._say(tr("Perfil renombrado a «{}» ✓").format(name))
 
     def _load_profile(self):
         k = self.prof.currentData()
@@ -821,23 +985,32 @@ class ParamsPage(Page):
         v = self._read_profiles().get(k)
         if not v:
             return
+        self._loading = True
         self.D.setValue(v.get("D_cm", 2.5))
         self.B.setValue(v.get("B_cm", 14))
         self.lam.setValue(v.get("lambda_nm", 550))
+        if v.get("pixel_um"):
+            self.pix.setValue(v["pixel_um"])
+        if v.get("focal_mm"):
+            self.focal.setValue(v["focal_mm"])
+        self._calc()
         sc = v.get("scale")
         self.scale.setText("" if not sc else fnum(sc, 3))
+        self._loading = False
+        self._changed()
+        self._say(tr("Perfil «{}» cargado") .format(k) + (tr(" · resultados actualizados sin volver a procesar") if self.s.result is not None else ""))
 
     def _del_profile(self):
-        import json
-
         k = self.prof.currentData()
         if not k:
             return
+        if not ask(self, "Eliminar perfil", tr("¿Eliminar el perfil «{}»?").format(k)):
+            return
         d = self._read_profiles()
         d.pop(k, None)
-        with open(self._profiles_path(), "w", encoding="utf-8") as f:
-            json.dump(d, f, ensure_ascii=False, indent=1)
+        self._write_profiles(d)
         self._reload_profiles()
+        self._say(tr("Perfil «{}» eliminado").format(k))
 
 
 # =============================================================================
@@ -890,8 +1063,20 @@ class ProcessPage(Page):
         self.cancel_b.setEnabled(False)
         self.res_b = button("Ver resultados →", "primary", lambda: self.main.go("resultados"))
         self.res_b.setVisible(False)
+        # Aviso llamativo: sin escala de placa no hay seeing.
+        self.scale_warn = Card(kind="soft", margins=(14, 12, 14, 12))
+        self.scale_warn_lbl = label("", wrap=True, rich=True)
+        self.scale_warn.add(self.scale_warn_lbl, hbox(button("Ir a Parámetros", "primary", lambda: self.main.go("parametros")),
+                                                       "stretch"))
+        self.done_info = Card(kind="soft", margins=(14, 12, 14, 12))
+        self.done_info.add(label("<b>Ya procesaste este tramo.</b> Si solo cambiaste los parámetros (D, B, λ, escala o altura), "
+                                 "no hace falta volver a procesar ni generar las imágenes otra vez: los resultados ya se "
+                                 "recalcularon con los valores nuevos.", wrap=True, rich=True),
+                           hbox(button("Ver resultados actualizados →", "primary", lambda: self.main.go("resultados")), "stretch"))
         run.add(self.state, self.bar, self.detail, hbox(self.start_b, self.cancel_b, self.res_b, "stretch"))
         run.lay.addStretch(1)
+        self.lay.addWidget(self.scale_warn)
+        self.lay.addWidget(self.done_info)
         self.sumc = Card("Resumen")
         self.sum_grid = QGridLayout()
         self.sum_grid.setVerticalSpacing(6)
@@ -914,12 +1099,23 @@ class ProcessPage(Page):
             self.start_b.setEnabled(False)
             self.state.setText("Primero carga un video")
             return
+        no_scale = not s.params.scale_arcsec_px
+        self.scale_warn.setVisible(no_scale)
+        if no_scale:
+            self.scale_warn_lbl.setText(
+                f"<span style='color:{theme.pal['bad']}; font-weight:700'>⚠ " + tr("Falta la escala de placa (″/px).") +
+                "</span> " + tr("Sin ella no se puede calcular el seeing. Escríbela en Parámetros (o calcúlala con el "
+                                "tamaño de píxel y la focal) antes de procesar."))
+        self.done_info.setVisible(self._same_as_result() and self.thread is None)
         if self.thread is None:
-            self.start_b.setEnabled(True)
+            self.start_b.setEnabled(not no_scale)
+            self.start_b.setToolTip("Primero escribe la escala de placa en Parámetros" if no_scale else "")
         n = s.tout - s.tin + 1
         nsave = (n + s.every_n - 1) // s.every_n if s.save_images else 0
         rows = [("Video", s.info.name), ("Tramo", f"{fmt_time(s.tin / s.info.fps)} – {fmt_time(s.tout / s.info.fps)}"),
-                ("Cuadros a medir", miles(n)), ("Región", f"{s.roi[2]} × {s.roi[3]} px" + (tr(" · con seguimiento") if s.track else "")),
+                ("Cuadros a medir", miles(n)), ("Región", f"{s.roi[2]} × {s.roi[3]} px" + (tr(" · con seguimiento") if s.track else "")
+                 + (tr(" · tamaño automático") if s.auto_size else "")),
+                ("Calibración", tr("dark y flat") if s.calibration_active() else "—"),
                 ("Imágenes", f"{miles(nsave)} · {FORMATS[s.fmt]['label']}" if s.save_images else "No se guardan"),
                 ("Escala", fnum(s.params.scale_arcsec_px, 3, " ″/px") if s.params.scale_arcsec_px else "Falta (sin seeing)"),
                 ("Salida", s.out_dir if s.save_images else "—")]
@@ -929,9 +1125,22 @@ class ProcessPage(Page):
         if s.result is not None and self.thread is None:
             self.res_b.setVisible(True)
 
+    def _same_as_result(self) -> bool:
+        """¿El resultado actual es de este mismo video y tramo? (entonces no hace falta reprocesar)"""
+        s = self.s
+        r = s.result
+        if r is None or s.info is None:
+            return False
+        return (r.video.get("path") == s.info.path and r.options.start == s.tin and r.options.stop == s.tout)
+
     def start(self):
         s = self.s
         if s.info is None or self.thread is not None:
+            return
+        if not s.params.scale_arcsec_px:
+            notify(self, "Falta la escala de placa", "Sin la escala de placa no se puede calcular el seeing. "
+                   "Escríbela en Parámetros antes de procesar.", "warning")
+            self.main.go("parametros")
             return
         roi = s.roi
         if s.track and s.tin != s.roi_frame:
@@ -943,9 +1152,14 @@ class ProcessPage(Page):
             except Exception:
                 pass
         base = os.path.splitext(s.info.name)[0][:40].replace(" ", "_") or "cuadro"
+        try:
+            cal = s.calibration_arrays()
+        except Exception as exc:
+            notify(self, "Calibración", tr("No se pudo usar el dark o el flat:") + f"\n{exc}", "warning")
+            return
         opts = pipeline.ProcessOptions(roi=roi, start=s.tin, stop=s.tout, track=s.track, save_images=s.save_images,
                                        fmt=s.fmt, every_n=s.every_n, out_dir=s.out_dir if s.save_images else "",
-                                       base_name=base)
+                                       base_name=base, auto_size=s.auto_size, calibration=cal)
         if s.save_images:
             try:
                 os.makedirs(s.out_dir, exist_ok=True)

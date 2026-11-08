@@ -7,13 +7,18 @@ from __future__ import annotations
 import numpy as np
 
 
-def render_pair(h, w, p1, p2, sigma_psf=1.3, peak=200.0, bg=4.0, noise=1.0, rng=None):
-    """Imagen con dos spots gaussianos en ``p1`` y ``p2`` (x, y)."""
+def render_pair(h, w, p1, p2, sigma_psf=1.3, peak=200.0, bg=4.0, noise=1.0, rng=None, ring=0.0):
+    """Imagen con dos spots en ``p1`` y ``p2`` (x, y): gaussianos o, con ``ring`` > 0, anillos de ese radio
+    (estrella desenfocada)."""
     rng = rng or np.random.default_rng(0)
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float64)
     img = bg + noise * rng.standard_normal((h, w))
     for (x, y), amp in ((p1, peak), (p2, peak * 0.85)):
-        img += amp * np.exp(-((xx - x) ** 2 + (yy - y) ** 2) / (2 * sigma_psf ** 2))
+        rr = np.sqrt((xx - x) ** 2 + (yy - y) ** 2)
+        if ring:
+            img += amp * np.exp(-((rr - ring) ** 2) / (2 * sigma_psf ** 2))
+        else:
+            img += amp * np.exp(-(rr ** 2) / (2 * sigma_psf ** 2))
     return np.clip(img, 0, 255)
 
 
@@ -33,7 +38,7 @@ def dimm_track(n, sep=13.0, angle_deg=114.0, sigma_l=0.7, sigma_t=0.65, start=(3
     return p1, p2
 
 
-def make_video(path: str, n=600, fps=60, w=640, h=400, codec="ffv1", **kw):
+def make_video(path: str, n=600, fps=60, w=640, h=400, codec="ffv1", ring=0.0, sigma_psf=1.3, **kw):
     """Escribe un video sintético con PyAV y devuelve las posiciones verdaderas."""
     import av
 
@@ -46,7 +51,7 @@ def make_video(path: str, n=600, fps=60, w=640, h=400, codec="ffv1", **kw):
         if codec != "ffv1":
             st.options = {"qscale": "2"}
         for i in range(n):
-            img = render_pair(h, w, p1[i], p2[i], rng=rng).astype(np.uint8)
+            img = render_pair(h, w, p1[i], p2[i], rng=rng, ring=ring, sigma_psf=sigma_psf).astype(np.uint8)
             if codec == "ffv1":
                 fr = av.VideoFrame.from_ndarray(img, format="gray")
             else:

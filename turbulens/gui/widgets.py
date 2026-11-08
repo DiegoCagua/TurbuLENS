@@ -386,86 +386,59 @@ class FlowLayout(QLayout):
 
 
 # ------------------------------------------------- elegir archivos y carpetas
-def _file_dialog(parent, title: str, start: str = ""):
-    """El mismo selector en todo el programa y en todos los sistemas: el de la propia app (no el del sistema),
-    con el tema y el idioma de TurbuLENS y accesos rápidos a las carpetas habituales."""
+# Se usa siempre el selector del propio sistema (el Explorador de Windows, el Finder del Mac o el del
+# escritorio de Linux): es el que la gente conoce, deja escribir la ruta arriba y tiene sus accesos rápidos.
+def _last_folder() -> str:
     import os
-
-    from PySide6.QtCore import QUrl
-    from PySide6.QtWidgets import QFileDialog
-
-    from ..i18n import tr
-
-    dlg = QFileDialog(parent, tr(title))
-    dlg.setOption(QFileDialog.Option.DontUseNativeDialog, True)
-    dlg.setViewMode(QFileDialog.ViewMode.Detail)
-    home = os.path.expanduser("~")
-    places = [home] + [os.path.join(home, n) for n in ("Desktop", "Escritorio", "Documents", "Documentos", "Videos",
-                                                        "Vídeos", "Movies", "Downloads", "Descargas", "Pictures", "Imágenes")]
-    urls = [QUrl.fromLocalFile(p) for p in dict.fromkeys(places) if os.path.isdir(p)]
-    if os.name == "nt":
-        import string
-
-        urls += [QUrl.fromLocalFile(f"{d}:/") for d in string.ascii_uppercase if os.path.isdir(f"{d}:/")]
-    else:
-        urls.append(QUrl.fromLocalFile("/"))
-    dlg.setSidebarUrls(urls)
-    if start and os.path.isdir(start):
-        dlg.setDirectory(start)
-    elif start and os.path.isdir(os.path.dirname(start)):
-        dlg.setDirectory(os.path.dirname(start))
-    else:
-        dlg.setDirectory(home)
-    dlg.resize(900, 560)
-    # Textos propios en el idioma de la app (las traducciones de Qt de este diálogo están incompletas)
-    dlg.setLabelText(QFileDialog.DialogLabel.LookIn, tr("Buscar en:"))
-    dlg.setLabelText(QFileDialog.DialogLabel.FileType, tr("Tipo:"))
-    dlg.setLabelText(QFileDialog.DialogLabel.Reject, tr("Cancelar"))
-    from PySide6.QtWidgets import QTreeView
-
-    tv = dlg.findChild(QTreeView)
-    if tv is not None:
-        tv.header().resizeSection(0, 380)
-        tv.header().resizeSection(1, 90)
-        tv.header().resizeSection(3, 150)
-    return dlg
-
-
-def choose_file(parent, title: str, name_filter: str, start: str = "") -> str:
-    """Elegir un archivo existente (por ejemplo, el video)."""
-    from PySide6.QtWidgets import QFileDialog
-
-    from ..i18n import tr
-
-    dlg = _file_dialog(parent, title, start)
-    dlg.setFileMode(QFileDialog.FileMode.ExistingFile)
-    dlg.setNameFilter(name_filter)
-    dlg.setLabelText(QFileDialog.DialogLabel.FileName, tr("Archivo:"))
-    dlg.setLabelText(QFileDialog.DialogLabel.Accept, tr("Abrir"))
-    if dlg.exec() and dlg.selectedFiles():
-        return dlg.selectedFiles()[0]
-    return ""
-
-
-def choose_folder(parent, title: str, start: str = "") -> str:
-    """Elegir una carpeta (salida de imágenes, exportaciones)."""
-    from PySide6.QtWidgets import QFileDialog
 
     from PySide6.QtCore import QSettings
 
-    st = QSettings("TurbuLENS", "TurbuLENS")
+    d = QSettings("TurbuLENS", "TurbuLENS").value("ultima_carpeta", "", type=str)
+    return d if d and os.path.isdir(d) else os.path.expanduser("~")
+
+
+def _remember(path: str) -> None:
+    import os
+
+    from PySide6.QtCore import QSettings
+
+    if path:
+        d = path if os.path.isdir(path) else os.path.dirname(path)
+        QSettings("TurbuLENS", "TurbuLENS").setValue("ultima_carpeta", d)
+
+
+def choose_file(parent, title: str, name_filter: str, start: str = "") -> str:
+    """Elegir un archivo existente (por ejemplo, el video), con el selector del sistema."""
+    from PySide6.QtWidgets import QFileDialog
+
     from ..i18n import tr
 
-    dlg = _file_dialog(parent, title, start or st.value("ultima_carpeta", "", type=str))
-    dlg.setOption(QFileDialog.Option.ShowDirsOnly, True)
-    dlg.setFileMode(QFileDialog.FileMode.Directory)
-    dlg.setLabelText(QFileDialog.DialogLabel.FileName, tr("Carpeta:"))
-    dlg.setLabelText(QFileDialog.DialogLabel.Accept, tr("Seleccionar"))
-    if dlg.exec() and dlg.selectedFiles():
-        folder = dlg.selectedFiles()[0]
-        st.setValue("ultima_carpeta", folder)  # la próxima vez abre en la misma carpeta
-        return folder
-    return ""
+    path, _ = QFileDialog.getOpenFileName(parent, tr(title), start or _last_folder(), name_filter)
+    _remember(path)
+    return path or ""
+
+
+def choose_files(parent, title: str, name_filter: str, start: str = "") -> list:
+    """Elegir varios archivos a la vez, con el selector del sistema."""
+    from PySide6.QtWidgets import QFileDialog
+
+    from ..i18n import tr
+
+    paths, _ = QFileDialog.getOpenFileNames(parent, tr(title), start or _last_folder(), name_filter)
+    if paths:
+        _remember(paths[0])
+    return list(paths or [])
+
+
+def choose_folder(parent, title: str, start: str = "") -> str:
+    """Elegir una carpeta (salida de imágenes, exportaciones), con el selector del sistema."""
+    from PySide6.QtWidgets import QFileDialog
+
+    from ..i18n import tr
+
+    folder = QFileDialog.getExistingDirectory(parent, tr(title), start or _last_folder())
+    _remember(folder)
+    return folder or ""
 
 
 def free_name(folder: str, name: str) -> str:
@@ -669,3 +642,118 @@ def ask_text(parent, title: str, label_text: str, text: str = "", multiline: boo
     dlg.setTextValue(text)
     ok = dlg.exec() == QInputDialog.Accepted
     return dlg.textValue(), ok
+
+
+# ------------------------------------------------- números con decimales y unidades
+from PySide6.QtWidgets import QComboBox, QDoubleSpinBox  # noqa: E402
+
+
+class DecSpin(QDoubleSpinBox):
+    """Campo numérico que acepta el punto y la coma como separador decimal (en cualquier idioma).
+
+    En español el punto es el separador de miles y Qt rechazaba «2.5»: el campo se trababa.
+    Aquí ambos se convierten al separador del idioma activo y no se usan separadores de miles.
+    """
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self.setGroupSeparatorShown(False)
+        self.setKeyboardTracking(False)  # el valor cambia al terminar de escribir (Enter, Tab o al salir)
+        self.setAccelerated(True)
+
+    def _dp(self) -> str:
+        return self.locale().decimalPoint()
+
+    def _norm(self, text: str) -> str:
+        dp = self._dp()
+        other = "," if dp == "." else "."
+        return text.replace(other, dp)
+
+    def keyPressEvent(self, ev):
+        if ev.text() in (".", ","):
+            le = self.lineEdit()
+            if self._dp() not in le.text().replace(self.suffix(), ""):
+                le.insert(self._dp())
+            return
+        super().keyPressEvent(ev)
+
+    def validate(self, text, pos):
+        return super().validate(self._norm(text), pos)
+
+    def valueFromText(self, text):
+        return super().valueFromText(self._norm(text))
+
+
+class UnitSpin(QWidget):
+    """Número con selector de unidades (µm, mm, cm, m…). ``value()`` siempre está en la unidad base."""
+
+    valueChanged = Signal(float)
+
+    def __init__(self, units: list, lo: float, hi: float, value: float, unit: str = "", width: int = 104,
+                 settings_key: str = ""):
+        super().__init__()
+        from PySide6.QtCore import QSettings
+
+        self.units = units  # [(nombre, factor a la base, decimales)]
+        self.lo, self.hi = lo, hi
+        self._key = settings_key
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.setSpacing(4)
+        self.spin = DecSpin()
+        self.spin.setFixedWidth(width)
+        self.combo = QComboBox()
+        for name, f, _ in units:
+            self.combo.addItem(name, f)
+        self.combo.setFixedWidth(64)
+        self.combo.setToolTip("Unidad")
+        lay.addWidget(self.spin)
+        lay.addWidget(self.combo)
+        if settings_key:
+            unit = QSettings("TurbuLENS", "TurbuLENS").value("unidad/" + settings_key, unit, type=str) or unit
+        i = max(0, [u[0] for u in units].index(unit) if unit in [u[0] for u in units] else 0)
+        self.combo.setCurrentIndex(i)
+        self._base = float(value)
+        self._apply_unit()
+        self.spin.valueChanged.connect(self._spin_changed)
+        self.combo.currentIndexChanged.connect(self._unit_changed)
+
+    def _factor(self) -> float:
+        return float(self.units[self.combo.currentIndex()][1])
+
+    def _apply_unit(self):
+        f = self._factor()
+        dec = int(self.units[self.combo.currentIndex()][2])
+        self.spin.blockSignals(True)
+        self.spin.setDecimals(dec)
+        self.spin.setRange(self.lo / f, self.hi / f)
+        self.spin.setSingleStep(10 ** -max(0, dec - 1) if dec else 1)
+        self.spin.setValue(self._base / f)
+        self.spin.blockSignals(False)
+
+    def _unit_changed(self, *_):
+        from PySide6.QtCore import QSettings
+
+        if self._key:
+            QSettings("TurbuLENS", "TurbuLENS").setValue("unidad/" + self._key, self.units[self.combo.currentIndex()][0])
+        self._apply_unit()
+
+    def _spin_changed(self, v):
+        self._base = float(v) * self._factor()
+        self.valueChanged.emit(self._base)
+
+    def value(self) -> float:
+        return self._base
+
+    def setValue(self, v: float):
+        self._base = float(v)
+        self._apply_unit()
+
+    def unit(self) -> str:
+        return self.units[self.combo.currentIndex()][0]
+
+
+LENGTH_CM = [("mm", 0.1, 1), ("cm", 1.0, 2), ("m", 100.0, 4)]
+LENGTH_UM = [("µm", 1.0, 2), ("mm", 1000.0, 4)]
+LENGTH_MM = [("mm", 1.0, 0), ("cm", 10.0, 1), ("m", 1000.0, 3)]
+WAVE_NM = [("nm", 1.0, 0), ("µm", 1000.0, 3)]
