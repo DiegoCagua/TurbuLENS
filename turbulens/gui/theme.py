@@ -17,6 +17,7 @@ DARK = {
     "accentSoft": "rgba(242,140,40,0.16)", "accentSoftHex": "#3A2E22",
     "accent2": "#6FA8FF", "good": "#5DBB8A", "warn": "#E8B54A", "bad": "#E57A62", "track": "#5A5D66",
     "preview": "#000000", "grid": "#34363D",
+    "bars": "#F28C28", "meanLine": "#6FA8FF", "medianLine": "#7FE0A8",
 }
 
 LIGHT = {
@@ -26,6 +27,8 @@ LIGHT = {
     "accentSoft": "rgba(62,124,114,0.12)", "accentSoftHex": "#E3EEEC",
     "accent2": "#B4652A", "good": "#2E7D5B", "warn": "#9A6B12", "bad": "#B0452C", "track": "#B9C4BF",
     "preview": "#0C0F0E", "grid": "#E4E8E6",
+    # Histograma en tema claro: barras aguamarina suave para que la media (roja) y la mediana (azul) resalten.
+    "bars": "#93C6BC", "meanLine": "#C62828", "medianLine": "#1F4FB5",
 }
 
 

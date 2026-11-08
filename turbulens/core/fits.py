@@ -32,7 +32,10 @@ def _card(key: str, value=None, comment: str = "") -> str:
     elif isinstance(value, (float, np.floating)):
         v = (f"{float(value):.10G}").rjust(20)
     else:
-        txt = str(value).replace("'", "''")
+        import unicodedata
+
+        txt = unicodedata.normalize("NFKD", str(value)).encode("ascii", "ignore").decode("ascii")  # FITS: solo ASCII
+        txt = txt.replace("'", "''")[:68]
         v = ("'" + txt.ljust(8) + "'").ljust(20)
     s = f"{key:<8}= {v}"
     if comment:

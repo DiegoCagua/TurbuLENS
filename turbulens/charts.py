@@ -23,6 +23,7 @@ PRINT_PALETTE = {
     "bg": "#FFFFFF", "panel": "#FFFFFF", "text": "#1D2622", "muted": "#55615B", "grid": "#E4E8E6",
     "accent": "#3E7C72", "accent2": "#B4652A", "good": "#2E7D5B", "warn": "#9A6B12", "bad": "#B0452C",
     "track": "#B9C4BF", "border": "#DDE2DF",
+    "bars": "#93C6BC", "meanLine": "#C62828", "medianLine": "#1F4FB5",
 }
 
 
@@ -415,7 +416,7 @@ def _credit(p, rect, scale, pal):
 
 # ------------------------------------------------------------ constructores
 def histogram_spec(x, bins=None, title="", xlabel="", ylabel="Cuadros", normal=True, density=False,
-                   mean_line=True, median_line=False, sigma_band=0, lim=None, color="accent") -> ChartSpec:
+                   mean_line=True, median_line=False, sigma_band=0, lim=None, color="bars") -> ChartSpec:
     from .core import stats
 
     a = _finite(x)
@@ -437,7 +438,7 @@ def histogram_spec(x, bins=None, title="", xlabel="", ylabel="Cuadros", normal=T
         yy = pdf if density else pdf * a.size * width
         series.append(Series("line", x=xx, y=yy, color="text", width=2, label="Normal (x̄, σ)"))
     if mean_line and s.n:
-        series.append(Series("vline", x=[s.mean], color="accent2", width=2, dash=True, label="Media"))
+        series.append(Series("vline", x=[s.mean], color="meanLine", width=2.5, dash=True, label="Media"))
     if median_line and s.n:
-        series.append(Series("vline", x=[s.median], color="good", width=2, label="Mediana"))
+        series.append(Series("vline", x=[s.median], color="medianLine", width=2.5, label="Mediana"))
     return ChartSpec(title=title, xlabel=xlabel, ylabel=ylabel, series=series, ymin_zero=True)

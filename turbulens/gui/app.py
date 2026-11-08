@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from .. import APP_NAME, INSTITUTION, __version__
-from .pages import analysis, edu, misc
+from .pages import analysis, edu, images, misc, satellite
 from .session import Session, resource_path
 from .theme import qss, theme
 from .widgets import app_icon, button, label, sun_moon_icon
@@ -27,15 +27,25 @@ NAV_ANALISIS = [
 ]
 NAV_EDU = [
     ("EMPIEZA AQUÍ", [("bienvenida", "Bienvenida")]),
-    ("ESTADÍSTICA", [("l1", "Datos y mediciones"), ("l2", "El histograma"), ("l3", "Media y mediana"),
-                                      ("l4", "Desviación estándar"), ("l5", "La campana de Gauss"),
-                                      ("l6", "Muestras y error"), ("l7", "Datos atípicos"), ("l8", "Correlación"),
-                                      ("l9", "Laboratorio libre"), ("quiz", "Ponte a prueba")]),
     ("LA ESTRELLA", [("titilan", "¿Por qué titilan?"), ("dimm", "Los dos huequitos"),
-                                  ("simulador", "Simulador")]),
+                     ("simulador", "Simulador")]),
+    ("ESTADÍSTICA", [("l1", "Datos y mediciones"), ("l2", "El histograma"), ("l3", "Media y mediana"),
+                     ("l4", "Desviación estándar"), ("l5", "La campana de Gauss"),
+                     ("l6", "Muestras y error"), ("l7", "Datos atípicos"), ("l8", "Correlación"),
+                     ("l9", "Laboratorio libre"), ("quiz", "Ponte a prueba")]),
     ("TU VIDEO", [("video", "Video"), ("region", "Recorte y tramo"), ("parametros", "Parámetros"),
                          ("procesar", "Procesar"), ("resultados", "Resultados"), ("historial", "Mis mediciones")]),
 ]
+NAV_IMAGENES = [
+    ("IMÁGENES", [("img_ver", "Visor de píxeles"), ("img_cal", "Darks y flats")]),
+]
+NAV_SATELITE = [
+    ("SATÉLITE", [("goes", "GOES: nubes y canales"), ("img_ver", "Visor de píxeles")]),
+]
+NAVS = {"analisis": NAV_ANALISIS, "educativo": NAV_EDU, "imagenes": NAV_IMAGENES, "satelite": NAV_SATELITE}
+MODE_NAMES = {"analisis": "Modo análisis", "educativo": "Modo educativo", "imagenes": "Modo imágenes",
+              "satelite": "Modo satélite"}
+FIRST_PAGE = {"analisis": "video", "educativo": "bienvenida", "imagenes": "img_ver", "satelite": "goes"}
 
 
 class MainWindow(QMainWindow):
@@ -118,7 +128,9 @@ class MainWindow(QMainWindow):
                          ("parametros", analysis.ParamsPage), ("procesar", analysis.ProcessPage),
                          ("resultados", analysis.ResultsPage), ("historial", analysis.HistoryPage),
                          ("acerca", misc.AboutPage), ("bienvenida", edu.Welcome), ("quiz", edu.QuizPage),
-                         ("titilan", edu.AstroTitilan), ("dimm", edu.AstroDimm), ("simulador", edu.AstroSim)]:
+                         ("titilan", edu.AstroTitilan), ("dimm", edu.AstroDimm), ("simulador", edu.AstroSim),
+                         ("img_ver", images.ImageViewerPage), ("img_cal", images.CalibrationPage),
+                         ("goes", satellite.GoesPage)]:
             self._add_page(key, cls(self))
         for i, cls in enumerate(edu.LESSONS, start=1):
             self._add_page(f"l{i}", cls(self))
@@ -177,11 +189,12 @@ class MainWindow(QMainWindow):
         while self.side_lay.count():
             it = self.side_lay.takeAt(0)
             if it.widget():
+                it.widget().hide()  # oculto ya (deleteLater espera al bucle de eventos)
                 it.widget().deleteLater()
         self.nav_buttons = {}
         group = QButtonGroup(self.sidebar)
         group.setExclusive(True)
-        nav = NAV_EDU if self.mode == "educativo" else NAV_ANALISIS
+        nav = NAVS.get(self.mode, NAV_ANALISIS)
         for title, items in nav:
             self.side_lay.addWidget(label(title, "section"))
             for i, (key, text) in enumerate(items, start=1):
@@ -203,16 +216,16 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------ navegación
     @property
     def session(self) -> Session:
-        return self.sessions[self.mode]
+        return self.sessions.get(self.mode, self.sessions["analisis"])  # imágenes y satélite usan la del análisis
 
     def set_mode(self, mode: str):
-        if mode not in self.sessions:  # protección: nunca quedar en un modo inválido
+        if mode not in NAVS:  # protección: nunca quedar en un modo inválido
             return
         self.mode = mode
-        self.mode_chip.setText("Modo educativo" if mode == "educativo" else "Modo análisis")
+        self.mode_chip.setText(MODE_NAMES[mode])
         self._build_nav()
         self.root.setCurrentIndex(1)
-        self.go("bienvenida" if mode == "educativo" else "video")
+        self.go(FIRST_PAGE[mode])
 
     def show_start_about(self):
         self.root.setCurrentIndex(2)

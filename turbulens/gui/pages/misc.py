@@ -22,7 +22,7 @@ class ModeCard(QFrame):
         self.setProperty("card", "true")
         self.setCursor(Qt.PointingHandCursor)
         self.cb = cb
-        self.setMinimumSize(380, 210)
+        self.setMinimumSize(380, 180)
         self.setMaximumWidth(520)
         lay = QVBoxLayout(self)
         lay.setContentsMargins(26, 24, 26, 22)
@@ -79,20 +79,29 @@ class StartPage(QWidget):
                   "muted", wrap=True)
         d.setAlignment(Qt.AlignCenter)
         lay.addWidget(d)
-        cards = QHBoxLayout()
-        cards.setSpacing(20)
-        cards.addStretch(1)
-        for title, text, cta, mode in (
+        from PySide6.QtWidgets import QGridLayout
+
+        grid = QGridLayout()
+        grid.setSpacing(20)
+        for i, (title, text, cta, mode) in enumerate((
             ("Análisis científico", "Para mediciones reales de tu sitio de observación: extracción de cuadros, seeing, "
              "historial y exportación de datos.", "Entrar al modo análisis  →", "analisis"),
             ("Modo educativo", "Aprende estadística con un experimento astronómico real: histogramas, media, desviación "
              "estándar, la campana de Gauss y más. Para colegios y cursos.", "Entrar al modo educativo  →", "educativo"),
-        ):
+            ("Imágenes", "Calibra tus imágenes con darks y flats y lee el valor de cada píxel, como en DS9. "
+             "Abre FITS, PNG, TIFF y JPG.", "Entrar al modo imágenes  →", "imagenes"),
+            ("Satélite", "Descarga imágenes del satélite GOES-Este para la fecha, hora y lugar de tu observación y "
+             "revisa si había nubes, canal por canal.", "Entrar al modo satélite  →", "satelite"),
+        )):
             c = ModeCard(title, text, cta, lambda *_, m=mode: self.main.set_mode(m))
-            cards.addWidget(c, 1)
+            grid.addWidget(c, i // 2, i % 2)
+        cards = QHBoxLayout()
+        cards.addStretch(1)
+        cards.addLayout(grid, 4)
         cards.addStretch(1)
         lay.addLayout(cards)
-        n = label("Los dos modos comparten el historial y los perfiles de equipo: lo que guardes en uno lo ves en el otro.", "muted")
+        n = label("Los modos de análisis y educativo comparten el historial y los perfiles de equipo: lo que guardes en uno lo "
+                  "ves en el otro.", "muted")
         n.setAlignment(Qt.AlignCenter)
         lay.addWidget(n)
         lay.addStretch(1)

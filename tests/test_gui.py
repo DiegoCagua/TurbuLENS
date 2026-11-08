@@ -41,7 +41,7 @@ def make_window(tmp_path):
     return w
 
 
-@pytest.mark.parametrize("idx,mode", [(0, "analisis"), (1, "educativo")])
+@pytest.mark.parametrize("idx,mode", [(0, "analisis"), (1, "educativo"), (2, "imagenes"), (3, "satelite")])
 @pytest.mark.parametrize("where", ["boton", "tarjeta"])
 def test_enter_mode_from_start_screen(app, errors, tmp_path, idx, mode, where):
     from turbulens.gui.pages.misc import ModeCard

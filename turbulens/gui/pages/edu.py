@@ -14,9 +14,9 @@ import random
 
 import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QRadialGradient
+from PySide6.QtGui import QBrush, QColor, QPainter, QRadialGradient
 from PySide6.QtWidgets import (
-    QCheckBox, QComboBox, QFileDialog, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QPushButton, QSizePolicy, QSlider,
+    QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QHeaderView, QLabel, QSlider,
     QSpinBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
@@ -25,10 +25,10 @@ import os
 from ... import charts
 from ...charts import ChartSpec, Series, histogram_spec
 from ...core import stats
-from ...core.dimm import DimmParams, k_coefficients, r0_from_variance, seeing_from_r0
+from ...core.dimm import k_coefficients, r0_from_variance, seeing_from_r0
 from ..session import resource_path
 from ..theme import theme
-from ..widgets import FormulaLabel, choose_folder, free_name, Card, ChipGroup, HelpButton, button, hbox, label, vbox
+from ..widgets import FormulaLabel, choose_folder, free_name, Card, ChipGroup, HelpButton, button, hbox, label
 from .base import Page
 from ...i18n import integer, num, tr
 
@@ -80,15 +80,28 @@ def seeing_example(sigma_px: float, scale: float = 1.0) -> float:
 
 
 # ------------------------------------------------------------------ widgets
+def option_order(store: dict | None, key, n: int) -> list[int]:
+    """Orden al azar de las opciones de una pregunta, fijo durante la sesión (sobrevive al cambio de idioma)."""
+    k = ("orden", key)
+    if store is not None and k in store and len(store[k]) == n:
+        return list(store[k])
+    order = list(range(n))
+    random.shuffle(order)
+    if store is not None:
+        store[k] = order
+    return order
+
+
 class MiniQuiz(Card):
     def __init__(self, question: str, options: list[str], ok: int, good: str, bad: str, store: dict | None = None):
         super().__init__("Comprueba", kind="panel2", margins=(12, 10, 12, 10))
         self.ok, self.good, self.bad = ok, good, bad
         self.store, self.key = store, question
+        self.order = option_order(store, question, len(options))  # posición en pantalla → opción original
         self.add(label(question, wrap=True))
         self.btns = []
-        for i, o in enumerate(options):
-            b = button(o, "option", lambda _=False, i=i: self.pick(i))
+        for pos, i in enumerate(self.order):
+            b = button(options[i], "option", lambda _=False, i=i: self.pick(i))
             self.btns.append(b)
             self.add(b)
         self.fb = label("", wrap=True)
@@ -98,6 +111,7 @@ class MiniQuiz(Card):
             self.pick(store[self.key])
 
     def pick(self, i):
+        """``i`` es el índice de la opción original (no su posición en pantalla)."""
         if self.answered:  # solo se puede responder una vez por sesión
             return
         self.answered = True
@@ -105,7 +119,8 @@ class MiniQuiz(Card):
             self.store[self.key] = i
         for b in self.btns:
             b.setCursor(Qt.ArrowCursor)
-        for j, b in enumerate(self.btns):
+        for pos, b in enumerate(self.btns):
+            j = self.order[pos]
             b.setProperty("state", "ok" if j == self.ok else ("bad" if j == i else ""))
             b.style().unpolish(b)
             b.style().polish(b)
@@ -422,8 +437,10 @@ class L3MediaMediana(LessonPage):
             "por debajo y la otra mitad por encima.<br><br>"
             "Si los datos son simétricos, media y mediana casi coinciden. Si hay datos muy raros, la media se deja "
             "arrastrar y la mediana casi no se mueve: decimos que la mediana es <b>robusta</b>.")
-    tryit = ["Agrega datos raros (distancias cercanas a 0 px, como las de una detección fallida).",
-             "Compara cuánto se mueve la media y cuánto la mediana."]
+    tryit = ["Agrega datos raros. Pueden caer muy por debajo (como una detección fallida, cerca de 0 px) o muy por "
+             "encima (como un spot confundido con ruido); el lado se elige al azar.",
+             "Compara cuánto se mueve la media y cuánto la mediana.",
+             "Pulsa «Nuevos datos raros» para sortearlos de nuevo y mira hacia dónde se va la media."]
     quiz = ("Si aparecen algunos datos muy extremos, ¿cuál cambia menos?", ["La media", "La mediana", "Las dos cambian igual"], 1,
             "¡Bien! La mediana solo mira el dato del medio, así que los extremos casi no la afectan.",
             "Recuerda: la media suma todos los valores, incluidos los extremos.")
@@ -435,14 +452,31 @@ class L3MediaMediana(LessonPage):
         self.bad = slider(0, 300, 0, 5)
         self.bad_lbl = label("", "mono")
         self.ctl("Datos raros agregados", self.bad, self.bad_lbl)
+        self.seed = random.randrange(1 << 30)
+        self.side_lbl = label("", "small")
+        self.controls.add(hbox(button("🎲  Nuevos datos raros", slot=self.reroll), self.side_lbl, "stretch"))
+
+    def reroll(self):
+        self.seed = random.randrange(1 << 30)
+        if self.bad.value() == 0:
+            self.bad.setValue(60)
+        self.update_view()
 
     def update_view(self, *a):
         d = self.data()
         n = min(self.n.value(), d["sep"].size)
         x = d["sep"][:n]
         k = self.bad.value()
-        rng = np.random.default_rng(1)
-        x = np.concatenate([x, rng.uniform(0.2, 1.5, k)])
+        rng = np.random.default_rng(self.seed)
+        # Los datos raros caen a un lado al azar (abajo, arriba o repartidos), no siempre al mismo.
+        frac_low = rng.choice([0.0, 0.2, 0.8, 1.0])
+        med, sd = float(np.median(x)), float(np.std(x)) or 1.0
+        low = rng.random(k) < frac_low
+        raros = np.where(low, rng.uniform(0.02, 0.12, k) * med, med + rng.uniform(5, 10, k) * sd)
+        x = np.concatenate([x, raros])
+        side = (tr("abajo") if frac_low == 1 else tr("arriba") if frac_low == 0 else
+                tr("la mayoría abajo") if frac_low > 0.5 else tr("la mayoría arriba"))
+        self.side_lbl.setText(tr("Lado de los datos raros: {}").format(side) if k else "")
         self.table_data = (["dato", "distancia_px", "es_dato_raro"], [np.arange(x.size), x, np.r_[np.zeros(n, int), np.ones(k, int)]])
         self.n_lbl.setText(str(n))
         self.bad_lbl.setText(str(k))
@@ -749,18 +783,20 @@ class QuizPage(Page):
         self.items = []
         grid = QGridLayout()
         grid.setSpacing(12)
+        store = self.main.sessions["educativo"].answers
         for k, (q, opts, ok, why) in enumerate(QUIZ):
             c = Card(margins=(14, 12, 14, 12))
             c.add(label(f"{k + 1}. {tr(q)}", "h2", wrap=True))
             bs = []
             fb = label("", wrap=True)
-            for i, o in enumerate(opts):
-                b = button(o, "option")
+            order = option_order(store, ("prueba", q), len(opts))
+            for i in order:
+                b = button(opts[i], "option")
                 b.clicked.connect(lambda _=False, k=k, i=i: self.pick(k, i))
                 bs.append(b)
                 c.add(b)
             c.add(fb)
-            self.items.append({"btns": bs, "fb": fb, "ok": ok, "why": why, "ans": None})
+            self.items.append({"btns": bs, "fb": fb, "ok": ok, "why": why, "ans": None, "order": order})
             grid.addWidget(c, k // 2, k % 2)
         self.lay.addLayout(grid)
         self.lay.addWidget(label("Cada pregunta se puede responder una sola vez por sesión: piensa bien antes de elegir.",
@@ -782,7 +818,8 @@ class QuizPage(Page):
         for b in it["btns"]:
             b.setCursor(Qt.ArrowCursor)
         pal = theme.pal
-        for j, b in enumerate(it["btns"]):
+        for pos, b in enumerate(it["btns"]):
+            j = it["order"][pos]
             b.setProperty("state", "ok" if j == it["ok"] else ("bad" if j == i else ""))
             b.style().unpolish(b)
             b.style().polish(b)
@@ -839,8 +876,22 @@ class AstroTitilan(Page):
             "una medida de ángulo muy pequeña: <b>1″ es el tamaño de una moneda de 1 cm vista a 2 km</b>.<br><br>"
             "Entre más pequeño el seeing, más nítido el cielo y mejor para observar.", wrap=True, rich=True)
         t.setStyleSheet("font-size:16px;")
-        c.add(t, label("Escala del seeing", "h2"), SeeingScale())
+        from ..anim import TwinkleAnim
+
+        a = Card("Míralo en movimiento", margins=(12, 10, 12, 12))
+        self.anim = TwinkleAnim(min_h=300)
+        self.mov = slider(0, 100, 45)
+        self.mov.valueChanged.connect(lambda v: self.anim.set_level(v / 100))
+        self.anim.set_level(0.45)
+        a.add(self.anim, hbox(label("Agua y aire quietos", "small"), self.mov, label("Muy agitados", "small"), spacing=10),
+              label("Mueve la barra: con el agua quieta la moneda se ve nítida; con el aire quieto la estrella casi no "
+                    "titila. Al agitarlos, la imagen baila, se borronea y cambia de brillo.", "muted", wrap=True))
+        c.add(t)
         self.lay.addWidget(c)
+        self.lay.addWidget(a)
+        sc = Card()
+        sc.add(label("Escala del seeing", "h2"), SeeingScale())
+        self.lay.addWidget(sc)
         self.lay.addLayout(hbox(button("Siguiente: el truco de los dos huequitos →", "primary",
                                        lambda: self.main.go("dimm")), "stretch"))
         self.lay.addStretch(1)
@@ -865,6 +916,19 @@ class AstroDimm(Page):
         t.setStyleSheet("font-size:16px;")
         c.add(t)
         self.lay.addWidget(c)
+        from ..anim import DimmAnim
+
+        a = Card("Míralo en movimiento", margins=(12, 10, 12, 12))
+        self.anim = DimmAnim(min_h=300)
+        self.turb = slider(0, 100, 50)
+        self.turb.valueChanged.connect(lambda v: self.anim.set_level(v / 100))
+        self.shake = QCheckBox(tr("Hacer temblar el telescopio"))
+        self.shake.toggled.connect(self.anim.set_shake)
+        a.add(self.anim, hbox(label("Turbulencia", "small"), self.turb, 16, self.shake, spacing=10),
+              label("Activa el temblor: los dos puntos se mueven juntos y la distancia entre ellos casi no cambia. "
+                    "Sube la turbulencia: cada punto baila por su lado y la distancia sí cambia. Eso es lo que mide el DIMM.",
+                    "muted", wrap=True))
+        self.lay.addWidget(a)
         steps = [("1", "Un telescopio", "Uno de 4 pulgadas o más es suficiente."),
                  ("2", "La máscara", "Cartulina con dos huequitos. Para 8 pulgadas: de 2,5 cm, separados 14 cm."),
                  ("3", "Una cámara de video", "Una cámara de 30 cuadros por segundo o más, o una DSLR en modo video."),
