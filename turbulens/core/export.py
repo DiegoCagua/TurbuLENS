@@ -88,7 +88,10 @@ def summary_record(res, dimm: DimmResult, params: DimmParams) -> dict:
     d["notas"] = list(res.notes)
     from .. import __version__, citation_apa
 
-    d["software"] = f"TurbuLENS {__version__} · Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria · https://github.com/DiegoCagua/TurbuLENS"
+    from .. import AUTHOR, REPO_URL
+    from ..i18n import tr
+
+    d["software"] = f"TurbuLENS {__version__} · {tr(AUTHOR)} · {REPO_URL}"
     d["como_citar"] = citation_apa()
     return d
 

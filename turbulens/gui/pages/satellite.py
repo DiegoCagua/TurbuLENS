@@ -280,7 +280,7 @@ class GoesPage(Page):
         self._run(work)
 
     def open_local(self):
-        ps = choose_files(self, "Archivos de GOES (NetCDF)", "GOES ABI L2 CMIP (*.nc);;Todos (*)")
+        ps = choose_files(self, "Archivos de GOES (NetCDF)", "GOES ABI L2 CMIP (*.nc);;" + tr("Todos") + " (*)")
         if not ps:
             return
         lat, lon, half = self.lat.value(), self.lon.value(), self.half.value() / 2

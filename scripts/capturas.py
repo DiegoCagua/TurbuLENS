@@ -88,6 +88,37 @@ def main():
                     shot(f"11_edu_{key}_{tag}")
         w.go("acerca")
         shot(f"30_acerca_{tag}")
+        # Modo Imágenes: una imagen sintética con estrellas en el visor
+        import numpy as np
+
+        from turbulens.core.imageio import write_fits
+
+        fits = os.path.join(tmp, "campo_estelar.fits")
+        if not os.path.exists(fits):
+            rng = np.random.default_rng(3)
+            yy, xx = np.mgrid[0:600, 0:800]
+            img = 1000 + rng.normal(0, 12, yy.shape) + 250 * (1 - ((xx - 400) ** 2 + (yy - 300) ** 2) / 500 ** 2)
+            for _ in range(60):
+                x, y, a = rng.uniform(0, 800), rng.uniform(0, 600), rng.uniform(150, 30000)
+                img += a * np.exp(-((xx - x) ** 2 + (yy - y) ** 2) / (2 * 1.8 ** 2))
+            write_fits(fits, img.astype(np.float32), {"OBJECT": "Campo de prueba", "EXPTIME": 30.0})
+        w.set_mode("imagenes")
+        v = w.page_by_key["img_ver"]
+        v.open(fits)
+        v.view.set_region(330, 230, 470, 370)
+        shot(f"40_imagenes_visor_{tag}")
+        w.go("img_cal")
+        shot(f"41_imagenes_calibracion_{tag}")
+        # Modo Satélite con una lectura de prueba (sin conexión)
+        import test_modes
+
+        from turbulens.core import goes
+
+        w.set_mode("satelite")
+        g = w.page_by_key["goes"]
+        g.folder = tmp
+        g.show_readings([goes.read_point(test_modes._FakeGoesFile(), goes.OAN_LAT, goes.OAN_LON, 300)])
+        shot(f"50_satelite_goes_{tag}")
 
     # Exportaciones (sin diálogos)
     from turbulens import reports

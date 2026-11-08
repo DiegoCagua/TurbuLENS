@@ -22,7 +22,10 @@ from ..widgets import (
 )
 from .base import Page
 
-IMAGE_FILTER = "Imágenes (" + " ".join("*" + e for e in IMAGE_EXTS) + ");;FITS (*.fits *.fit *.fts);;Todos (*)"
+def image_filter() -> str:
+    """Filtro del selector de archivos (en el idioma activo)."""
+    return (tr("Imágenes") + " (" + " ".join("*" + e for e in IMAGE_EXTS) + ");;FITS (*.fits *.fit *.fts);;"
+            + tr("Todos") + " (*)")
 
 VIEWER_HELP = (
     "<b>Visor de píxeles</b> (como SAOImage DS9).<ul style='margin-left:-16px'>"
@@ -100,6 +103,9 @@ class ImageViewerPage(Page):
         vc = Card(margins=(8, 8, 8, 8))
         self.view = ImageView()
         self.view.setMinimumHeight(460)
+        from PySide6.QtWidgets import QSizePolicy
+
+        self.view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.view.hovered.connect(self._hover)
         self.view.left.connect(lambda: self.pix.setText(tr("Mueve el cursor sobre la imagen")))
         self.view.region.connect(self._region)
@@ -173,7 +179,7 @@ class ImageViewerPage(Page):
 
     # ------------------------------------------------------------- abrir
     def open_dialog(self):
-        p = choose_file(self, "Abrir imagen", IMAGE_FILTER)
+        p = choose_file(self, "Abrir imagen", image_filter())
         if p:
             self.open(p)
 
@@ -348,7 +354,7 @@ class CalibrationPage(Page):
         self.lay.addStretch(1)
 
     def add_files(self, k):
-        ps = choose_files(self, "Elegir imágenes", IMAGE_FILTER)
+        ps = choose_files(self, "Elegir imágenes", image_filter())
         for p in ps:
             if p not in self.files[k]:
                 self.files[k].append(p)

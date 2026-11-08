@@ -50,3 +50,7 @@ Tres idiomas (español, inglés y portugués) que se cambian desde *Acerca de* o
 ## 8. Versión 1.2.2
 
 Un solo selector de archivos y carpetas en toda la app (el propio, con el tema y el idioma de TurbuLENS); exportar pide solo la carpeta y nombra los archivos solo; historial y perfiles de equipo compartidos entre los dos modos; en la pantalla de carga del idioma gira el logo; y Recorte y tramo se desplaza en ventanas bajas en vez de montar los textos sobre el video.
+
+## 9. Versión 1.3.0
+
+Cuatro modos en la pantalla de inicio (Análisis, Educativo, **Imágenes** y **Satélite**), en una cuadrícula de 2 × 2. El selector de archivos vuelve a ser **el del sistema operativo** (en Windows permite escribir la ruta). En el modo educativo «La estrella» va antes de «Estadística» y tiene **animaciones** dibujadas con Qt (moneda en la piscina, estrella que titila, máscara de dos huequitos con el telescopio que tiembla). El histograma en tema claro usa barras aguamarina suaves, la media en rojo discontinuo y la mediana en azul. El visor de píxeles sigue las convenciones de DS9 (escalas, ZScale, regiones con Mayús + arrastrar). Saray Juliana Pinto Sanabria se suma como coautora y encargada de las pruebas.

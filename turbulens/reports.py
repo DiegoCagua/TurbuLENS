@@ -225,6 +225,8 @@ def _fmt_val(v):
 def summary_rows(rec: dict) -> list[tuple[str, str]]:
     rows = []
     for key, label in SUMMARY_LABELS:
+        if key in ("software", "como_citar"):  # van en el subtítulo y en el pie de cada página (no caben en la tabla)
+            continue
         if key in rec:
             rows.append((label, _fmt_val(rec[key])))
     return rows

@@ -1,8 +1,11 @@
-TurbuLENS 1.2.2
+TurbuLENS 1.3.0
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia
-Español · English · Português (cambia el idioma en «Acerca de»)
+Español · English · Português (el idioma se cambia en la pantalla de inicio)
 
 No hay que instalar nada: abre el programa y listo.
+
+MODOS: Análisis científico (seeing con un DIMM), Educativo (estadística),
+Imágenes (darks, flats y visor de píxeles) y Satélite (nubes con GOES-16/19).
 
 WINDOWS
   Doble clic en TurbuLENS.exe. La primera vez tarda unos segundos en abrir.
@@ -18,13 +21,15 @@ LINUX
   o desde la terminal: ./TurbuLENS
 
 Código fuente, manual y novedades: https://github.com/DiegoCagua/TurbuLENS
-Autores: Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina, estudiantes del
-pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C.
+Autores: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto
+Sanabria (coautora y pruebas), estudiantes del pregrado de Física, Departamento de
+Física, Universidad Nacional de Colombia, Bogotá D.C.
 Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía
 del Observatorio Astronómico Nacional.
 
 LICENCIA: PolyForm Noncommercial 1.0.0 (ver LICENSE.txt). Uso libre SIN fines
 comerciales. Toda copia o versión modificada debe conservar el crédito a los autores.
 Si usas TurbuLENS en un trabajo o publicación, cítalo:
-  Cagua Lozada, D. F., & Cruz Ospina, F. E. (2026). TurbuLENS (versión 1.2.2) [Software].
+  Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). TurbuLENS
+  (versión 1.3.0) [Software].
   https://github.com/DiegoCagua/TurbuLENS

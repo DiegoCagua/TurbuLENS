@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "turbulens"
-version = "1.2.2"
+version = "1.3.0"
 description = "Separa videos de un DIMM en imágenes, mide el seeing y enseña estadística con astronomía."
 readme = "README.md"
 license = {text = "LicenseRef-PolyForm-Noncommercial-1.0.0"}
@@ -22,7 +22,7 @@ turbulens = "turbulens.gui.app:main"
 include = ["turbulens*"]
 
 [tool.setuptools.package-data]
-turbulens = ["assets/*", "assets/formulas/*", "data/*", "locales/*.json"]
+turbulens = ["assets/*", "assets/formulas/*", "data/*", "locales/*.json", "_vendor/pyfive/LICENSE.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

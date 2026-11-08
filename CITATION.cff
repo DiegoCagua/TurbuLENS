@@ -12,8 +12,8 @@ authors:
   - family-names: "Pinto Sanabria"
     given-names: "Saray Juliana"
     affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
-version: "1.2.2"
-date-released: "2026-10-23"
+version: "1.3.0"
+date-released: "2026-11-08"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"
 repository-code: "https://github.com/DiegoCagua/TurbuLENS"

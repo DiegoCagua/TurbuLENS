@@ -29,10 +29,21 @@ TurbuLENS reemplaza dos scripts de Python usados en la práctica del DIMM: `open
 | Histograma normalizado a fracciones con una curva normal en densidad | Barras y curva en escalas distintas | Histograma y curva normal en la misma escala |
 | Media y desviación de la distancia reportadas como resultado; `ESCALAPLACA = 1.0` de relleno; título fijo `MVI1346.MOV` | No es el seeing y no sirve para otro video ni equipo | Seeing longitudinal y transversal con el modelo de Tokovinin (2002), r₀ y corrección al cenit, con los parámetros del usuario |
 
+### Un caso real: spots grandes y desenfocados (2026)
+
+Con un video de estudiantes grabado con un Celestron NexStar 8SE (focal 2032 mm), máscara de D = 4,2 cm y B = 14,4 cm y una Nikon D5600, el código original daba una separación media de unos 20 a 50 px con σ ≈ 77 px, y TurbuLENS 1.2.2 daba unos 0,3 px. Ninguno era correcto:
+
+- En **163 de 462 cuadros** el umbral de 128 encontraba **un solo objeto** (los dos spots eran grandes y se tocaban, o uno era débil). `Imagen_v5.py` emparejaba entonces ese objeto con el primero del cuadro siguiente: salían 117 distancias de 0 a 5 px y otras de más de 100 px por objetos de ruido. La media y la σ resultantes no medían la turbulencia.
+- TurbuLENS 1.2.2 buscaba el segundo pico fuera de un disco pequeño alrededor del primero; con spots de ~20 px y textura interna, encontraba el «segundo spot» **dentro del primero**.
+
+Desde la 1.3.0 los píxeles con luz se separan en dos grupos (k-medias ponderado por intensidad) y un cuadro solo cuenta si hay una caída de luz entre los dos spots. En ese video: 457 de 462 cuadros válidos, separación de 43,6 px con σ = 1,43 px. Con estrellas pequeñas (Altair) los dos métodos coinciden (13,35 frente a 13,45 px).
+
+Además, la escala de placa que se había usado (0,40–0,44 ″/px) salía del píxel del **sensor** (3,9 µm), pero en video la cámara reduce la imagen: el píxel efectivo es 23,5 mm ÷ 1920 px = 12,2 µm, es decir 1,24 ″/px. Con la escala correcta el seeing pasa de ~1″ (imposible para ese sitio) a ~3,8″.
+
 ## Qué cambió en TurbuLENS
 
 - Todo con **NumPy vectorizado**: bloques de cuadros `(n, alto, ancho)`, sin recorrer píxeles en Python; mediciones en un arreglo estructurado reservado de antemano.
-- **Centroide ponderado por intensidad** con umbral relativo al fondo y al pico, en dos pasadas: error típico de 0,02–0,05 px en pruebas sintéticas.
+- **Dos grupos de luz** (k-medias ponderado) y **centroide ponderado por intensidad** de cada spot, con umbral relativo al fondo y al pico: error típico de 0,02–0,05 px en pruebas sintéticas, también con spots grandes o en anillo.
 - **Validación** de cada cuadro (relación señal/ruido, segundo spot real, dentro del recorte) y descarte robusto de atípicos (5 σ con MAD).
 - **Seguimiento** de la estrella: en el video de Altair la estrella se desplaza ~110 px horizontal y ~140 px vertical en 2 minutos; sin seguimiento, un recorte fijo la pierde.
 - **Seeing** con el modelo de Tokovinin (2002), longitudinal y transversal por separado, r₀ y corrección al cenit.

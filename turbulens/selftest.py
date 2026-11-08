@@ -55,11 +55,26 @@ def run(argv: list[str]) -> int:
     files = export.export_analysis(rec, res.meas, d, list(export.DATA_FORMATS), os.path.join(out, "export"), "autoprueba")
     files += reports.export_analysis_charts(reports.analysis_charts(d, res.meas["t"]), ["png", "svg", "pdfg", "pdf"],
                                             os.path.join(out, "export"), "autoprueba", rec)
+    # Modos Imágenes y Satélite: calibración, FITS y el lector HDF5 incluido (comprueba que viajan en el ejecutable)
+    import numpy as np
+
+    from ._vendor import pyfive  # noqa: F401
+    from .core import calibration, goes, imageio
+
+    dark = np.full((20, 30), 100.0, np.float32)
+    flat = np.ones((20, 30), np.float32)
+    cal = calibration.apply_calibration(dark + 50, dark, calibration.master_flat([flat * 1000]))
+    imageio.write_fits(os.path.join(out, "calibrada.fits"), cal)
+    cal_ok = abs(float(imageio.read_image(os.path.join(out, "calibrada.fits")).mean()) - 50) < 1e-3
+    proj = goes.Projection(h=42164160.0, r_eq=6378137.0, r_pol=6356752.31414, lon0=-75.0, x0=-0.151844, dx=5.6e-5,
+                           y0=0.151844, dy=-5.6e-5, nx=5424, ny=5424)
+    goes_ok = abs(proj.scan_angles(33.846162, -84.690932)[0] + 0.024052) < 1e-5
     summary = {"version": __version__, "video": r.info.name, "codec": r.info.codec, "frames": int(res.meas.size),
                "detected": d.n_detected, "saved_images": res.n_saved, "sigma_px": round(d.std_sep_px, 4),
-               "seeing_arcsec": round(d.eps, 3), "exported_files": len(files), "out": out}
+               "seeing_arcsec": round(d.eps, 3), "exported_files": len(files), "calibration": cal_ok, "goes": goes_ok,
+               "out": out}
     print(json.dumps(summary, ensure_ascii=False))
-    ok = d.n_detected > 0.9 * res.meas.size and len(files) >= 10
+    ok = d.n_detected > 0.9 * res.meas.size and len(files) >= 10 and cal_ok and goes_ok
     print("AUTOPRUEBA OK" if ok else "AUTOPRUEBA FALLÓ")
     return 0 if ok else 1
 

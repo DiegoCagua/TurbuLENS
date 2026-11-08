@@ -6,12 +6,14 @@ Una máscara con dos orificios de diámetro **D**, separados **B** entre centros
 
 ## 2. Medición por cuadro
 
-Para cada cuadro (en bloques vectorizados de 32 cuadros):
+Antes de medir, en los primeros cuadros se **ubica la estrella** (aunque la región haya quedado lejos: la búsqueda se amplía desde la región hasta el cuadro completo) y, con *Tamaño automático*, se ajusta el tamaño de la región a la separación y el tamaño de los spots, con margen para el fondo y el movimiento. Con *Seguir a la estrella* la región se recentra en cada cuadro en el centro de luz de la imagen doble; si la estrella se pierde 5 cuadros seguidos, se vuelve a buscar en todo el cuadro. Si hay maestros de calibración, cada cuadro se corrige como (cuadro − dark) ÷ flat.
 
-1. Fondo = mediana del recorte; ruido = 1,4826 × MAD.
-2. Spot 1 = píxel más brillante. Se oculta un disco de radio ≈ 3 r (r = radio del spot estimado a media altura) y el máximo restante es el spot 2.
-3. Centroide ponderado por intensidad en una ventana de semiancho ≈ 2,5 r, con umbral max(0,2 × pico, 3 × ruido); se repite centrado en el resultado.
-4. El cuadro es válido si ambos picos superan 6 × ruido, el segundo tiene al menos 12 % del primero y ninguno está en el borde.
+Para cada cuadro (en bloques vectorizados):
+
+1. Fondo = mediana del recorte; ruido = 1,4826 × MAD. La imagen se suaviza con una caja de 3 × 3 solo para decidir qué píxeles tienen luz: los que superan max(0,15 × pico, 4 × ruido / 3).
+2. Los píxeles con luz se separan en **dos grupos** con k-medias ponderado por intensidad (8 iteraciones), que empieza en el píxel más brillante y en el píxel con luz más alejado de él. Así se separan bien spots pequeños, grandes, en anillo (desenfocados) o partidos.
+3. El centro de cada spot es el **centroide ponderado por intensidad** de su grupo, recortado a 3 r + 3 px alrededor del centro (r = radio de giro del grupo). El spot 1 es el más brillante.
+4. El cuadro es válido si los dos spots superan la relación señal/ruido mínima, el segundo tiene al menos 12 % de la luz del primero, están separados más de 2,2 veces su radio, entre ellos hay una **caída de luz** (menos de 60 % del pico menor en el punto medio) y ninguno toca el borde del recorte.
 
 ## 3. De las mediciones al seeing
 
@@ -29,6 +31,14 @@ Para cada cuadro (en bloques vectorizados de 32 cuadros):
 - El seeing reportado es el promedio de εₗ y εₜ. Con la altura h de la estrella, z = 90° − h y ε_cenit = ε · (cos z)^(3/5).
 
 Referencia de control (probada en `tests/test_core.py`): σ = 0,72 px, s = 1″/px, D = 2,5 cm, B = 14 cm, λ = 550 nm → r₀ ≈ 10 cm, ε ≈ 1,11″.
+
+### Controles de calidad (correlaciones)
+
+- **r longitudinal–transversal**: correlación de Pearson entre ℓ y t. La turbulencia mueve las dos componentes de forma independiente; |r| < 0,2 es lo esperado y un |r| grande indica vibración en una dirección, cambios de foco o spots confundidos.
+- **r entre los dos spots** (longitudinal y transversal), tras quitar la deriva lenta con una media móvil de 1 s: cerca de 1 domina el movimiento común (vibración, seguimiento), que el DIMM cancela; entre 0 y 1 es lo normal; cerca de 0 cada orificio ve turbulencia independiente; negativo indica cambios de foco o de escala o errores de detección.
+- **σt/σl** medido frente al teórico √(Kt/Kl).
+
+El informe PDF explica estos valores con los números del análisis.
 
 ## 4. Precauciones
 
