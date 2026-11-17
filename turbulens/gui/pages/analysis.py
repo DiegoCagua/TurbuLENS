@@ -52,6 +52,12 @@ def human_bytes(b: float) -> str:
     return fnum(max(b, 1e3) / 1e3, 0, " kB")
 
 
+def _fixed(w):
+    """Un botón que no se estira para llenar la fila."""
+    w.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+    return w
+
+
 def nav_row(back=None, nxt=None):
     row = QHBoxLayout()
     if back:
@@ -136,9 +142,14 @@ class VideoPage(Page):
         if not has:
             return
         i = self.s.info
+        if getattr(self, "_shown_info", None) is i:
+            self._show_preview()
+            return
+        self._shown_info = i
         while self.info_grid.count():
             it = self.info_grid.takeAt(0)
             if it.widget():
+                it.widget().hide()
                 it.widget().deleteLater()
         rows = [
             ("Archivo", i.name), ("Formato", f"{i.codec} · {i.container.split(',')[0].upper()}"),
@@ -238,11 +249,13 @@ class RegionPage(Page):
         self.auto_size.setChecked(True)
         self.auto_size.toggled.connect(self._auto_size)
         self.status = label("", "small")
-        bar = hbox(label("Región", "h2"), HelpButton(REGION_HELP), 10, label("Zoom", "small"), self.zoom_chips,
+        # Dos filas cortas en vez de una larga: en pantallas de 1366 px la fila única no cabía.
+        bar = hbox(label("Región", "h2"), HelpButton(REGION_HELP), 10,
                    button("◎ Ajustar a la estrella", slot=self.autofit, tip="Busca la imagen doble y ajusta la región"),
-                   self.size_box, self.track, HelpButton(TRACK_HELP), self.auto_size, HelpButton(AUTOSIZE_HELP),
-                   "stretch", spacing=8)
+                   self.size_box, "stretch", label("Zoom", "small"), self.zoom_chips, spacing=8)
         self.lay.addLayout(bar)
+        self.lay.addLayout(hbox(self.track, 14, self.auto_size, HelpButton(TRACK_HELP + "<br><br>" + AUTOSIZE_HELP),
+                                "stretch", spacing=8))
 
         # Lienzo + columna derecha
         self.canvas = RoiCanvas()
@@ -602,6 +615,14 @@ SAVE_HELP = (
 )
 
 
+OAN_HELP = (
+    "<b>Dispositivos del OAN</b><br>Llena D, B y la escala de placa con los equipos del Observatorio Astronómico "
+    "Nacional: el telescopio (Celestron NexStar 8SE o Meade 10″), la cámara (Nikon D5600, Canon T5i o QHY174M-GPS) y "
+    "la máscara.<br><br>Con las cámaras de fotos la escala se calcula con el <b>píxel efectivo del video</b> (ancho del "
+    "sensor ÷ ancho del video); el ancho se toma del video cargado. Después puedes guardarlo como perfil."
+)
+
+
 ALT_HELP = (
     "<b>Altura de la estrella</b><br>Es el ángulo entre el horizonte y la estrella en el momento de grabar: 0° en el "
     "horizonte y 90° justo encima de ti (el cenit).<br><br><b>¿Para qué sirve?</b> Cerca del horizonte la luz atraviesa más "
@@ -668,14 +689,19 @@ class ParamsPage(Page):
         self.done_info = Card(kind="soft", margins=(14, 12, 14, 12))
         self.done_info.add(hbox(label("<b>Ya hay resultados de este video.</b> Los cambios de D, B, λ, escala y altura se "
                                       "aplican al instante en Resultados: no hace falta volver a procesar ni generar las "
-                                      "imágenes otra vez.", wrap=True, rich=True), 1,
-                                button("Ver resultados →", "primary", lambda: self.main.go("resultados"))))
+                                      "imágenes otra vez.", wrap=True, rich=True), 12,
+                                _fixed(button("Ver resultados →", "primary", lambda: self.main.go("resultados")))))
         self.lay.addWidget(self.done_info)
         grid = QGridLayout()
         grid.setHorizontalSpacing(16)
         grid.setVerticalSpacing(16)
 
         tel = Card("Telescopio y máscara", help_text=PARAMS_HELP)
+        self.oan_b = button("Dispositivos del OAN…", "primary", self._oan_devices,
+                            tip="Telescopios, cámaras y máscaras del Observatorio Astronómico Nacional")
+        self.oan_msg = label("", "small", wrap=True)
+        self.oan_msg.setVisible(False)
+        tel.add(hbox(self.oan_b, HelpButton(OAN_HELP), "stretch"), self.oan_msg)
         self.D = UnitSpin(LENGTH_CM, 0.1, 100, 2.5, "cm", settings_key="D")
         self.B = UnitSpin(LENGTH_CM, 0.2, 300, 14.0, "cm", settings_key="B")
         self.lam = UnitSpin(WAVE_NM, 300, 1100, 550, "nm", settings_key="lambda")
@@ -695,10 +721,13 @@ class ParamsPage(Page):
         f = QGridLayout()
         f.setHorizontalSpacing(12)
         f.setVerticalSpacing(8)
+        self.calc_b = button("Calcular…", "toggle", checkable=True, tip="Calcular la escala con la cámara y la focal")
         for r, (t, w) in enumerate((("Diámetro de cada orificio (D)", self.D), ("Separación entre orificios (B)", self.B),
-                                    ("Longitud de onda (λ)", self.lam), ("Escala de placa (″/px)", self.scale))):
+                                    ("Longitud de onda (λ)", self.lam))):
             f.addWidget(label(t), r, 0)
             f.addWidget(w, r, 1, Qt.AlignRight)
+        f.addLayout(hbox(label("Escala de placa (″/px)"), "stretch", self.calc_b, spacing=6), 3, 0)
+        f.addWidget(self.scale, 3, 1, Qt.AlignRight)
         f.addLayout(hbox(self.alt_on, HelpButton(ALT_HELP), "stretch", spacing=6), 4, 0)
         f.addWidget(self.alt, 4, 1, Qt.AlignRight)
         tel.add(f)
@@ -725,7 +754,10 @@ class ParamsPage(Page):
         self.video_row = QWidget()
         self.video_row.setLayout(hbox(label("Ancho del sensor", "small"), self.sensor, label("Ancho del video", "small"),
                                       self.vid_w, "stretch"))
-        calc.add(label("¿No conoces la escala? Calcúlala:", "small"),
+        self.calc_card = calc
+        calc.setVisible(False)
+        self.calc_b.toggled.connect(calc.setVisible)
+        calc.add(label("Calcular la escala de placa", "small"),
                  hbox(label("Cámara", "small"), self.cam, 1, self.is_video, HelpButton(VIDEO_PIXEL_HELP), "stretch"),
                  self.photo_row, self.video_row,
                  hbox(label("Focal del telescopio", "small"), self.focal, "stretch"),
@@ -734,24 +766,32 @@ class ParamsPage(Page):
         for w in (self.pix, self.focal, self.sensor):
             w.valueChanged.connect(self._calc)
         self.vid_w.valueChanged.connect(self._calc)
-        tel.add(calc)
         from ... import SCALE_LINKS
 
         links = "<br>".join(f"• <a href='{u}'>{tr(t)}</a>" for u, t in SCALE_LINKS)
-        tel.add(label(tr("<b>Datos para tu equipo:</b> la focal del telescopio está en la etiqueta del tubo (por ejemplo "
-                         "«D = 203 mm, F = 2032 mm») y el tamaño de píxel en la ficha de la cámara.<br>") + links,
-                      "small", wrap=True, rich=True))
+        calc.add(label(tr("La focal está en la etiqueta del tubo (por ejemplo «D = 203 mm, F = 2032 mm») y el tamaño de "
+                          "píxel en la ficha de la cámara.<br>") + links, "small", wrap=True, rich=True))
+        tel.add(calc)
         self.prof = QComboBox()
-        self.prof.setMinimumWidth(200)
+        self.prof.setMinimumWidth(180)
         self.prof.activated.connect(self._load_profile)
         self.prof_msg = label("", "small")
-        tel.add(label("Perfil de equipo", "h2"),
-                hbox(self.prof, HelpButton(PROFILE_HELP), "stretch"),
-                hbox(button("Guardar como nuevo…", slot=self._save_profile, tip="Guarda los valores actuales con un nombre nuevo"),
-                     button("Actualizar", slot=self._update_profile, tip="Reescribe el perfil elegido con los valores actuales"),
-                     button("Renombrar…", slot=self._rename_profile),
-                     button("Eliminar", slot=self._del_profile), "stretch"),
-                self.prof_msg)
+        from PySide6.QtWidgets import QMenu, QToolButton
+
+        more = QToolButton()
+        more.setText("⋯")
+        more.setToolTip("Actualizar, renombrar o eliminar el perfil elegido")
+        more.setPopupMode(QToolButton.InstantPopup)
+        more.setCursor(Qt.PointingHandCursor)
+        menu = QMenu(more)
+        menu.addAction(tr("Actualizar con los valores actuales"), self._update_profile)
+        menu.addAction(tr("Renombrar…"), self._rename_profile)
+        menu.addAction(tr("Eliminar"), self._del_profile)
+        more.setMenu(menu)
+        self.more_b = more
+        tel.add(hbox(label("Perfil"), self.prof, 1,
+                     button("Guardar…", slot=self._save_profile, tip="Guarda los valores actuales como un perfil nuevo"),
+                     more, HelpButton(PROFILE_HELP)), self.prof_msg)
 
         sav = Card("Imágenes a guardar", help_text=SAVE_HELP)
         self.save_on = QCheckBox(tr("Guardar los cuadros como imágenes"))
@@ -788,7 +828,8 @@ class ParamsPage(Page):
                                             button("Quitar", slot=lambda *_, k=k: self._clear_cal(k))))
         self.cal_msg = label("", "small", wrap=True)
         cal.lay.insertWidget(1, self.cal_on)
-        cal.add(self.cal_msg, label("Los maestros se crean en el modo «Imágenes» (pantalla de inicio).", "small", wrap=True))
+        cal.add(self.cal_msg)
+        self.cal_box = cal
         sav.lay.addStretch(1)
         right = QVBoxLayout()
         right.setSpacing(16)
@@ -845,6 +886,9 @@ class ParamsPage(Page):
         self.cal_on.setChecked(bool(s.cal.get("on")))
         for k, e in self.cal_rows.items():
             e.setText(s.cal.get(k) or "")
+        self._cal_rows_visible()
+        if not p.scale_arcsec_px and not self.calc_b.isChecked():
+            self.calc_b.setChecked(True)  # sin escala: la calculadora a la vista
         self._reload_profiles()
         self._loading = False
         self._update_est()
@@ -889,7 +933,23 @@ class ParamsPage(Page):
     # Calibración
     def _cal_changed(self, *a):
         self.s.cal["on"] = self.cal_on.isChecked()
+        self._cal_rows_visible()
         self._cal_status()
+
+    def _cal_rows_visible(self):
+        """Los campos del dark, el flat y el bias solo se ven con la calibración activada."""
+        on = self.cal_on.isChecked()
+        lay = self.cal_box.lay
+        for i in range(2, lay.count()):
+            it = lay.itemAt(i)
+            w = it.widget()
+            if w is not None and w is not self.cal_msg:
+                w.setVisible(on)
+            elif it.layout() is not None:
+                for j in range(it.layout().count()):
+                    ww = it.layout().itemAt(j).widget()
+                    if ww is not None:
+                        ww.setVisible(on)
 
     def _pick_cal(self, k):
         from ...core.imageio import IMAGE_EXTS
@@ -953,6 +1013,38 @@ class ParamsPage(Page):
 
     def _use_calc(self):
         self.scale.setText(fnum(self._calc_v, 3))
+
+    def _oan_devices(self):
+        from ..oan import OanDevicesDialog
+
+        s = self.s
+        dlg = OanDevicesDialog(self, s.info.width if s.info is not None else None,
+                               self.main.settings.value("oan/ultimo", "", type=str))
+        if not dlg.exec():
+            return
+        tel, cam, mask, as_video, vw, scale = dlg.selection()
+        self.main.settings.setValue("oan/ultimo", f"{tel.key},{cam.key},{mask.key},{int(as_video)}")
+        self._loading = True
+        if mask.D_cm:
+            self.D.setValue(mask.D_cm)
+            self.B.setValue(mask.B_cm)
+        self.focal.setValue(tel.focal_mm)
+        self.sensor.setValue(cam.sensor_w_mm)
+        self.pix.setValue(cam.pixel_um)
+        self.is_video.setChecked(as_video)
+        if vw:
+            self.vid_w.setValue(vw)
+        self.cam.setCurrentIndex(0)
+        self._calc()
+        self.scale.setText(fnum(scale, 3))
+        self._loading = False
+        self._changed()
+        self.oan_msg.setText(tr("✓ {} + {}{} · escala {} ″/px").format(
+            tel.name, cam.name, "" if not mask.D_cm else tr(" · D = {} cm, B = {} cm").format(num(mask.D_cm, 1),
+                                                                                            num(mask.B_cm, 1)),
+            fnum(scale, 3)) + (tr(" · resultados actualizados sin volver a procesar") if s.result is not None else ""))
+        self.oan_msg.setStyleSheet(f"color:{theme.pal['good']}; font-weight:600;")
+        self.oan_msg.setVisible(True)
 
     def _pick_out(self):
         d = choose_folder(self, "Carpeta de salida", self.out.text() or "")
@@ -1172,6 +1264,7 @@ class ProcessPage(Page):
         while self.sum_grid.count():
             it = self.sum_grid.takeAt(0)
             if it.widget():
+                it.widget().hide()
                 it.widget().deleteLater()
         if s.info is None:
             self.start_b.setEnabled(False)
@@ -1610,8 +1703,7 @@ class HistoryPage(Page):
     def refresh(self):
         s = self.s
         self.h1.setText("Mis mediciones" if self.is_edu else "Historial de estadísticas")
-        self.sub.setText("El mismo historial en los dos modos: aquí están los análisis guardados en el modo análisis y en el "
-                         "educativo, para comparar noches y épocas del año.")
+        self.sub.setText("Compara noches y épocas del año (es el mismo en los modos análisis y educativo).")
         self.sub.setVisible(True)
         self._rows = s.history.list()
         has = bool(self._rows)

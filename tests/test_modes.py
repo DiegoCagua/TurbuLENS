@@ -6,6 +6,7 @@ import datetime as dt
 import io
 import os
 import pathlib
+import time
 
 import numpy as np
 import pytest
@@ -224,31 +225,34 @@ def test_images_mode_calibrate_and_view(app, tmp_path, monkeypatch):
 
     rng = np.random.default_rng(2)
     shape = (30, 50)
-    paths = {}
-    for k, base in (("darks", 100.0), ("flats", 2000.0), ("luces", 400.0)):
-        paths[k] = []
+    root = tmp_path / "noche"
+    for k, base in (("Darks", 100.0), ("Flats", 2000.0), ("Luces", 400.0)):
+        (root / k).mkdir(parents=True)
         for i in range(3):
-            p = tmp_path / f"{k}_{i}.fits"
-            write_fits(str(p), (base + rng.normal(0, 3, shape)).astype(np.float32))
-            paths[k].append(str(p))
+            write_fits(str(root / k / f"{k.lower()}_{i}.fits"), (base + rng.normal(0, 3, shape)).astype(np.float32),
+                       {"EXPTIME": 0.5 if k == "Flats" else 30.0})
     w = _window(tmp_path)
     w.set_mode("imagenes")
     assert w.current == "img_ver"
     pg = w.page_by_key["img_cal"]
     w.go("img_cal")
-    for k, ps in paths.items():
-        pg.files[k] = list(ps)
-        pg._sync(k)
+    pg._add([str(root)])  # una carpeta con subcarpetas: se clasifica por el nombre de la carpeta
+    assert pg.table.rowCount() == 9 and pg.plan.counts["light"] == 3 and pg.plan.counts["dark"] == 3
+    assert "dark de 30 s (3)" in pg.plan_lbl.text()
     pg.out_dir = str(tmp_path / "salida")
-    os.makedirs(pg.out_dir)
     pg.run()
-    assert set(pg.masters) == {"dark", "flat"} and len(pg.outputs) == 3
-    calib = read_stack(pg.outputs[0])
+    t0 = time.time()
+    while pg.thread is not None and time.time() - t0 < 60:
+        QApplication.processEvents()
+        time.sleep(0.02)
+    res = pg.result
+    assert res and res.first["dark"] and res.first["flat"] and len(res.outputs) == 3
+    calib = read_stack(res.outputs[0])
     assert calib.shape == shape and abs(float(np.median(calib)) - 300) < 10
     pg.use_in_analysis()
-    assert w.sessions["analisis"].cal["on"] and w.sessions["analisis"].cal["dark"].endswith("_dark.fits")
+    assert w.sessions["analisis"].cal["on"] and "maestro_dark_30s" in w.sessions["analisis"].cal["dark"]
     # Visor: abrir, leer un píxel, estadística de región y exportar la región a CSV
-    pg.open_in_viewer(pg.outputs[0])
+    pg.open_in_viewer(res.outputs[0])
     v = w.page_by_key["img_ver"]
     assert w.current == "img_ver" and v.view.data.shape == shape
     v._hover(4, 2, float(v.view.data[2, 4]))

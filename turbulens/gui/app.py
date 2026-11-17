@@ -383,8 +383,36 @@ class MainWindow(QMainWindow):
         super().closeEvent(ev)
 
 
+UI_SCALES = [("100", "100 %"), ("125", "125 %"), ("150", "150 %"), ("sistema", "Como el sistema")]
+
+
+def ui_scale_setting() -> str:
+    v = str(QSettings("TurbuLENS", "TurbuLENS").value("escala_interfaz", "100"))
+    return v if v in dict(UI_SCALES) else "100"
+
+
+def apply_ui_scale(value: str | None = None) -> None:
+    """Tamaño de la interfaz, antes de crear la aplicación.
+
+    Por defecto TurbuLENS se dibuja al 100 %: en Windows y Linux se ignora el escalado de pantalla del sistema
+    (125 %, 150 %…), que agrandaba todo y no dejaba ver las páginas completas en portátiles. En macOS se respeta la
+    densidad de la pantalla (Retina), que no agranda la interfaz.
+    """
+    value = value or ui_scale_setting()
+    if value == "sistema" or sys.platform == "darwin":
+        return
+    for k in ("QT_SCALE_FACTOR", "QT_ENABLE_HIGHDPI_SCALING", "QT_FONT_DPI"):
+        if os.environ.get(k):  # el usuario ya eligió algo a mano
+            return
+    os.environ["QT_ENABLE_HIGHDPI_SCALING"] = "0"
+    os.environ["QT_FONT_DPI"] = "96"
+    if value != "100":
+        os.environ["QT_SCALE_FACTOR"] = str(int(value) / 100)
+
+
 def main(argv=None) -> int:
     argv = sys.argv if argv is None else argv
+    apply_ui_scale()
     from .. import i18n
     from . import i18n_qt
 
@@ -405,7 +433,7 @@ def main(argv=None) -> int:
     app.setWindowIcon(QIcon(resource_path("assets", "turbulens_256.png")))
     f = QFont()
     f.setFamilies(["Segoe UI", "SF Pro Text", "Helvetica Neue", "Inter", "Noto Sans", "DejaVu Sans", "Arial"])
-    f.setPointSizeF(10)
+    f.setPixelSize(14)  # en píxeles, como la hoja de estilos: el mismo tamaño en todos los sistemas
     app.setFont(f)
     w = MainWindow()
     w.showMaximized()  # abre ocupando toda la pantalla

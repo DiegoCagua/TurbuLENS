@@ -83,6 +83,30 @@ def read_fits(path: str) -> tuple[np.ndarray, dict, list[str]]:
                 raise ValueError("el archivo FITS no tiene una imagen")
 
 
+def read_fits_header(path: str) -> dict:
+    """Cabecera del primer HDU con imagen, sin leer los píxeles (rápido: sirve para clasificar miles de archivos)."""
+    size = os.path.getsize(path)
+    with open(path, "rb") as f:
+        first = None
+        while True:
+            hdr, _cards = _parse_header(f)
+            if first is None:
+                first = hdr
+            naxis = int(hdr.get("NAXIS", 0))
+            dims = [int(hdr.get(f"NAXIS{i}", 0)) for i in range(1, naxis + 1)]
+            n = int(np.prod(dims)) if dims else 0
+            if naxis >= 2 and n > 0:
+                if hdr is not first:  # imagen en una extensión: los datos generales están en el HDU primario
+                    merged = dict(first)
+                    merged.update(hdr)
+                    return merged
+                return hdr
+            nbytes = n * abs(int(hdr.get("BITPIX", 8))) // 8
+            f.seek(nbytes + ((-nbytes) % BLOCK), 1)
+            if f.tell() >= size:
+                raise ValueError("el archivo FITS no tiene una imagen")
+
+
 def read_image(path: str, frame: int = 0) -> np.ndarray:
     """Una imagen 2D (float32). En cubos o videos de imágenes se toma ``frame``."""
     a = read_stack(path)

@@ -24,11 +24,15 @@ def combine(frames: Iterable[np.ndarray], method: str = "mediana", sigma: float 
     ``method``: "mediana", "media" o "sigma" (media tras descartar valores a más de ``sigma`` desviaciones
     robustas de la mediana de cada píxel).
     """
-    stack = np.stack([np.asarray(f, dtype=np.float32) for f in frames])
+    return combine_stack(np.stack([np.asarray(f, dtype=np.float32) for f in frames]), method, sigma)
+
+
+def combine_stack(stack: np.ndarray, method: str = "mediana", sigma: float = 3.0) -> np.ndarray:
+    """Igual que :func:`combine`, para un arreglo ``(n, alto, ancho)`` ya armado (no lo copia)."""
     if stack.ndim != 3 or stack.shape[0] == 0:
         raise ValueError("se necesita al menos una imagen")
     if stack.shape[0] == 1:
-        return stack[0].copy()
+        return np.array(stack[0], dtype=np.float32)
     if method == "media":
         return stack.mean(axis=0, dtype=np.float32)
     med = np.median(stack, axis=0)

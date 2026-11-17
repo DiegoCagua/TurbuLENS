@@ -153,6 +153,14 @@ class AboutPage(Page):
         self.lang.changed.connect(self._lang_changed)
         lang_card.add(label("Cambia el idioma de toda la aplicación. Tus datos y mediciones se conservan.", "muted", wrap=True),
                       self.lang)
+        from ..app import UI_SCALES, ui_scale_setting
+
+        self.ui_scale = ChipGroup([(k, t) for k, t in UI_SCALES])
+        self.ui_scale.set_value(ui_scale_setting())
+        self.ui_scale.changed.connect(self._scale_changed)
+        lang_card.add(label("Tamaño de la interfaz", "h2"),
+                      label("100 % muestra las páginas completas aunque Windows o Linux tengan la pantalla al 125 % o 150 %. "
+                            "El cambio se aplica al volver a abrir TurbuLENS.", "muted", wrap=True), self.ui_scale)
         self.lay.addWidget(lang_card)
         c = Card()
         refs = ("<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion to seeing. "
@@ -196,6 +204,14 @@ class AboutPage(Page):
                       button("Copiar BibTeX", slot=lambda: self._copy(citation_bibtex())), self.copied, "stretch"))
         self.lay.addWidget(cite)
         self.lay.addStretch(1)
+
+    def _scale_changed(self):
+        v = self.ui_scale.value()
+        if v:
+            from PySide6.QtCore import QSettings
+
+            QSettings("TurbuLENS", "TurbuLENS").setValue("escala_interfaz", v)
+            self.main.toast("El nuevo tamaño se aplica al volver a abrir TurbuLENS.")
 
     def _lang_changed(self):
         code = self.lang.value()

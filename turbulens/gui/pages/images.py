@@ -9,14 +9,19 @@ import os
 import time
 
 import numpy as np
+from PySide6.QtCore import QEventLoop, QObject, Qt, QThread, Signal
+from PySide6.QtGui import QColor
 from PySide6.QtWidgets import (
-    QComboBox, QGridLayout, QHBoxLayout, QListWidget, QPlainTextEdit, QSpinBox, QVBoxLayout, QWidget,
+    QAbstractItemView, QApplication, QCheckBox, QComboBox, QGridLayout, QHBoxLayout, QHeaderView, QPlainTextEdit,
+    QProgressBar, QSpinBox, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget,
 )
 
+from ...core import calframes as cf
 from ...core import calibration as cal
 from ...core.imageio import IMAGE_EXTS, header_text, read_stack, write_fits, write_png16
 from ...i18n import integer, num, tr
 from ..imageview import CMAPS, LIMITS, STRETCHES, ImageView
+from ..theme import theme
 from ..widgets import (
     Card, HelpButton, button, choose_file, choose_files, choose_folder, free_base, free_name, hbox, label, notify,
 )
@@ -40,17 +45,16 @@ VIEWER_HELP = (
     "Los datos no cambian al cambiar la escala o los colores: solo cambia cómo se ven.")
 
 CAL_PAGE_HELP = (
-    "<b>Calibración de imágenes</b><ul style='margin-left:-16px'>"
-    "<li><b>Luces</b>: tus imágenes del cielo (las que quieres corregir).</li>"
-    "<li><b>Darks</b>: con la tapa puesta, con el mismo tiempo de exposición, ganancia y temperatura que las luces. "
-    "Quitan la corriente oscura y los píxeles calientes.</li>"
-    "<li><b>Flats</b>: de una superficie iluminada de forma pareja (cielo del atardecer o una pantalla blanca), con el "
-    "mismo foco. Corrigen el viñeteo y el polvo.</li>"
-    "<li><b>Darks de flats</b> (opcional): darks con la exposición de los flats.</li>"
-    "<li><b>Bias</b> (opcional): exposición más corta posible con la tapa puesta. Se usa si no hay darks.</li></ul>"
-    "Cada grupo se combina en una imagen <b>maestra</b> (la mediana es robusta a rayos cósmicos). Luego "
-    "cada luz se corrige así: <b>(luz − dark) ÷ flat normalizado</b>. Los maestros y las luces calibradas se guardan "
-    "en FITS de 32 bits, que abren DS9, Astropy y AstroImageJ.")
+    "<b>Calibración guiada por las cabeceras</b><br>Agrega una carpeta completa (con subcarpetas) o imágenes sueltas. "
+    "TurbuLENS lee la cabecera de cada una (FITS, o EXIF de las fotos) y:<ul style='margin-left:-16px'>"
+    "<li><b>Las clasifica</b> en luces, darks, flats, darks de flat y bias: por la cabecera (IMAGETYP), y si no la "
+    "tiene, por el nombre del archivo o de la carpeta. Lo que no se pueda saber se toma como luz y se marca.</li>"
+    "<li><b>Empareja</b>: cada luz recibe los darks de su misma <b>exposición</b>, ganancia (o ISO), temperatura, "
+    "binning y tamaño, y los flats de su mismo <b>filtro</b>. Los flats reciben sus propios darks (darks de flat).</li>"
+    "<li>Si no hay darks de la misma exposición pero sí bias, <b>escala</b> el dark: (dark − bias) · t<sub>luz</sub> / "
+    "t<sub>dark</sub> + bias.</li></ul>"
+    "Antes de calibrar ves el plan con los avisos. Cada maestro se crea una sola vez y se guarda en FITS de 32 bits "
+    "(carpeta «maestros»); cada luz se corrige como <b>(luz − dark) ÷ flat normalizado</b> (carpeta «calibradas»).")
 
 
 def fmt(v, d=3):
@@ -297,162 +301,310 @@ class ImageViewerPage(Page):
 
 
 # ----------------------------------------------------------- calibración
-GROUPS = [("luces", "Luces (imágenes del cielo)", True), ("darks", "Darks", False), ("flats", "Flats", False),
-          ("darkflats", "Darks de los flats (opcional)", False), ("bias", "Bias (opcional)", False)]
 METHODS = [("mediana", "Mediana (recomendado)"), ("sigma", "Media con recorte de 3 σ"), ("media", "Media")]
+KIND_ORDER = ["light", "dark", "flat", "darkflat", "bias"]
+
+
+def _exp_text(e):
+    if e is None:
+        return "—"
+    return (num(e, 3).rstrip("0").rstrip(",.") or "0") + " s"
+
+
+def _arg(a):
+    """Números de los avisos con el formato del idioma (60 y no 60.0)."""
+    if isinstance(a, float):
+        return num(a, 3).rstrip("0").rstrip(",.") or "0"
+    return a
+
+
+def _dark_text(c) -> str:
+    """Descripción corta de lo que se resta a un grupo."""
+    if c is None or c.mode == "ninguno":
+        return tr("nada")
+    if c.mode == "bias":
+        return tr("bias ({})").format(len(c.bias_paths))
+    if c.mode == "escalado":
+        return tr("dark de {} escalado ×{} con bias ({} + {})").format(_exp_text(c.exptime), num(c.scale, 3),
+                                                                      len(c.paths), len(c.bias_paths))
+    return tr("dark de {} ({})").format(_exp_text(c.exptime), len(c.paths))
+
+
+class _CalJob(QObject):
+    progress = Signal(str, int, int)
+    done = Signal(object)
+    failed = Signal(str)
+
+    def __init__(self, fn):
+        super().__init__()
+        self.fn = fn
+        self.cancel = False
+
+    def run(self):
+        try:
+            self.done.emit(self.fn(self))
+        except Exception as exc:  # se muestra en la interfaz
+            self.failed.emit(str(exc) or exc.__class__.__name__)
 
 
 class CalibrationPage(Page):
     title = "Calibración: darks y flats"
-    subtitle = "Crea las imágenes maestras y corrige tus imágenes del cielo"
+    subtitle = "Agrega imágenes o carpetas completas: TurbuLENS lee cada cabecera y empareja los darks y flats"
     help_text = CAL_PAGE_HELP
 
     def __init__(self, main):
         super().__init__(main)
-        self.files = {k: [] for k, _, _ in GROUPS}
-        self.lists = {}
-        self.counts = {}
-        self.masters = {}
-        self.outputs = []
-        grid = QGridLayout()
-        grid.setSpacing(12)
-        for i, (k, t, _) in enumerate(GROUPS):
-            c = Card(t, margins=(12, 10, 12, 10))
-            lst = QListWidget()
-            lst.setMinimumHeight(90)
-            lst.setMaximumHeight(130)
-            self.lists[k] = lst
-            self.counts[k] = label("0 archivos", "small")
-            c.add(lst, hbox(button("Agregar…", slot=lambda _=False, k=k: self.add_files(k)),
-                            button("Quitar todo", slot=lambda _=False, k=k: self.clear(k)), "stretch", self.counts[k]))
-            grid.addWidget(c, i // 3, i % 3)
-        oc = Card("Opciones", margins=(12, 10, 12, 10))
+        self.frames: list = []
+        self.plan = None
+        self.result = None
+        self.thread = None
+        self.job = None
+        self.out_dir = ""
+
+        add = Card("1. Imágenes", margins=(14, 12, 14, 12))
+        self.count_lbl = label("Ninguna imagen todavía.", "small", wrap=True)
+        add.add(hbox(button("Agregar carpeta…", "primary", self.add_folder,
+                            tip="Se recorren también las subcarpetas (por ejemplo Luces/, Darks/, Flats/)"),
+                     button("Agregar imágenes…", slot=self.add_files), button("Quitar todo", slot=self.clear), "stretch",
+                     self.count_lbl))
+        self.table = QTableWidget(0, 9)
+        self.table.setHorizontalHeaderLabels(["Archivo", "Tipo", "Según", "Exposición", "Ganancia / ISO", "Temp. (°C)",
+                                              "Filtro", "Tamaño", "Binning"])
+        self.table.verticalHeader().setVisible(False)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.table.setMinimumHeight(220)
+        self.table.setMaximumHeight(320)
+        self.kind_c = QComboBox()
+        for k in KIND_ORDER:
+            self.kind_c.addItem(cf.KIND_NAMES[k], k)
+        add.add(self.table, hbox(label("Si alguna quedó mal clasificada, selecciónala y márcala como", "small"), self.kind_c,
+                                 button("Cambiar", slot=self.set_kind), "stretch"))
+        self.lay.addWidget(add)
+
+        plan = Card("2. Qué se va a hacer", margins=(14, 12, 14, 12))
         self.method = QComboBox()
         for k, t in METHODS:
             self.method.addItem(t, k)
-        self.out_dir = ""
+        self.scale_chk = QCheckBox(tr("Escalar darks con el bias si no hay de la misma exposición"))
+        self.scale_chk.setChecked(True)
+        self.method.currentIndexChanged.connect(self._replan)
+        self.scale_chk.toggled.connect(self._replan)
+        plan.add(hbox(label("Combinar con"), self.method, 12, self.scale_chk, "stretch"))
+        self.plan_lbl = label("Agrega imágenes para ver el plan.", wrap=True, rich=True)
+        self.plan_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        plan.add(self.plan_lbl)
+        self.lay.addWidget(plan)
+
+        run = Card("3. Calibrar", margins=(14, 12, 14, 12))
         self.out_lbl = label("Carpeta de salida: (sin elegir)", "small", wrap=True)
-        oc.add(hbox(label("Combinar con"), self.method, "stretch"),
-               hbox(button("Carpeta de salida…", slot=self.pick_out), "stretch"), self.out_lbl)
-        grid.addWidget(oc, 1, 2)
-        self.lay.addLayout(grid)
         self.run_b = button("Crear maestros y calibrar", "primary", self.run)
+        self.cancel_b = button("Cancelar", slot=self.cancel)
+        self.cancel_b.setEnabled(False)
+        self.bar = QProgressBar()
+        self.bar.setRange(0, 1000)
+        self.bar.setTextVisible(False)
+        self.bar.setFixedHeight(8)
         self.status = label("", "small", wrap=True)
-        self.lay.addLayout(hbox(self.run_b, 8, self.status, "stretch"))
-        rc = Card("Resultado")
-        self.res_lbl = label("Aún no se ha calibrado nada.", "small", wrap=True)
+        run.add(hbox(button("Carpeta de salida…", slot=self.pick_out), self.out_lbl, "stretch"),
+                hbox(self.run_b, self.cancel_b, self.bar, 1), self.status)
+        self.res_lbl = label("", "small", wrap=True)
         self.view_btns = hbox(spacing=8)
-        rc.add(self.res_lbl, self.view_btns)
-        self.use_b = button("Usar estos maestros en el análisis de video", slot=self.use_in_analysis,
-                            tip="El dark, el flat y el bias se aplican a cada cuadro del video antes de medir")
+        self.use_b = button("Usar en el análisis de video", slot=self.use_in_analysis,
+                            tip="El dark, el flat y el bias del grupo principal se aplican a cada cuadro del video antes de medir")
         self.use_b.setEnabled(False)
-        rc.add(hbox(self.use_b, HelpButton(
-            "Los maestros se aplican cuadro a cuadro al video del DIMM (Análisis → Parámetros → Calibración). "
-            "Deben tener el mismo tamaño en píxeles que el video. Con darks y flats las medidas de centroide "
-            "son más precisas en estrellas débiles."), "stretch"))
-        self.lay.addWidget(rc)
+        run.add(self.res_lbl, self.view_btns, hbox(self.use_b, HelpButton(
+            "Los maestros del grupo principal (el de más luces) se aplican cuadro a cuadro al video del DIMM "
+            "(Análisis → Parámetros → Calibración). Deben tener el mismo tamaño en píxeles que el video y, el dark, la "
+            "misma exposición que cada cuadro del video."), "stretch"))
+        self.lay.addWidget(run)
         self.lay.addStretch(1)
 
-    def add_files(self, k):
-        ps = choose_files(self, "Elegir imágenes", image_filter())
-        for p in ps:
-            if p not in self.files[k]:
-                self.files[k].append(p)
-        self._sync(k)
+    # ------------------------------------------------------------ agregar
+    def add_files(self):
+        self._add(choose_files(self, "Elegir imágenes", image_filter()))
 
-    def clear(self, k):
-        self.files[k] = []
-        self._sync(k)
+    def add_folder(self):
+        d = choose_folder(self, "Carpeta con las imágenes (puede tener subcarpetas)")
+        if d:
+            self._add([d])
 
-    def _sync(self, k):
-        lst = self.lists[k]
-        lst.clear()
-        for p in self.files[k]:
-            lst.addItem(os.path.basename(p))
-        self.counts[k].setText(tr("{} archivos").format(len(self.files[k])))
+    def _add(self, paths):
+        if not paths:
+            return
+        known = {f.path for f in self.frames}
 
+        def prog(a, b):
+            self.count_lbl.setText(tr("Leyendo cabeceras… {} de {}").format(a, b))
+            QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+
+        new = [f for f in cf.scan(paths, prog) if f.path not in known]
+        self.frames += new
+        order = {k: i for i, k in enumerate(KIND_ORDER)}
+        self.frames.sort(key=lambda f: (bool(f.error), order.get(f.kind, 9), f.path.lower()))
+        self._fill()
+        self._replan()
+
+    def clear(self):
+        self.frames = []
+        self._fill()
+        self._replan()
+
+    def set_kind(self):
+        rows = sorted({i.row() for i in self.table.selectedIndexes()})
+        k = self.kind_c.currentData()
+        for r in rows:
+            if r < len(self.frames):
+                self.frames[r].kind, self.frames[r].kind_source = k, "manual"
+        self._fill()
+        self._replan()
+
+    def _fill(self):
+        t = self.table
+        t.setRowCount(len(self.frames))
+        for i, f in enumerate(self.frames):
+            if f.error:
+                vals = [f.name, tr("No se pudo leer"), f.error, "", "", "", "", "", ""]
+            else:
+                vals = [f.name, tr(cf.KIND_NAMES[f.kind]), tr(cf.SOURCE_NAMES[f.kind_source]), _exp_text(f.exptime),
+                        "—" if f.gain is None else num(f.gain, 1).rstrip("0").rstrip(",."),
+                        "—" if f.temp is None else num(f.temp, 1), f.filter or "—",
+                        f"{f.width} × {f.height}" + (f" · {f.frames}" if f.frames > 1 else ""),
+                        "—" if not f.binning else f"{f.binning[0]}×{f.binning[1]}"]
+            for j, v in enumerate(vals):
+                it = QTableWidgetItem(v)
+                if j == 0:
+                    it.setToolTip(f.path + (f"\n{f.type_text}" if f.type_text else ""))
+                if j == 2 and f.kind_source == "supuesto":
+                    it.setForeground(QColor(theme.pal["warn"]))
+                t.setItem(i, j, it)
+        c = {k: sum(1 for f in self.frames if f.kind == k and not f.error) for k in KIND_ORDER}
+        bad = sum(1 for f in self.frames if f.error)
+        if self.frames:
+            self.count_lbl.setText(tr("{} luces · {} darks · {} flats · {} darks de flat · {} bias").format(
+                c["light"], c["dark"], c["flat"], c["darkflat"], c["bias"]) + (tr(" · {} sin leer").format(bad) if bad else ""))
+        else:
+            self.count_lbl.setText(tr("Ninguna imagen todavía."))
+
+    # ------------------------------------------------------------ plan
+    def _opts(self):
+        return cf.MatchOptions(method=self.method.currentData(), scale_darks=self.scale_chk.isChecked())
+
+    def _replan(self, *_):
+        if not self.frames:
+            self.plan = None
+            self.plan_lbl.setText(tr("Agrega imágenes para ver el plan."))
+            return
+        self.plan = cf.build_plan(self.frames, self._opts())
+        pal = theme.pal
+        lines = []
+        for g in self.plan.groups:
+            head = (tr("<b>1 luz</b> · {} · {}{} · {} × {} px") if len(g.lights) == 1 else
+                    tr("<b>{} luces</b> · {} · {}{} · {} × {} px").replace("{}", str(len(g.lights)), 1)).format( _exp_text(g.exptime), tr("filtro {}").format(g.filter) if g.filter else tr("sin filtro"),
+                "" if g.gain is None else tr(" · ganancia {}").format(num(g.gain, 0)), g.size[0], g.size[1])
+            what = tr("se resta: {} · se divide: {}").format(
+                _dark_text(g.dark), tr("flat {} ({})").format(g.flat.filter or "", len(g.flat.paths)).replace("  ", " ")
+                if g.flat and g.flat.paths else tr("nada"))
+            warn = "".join(f"<br><span style='color:{pal['warn']}'>⚠ {tr(w).format(*[_arg(x) for x in a])}</span>"
+                           for w, a in g.warnings)
+            lines.append(f"{head}<br>→ {what}{warn}")
+        for kind, ref, ch in self.plan.masters_only:
+            n = len(getattr(ch, "paths", []) or getattr(ch, "bias_paths", []))
+            lines.append(tr("<b>Maestro de {}</b> con {} imágenes · {} · {} × {} px").format(
+                tr(cf.KIND_NAMES[kind]).lower(), n, _exp_text(ref.exptime), ref.width, ref.height))
+        if not lines:
+            lines.append(tr("No hay luces ni imágenes de calibración para combinar."))
+        if self.plan.unreadable:
+            lines.append(f"<span style='color:{pal['bad']}'>" + tr("{} archivos no se pudieron leer y se omiten.").format(
+                len(self.plan.unreadable)) + "</span>")
+        self.plan_lbl.setText("<br><br>".join(lines))
+
+    # ------------------------------------------------------------ correr
     def pick_out(self):
         d = choose_folder(self, "Carpeta para los maestros y las imágenes calibradas")
         if d:
             self.out_dir = d
             self.out_lbl.setText(tr("Carpeta de salida: {}").format(d))
 
-    def _load(self, paths):
-        out = []
-        for p in paths:
-            a = read_stack(p)
-            out.extend(a if a.ndim == 3 else [a])
-        return out
-
     def run(self):
-        f = self.files
-        if not any(f[k] for k in ("darks", "flats", "bias")):
-            notify(self, "Faltan imágenes", "Agrega al menos darks, flats o bias para crear un maestro.", "warning")
+        if not self.plan or not (self.plan.groups or self.plan.masters_only):
+            notify(self, "Faltan imágenes", "Agrega luces con sus darks y flats, o solo darks, flats o bias para crear maestros.",
+                   "warning")
             return
         if not self.out_dir:
             self.pick_out()
             if not self.out_dir:
                 return
-        method = self.method.currentData()
-        t0 = time.time()
+        plan, frames, out, opts = self.plan, list(self.frames), self.out_dir, self._opts()
+
+        def work(job):
+            c = cf.Calibrator(out, opts, progress=lambda t, a, x, y: job.progress.emit(tr(t).format(*a), x, y),
+                              cancelled=lambda: job.cancel)
+            return c.run(plan, frames)
+
+        self.thread = QThread(self)
+        self.job = _CalJob(work)
+        self.job.moveToThread(self.thread)
+        self.thread.started.connect(self.job.run)
+        self.job.progress.connect(self._progress)
+        self.job.done.connect(self._done)
+        self.job.failed.connect(self._failed)
         self.run_b.setEnabled(False)
-        try:
-            self._step("Leyendo y combinando los bias…")
-            bias = cal.combine(self._load(f["bias"]), method) if f["bias"] else None
-            self._step("Leyendo y combinando los darks…")
-            dark = cal.combine(self._load(f["darks"]), method) if f["darks"] else None
-            dflat = cal.combine(self._load(f["darkflats"]), method) if f["darkflats"] else None
-            self._step("Leyendo y combinando los flats…")
-            flat = cal.master_flat(self._load(f["flats"]), dflat, bias, method) if f["flats"] else None
-            base = free_base(self.out_dir, "turbulens_maestro")
-            self.masters = {}
-            for k, a in (("bias", bias), ("dark", dark), ("flat", flat)):
-                if a is not None:
-                    p = os.path.join(self.out_dir, f"{base}_{k}.fits")
-                    write_fits(p, a, {"IMAGETYP": f"MASTER {k.upper()}", "NCOMBINE": len(f["darks" if k == "dark" else
-                                                                                             ("flats" if k == "flat" else "bias")]),
-                                      "COMBINE": method})
-                    self.masters[k] = p
-            self.outputs = []
-            n = 0
-            for p in f["luces"]:
-                a = read_stack(p)
-                frames = a if a.ndim == 3 else [a]
-                for j, img in enumerate(frames):
-                    self._step(tr("Calibrando {} ({} de {})…").format(os.path.basename(p), j + 1, len(frames)))
-                    out = cal.apply_calibration(img, dark, flat, bias)
-                    suf = f"_{j + 1:04d}" if len(frames) > 1 else ""
-                    q = free_name(self.out_dir, os.path.splitext(os.path.basename(p))[0] + suf + "_calibrada.fits")
-                    write_fits(q, out, {"CALSTAT": "".join(c for c, m in (("B", bias), ("D", dark), ("F", flat)) if m is not None)})
-                    self.outputs.append(q)
-                    n += 1
-        except Exception as exc:
-            self.status.setText("")
-            notify(self, "No se pudo calibrar", str(exc), "warning")
-            return
-        finally:
-            self.run_b.setEnabled(True)
-        self.status.setText(tr("Listo en {} s.").format(num(time.time() - t0, 1)))
-        parts = [tr("Maestros: {}").format(", ".join(os.path.basename(p) for p in self.masters.values()) or "—"),
-                 tr("Imágenes calibradas: {}").format(n), tr("Carpeta: {}").format(self.out_dir)]
-        self.res_lbl.setText("<br>".join(parts))
+        self.cancel_b.setEnabled(True)
+        self.bar.setValue(0)
+        self.t0 = time.time()
+        self.main.set_busy(True)
+        self.thread.start()
+
+    def cancel(self):
+        if self.job is not None:
+            self.job.cancel = True
+            self.status.setText(tr("Cancelando…"))
+
+    def _progress(self, text, a, b):
+        self.status.setText(text)
+        self.bar.setValue(int(1000 * a / max(1, b)))
+
+    def _end(self):
+        if self.thread is not None:
+            self.thread.quit()
+            self.thread.wait(5000)
+        self.thread = None
+        self.job = None
+        self.run_b.setEnabled(True)
+        self.cancel_b.setEnabled(False)
+        self.main.set_busy(False)
+
+    def _failed(self, msg):
+        self._end()
+        self.status.setText("")
+        notify(self, "No se pudo calibrar", msg, "warning")
+
+    def _done(self, res):
+        self._end()
+        self.result = res
+        self.bar.setValue(1000)
+        self.status.setText(tr("Cancelado: se conserva lo que alcanzó a calibrarse.") if res.cancelled else
+                            tr("Listo en {} s.").format(num(time.time() - self.t0, 1)))
+        self.res_lbl.setText("<br>".join([
+            tr("Maestros ({}): {}").format(len(res.masters), ", ".join(res.masters) or "—"),
+            tr("Imágenes calibradas: {} (en «calibradas»)").format(len(res.outputs)),
+            tr("Carpeta: {}").format(self.out_dir)]))
         while self.view_btns.count():
             it = self.view_btns.takeAt(0)
             if it.widget():
+                it.widget().hide()
                 it.widget().deleteLater()
-        for k, p in self.masters.items():
-            self.view_btns.addWidget(button(tr("Ver {} maestro").format(k), slot=lambda _=False, p=p: self.open_in_viewer(p)))
-        if self.outputs:
-            self.view_btns.addWidget(button("Ver la primera calibrada", slot=lambda: self.open_in_viewer(self.outputs[0])))
+        for k in ("dark", "flat", "bias"):
+            p = res.first.get(k)
+            if p:
+                self.view_btns.addWidget(button(tr("Ver {} maestro").format(k), slot=lambda _=False, p=p: self.open_in_viewer(p)))
+        if res.outputs:
+            self.view_btns.addWidget(button("Ver la primera calibrada", slot=lambda: self.open_in_viewer(res.outputs[0])))
         self.view_btns.addStretch(1)
-        self.use_b.setEnabled(bool(self.masters))
-
-    def _step(self, text):
-        from PySide6.QtCore import QEventLoop
-        from PySide6.QtWidgets import QApplication
-
-        self.status.setText(tr(text))
-        QApplication.processEvents(QEventLoop.ExcludeUserInputEvents)
+        self.use_b.setEnabled(any(res.first.get(k) for k in ("dark", "flat", "bias")))
 
     def open_in_viewer(self, p):
         v = self.main.page_by_key["img_ver"]
@@ -460,8 +612,10 @@ class CalibrationPage(Page):
         v.open(p)
 
     def use_in_analysis(self):
+        if not self.result:
+            return
+        f = self.result.first
         s = self.main.sessions["analisis"]
-        s.cal = {"on": True, "dark": self.masters.get("dark", ""), "flat": self.masters.get("flat", ""),
-                 "bias": self.masters.get("bias", "")}
+        s.cal = {"on": True, "dark": f.get("dark", ""), "flat": f.get("flat", ""), "bias": f.get("bias", "")}
         self.main.toast("Listo: el análisis de video usará estos maestros. Puedes revisarlos o apagarlos en "
                         "Análisis → Parámetros → Calibración.")

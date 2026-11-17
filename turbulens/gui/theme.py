@@ -102,6 +102,11 @@ QPushButton[kind="option"][state="ok"] {{ border: 2px solid {p['good']}; }}
 QPushButton[kind="option"][state="bad"] {{ border: 2px solid {p['bad']}; }}
 QToolButton {{ background: {p['panel2']}; color: {p['text']}; border: 1px solid {p['border2']}; border-radius: 9px; padding: 6px; }}
 QToolButton:hover {{ border-color: {p['accent']}; }}
+QToolButton::menu-indicator {{ image: none; width: 0; }}
+QMenu {{ background: {p['panel']}; color: {p['text']}; border: 1px solid {p['border2']}; border-radius: 8px; padding: 4px; }}
+QMenu::item {{ padding: 6px 18px; border-radius: 6px; }}
+QMenu::item:selected {{ background: {p['accentSoftHex']}; color: {p['text']}; }}
+QDialog {{ background: {p['bg']}; }}
 QToolButton[kind="help"] {{ background: {p['accentSoftHex']}; color: {p['accent']}; border: 1px solid {p['accent']}; border-radius: 11px; font-weight: 800; padding: 0px; min-width: 22px; max-width: 22px; min-height: 22px; max-height: 22px; }}
 QToolButton[kind="theme"] {{ border-radius: 20px; min-width: 38px; max-width: 38px; min-height: 38px; max-height: 38px; padding: 0; }}
 
