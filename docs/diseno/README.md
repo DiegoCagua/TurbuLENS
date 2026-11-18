@@ -54,3 +54,7 @@ Un solo selector de archivos y carpetas en toda la app (el propio, con el tema y
 ## 9. Versión 1.3.0
 
 Cuatro modos en la pantalla de inicio (Análisis, Educativo, **Imágenes** y **Satélite**), en una cuadrícula de 2 × 2. El selector de archivos vuelve a ser **el del sistema operativo** (en Windows permite escribir la ruta). En el modo educativo «La estrella» va antes de «Estadística» y tiene **animaciones** dibujadas con Qt (moneda en la piscina, estrella que titila, máscara de dos huequitos con el telescopio que tiembla). El histograma en tema claro usa barras aguamarina suaves, la media en rojo discontinuo y la mediana en azul. El visor de píxeles sigue las convenciones de DS9 (escalas, ZScale, regiones con Mayús + arrastrar). Saray Juliana Pinto Sanabria se suma como coautora y encargada de las pruebas.
+
+## 10. Versión 1.4.0
+
+La interfaz se dibuja al 100 % aunque el sistema escale la pantalla (en Windows y Linux), para que las páginas quepan en portátiles de 1366 × 768. Parámetros se aligeró: la calculadora de la escala se pliega tras *Calcular…*, los perfiles van en una fila con un menú «⋯» y la calibración solo muestra sus campos al activarla. La barra de Recorte y tramo pasó a dos filas. Nuevo diálogo *Dispositivos del OAN* con fichas para telescopio, cámara y máscara y la escala resultante en grande. La calibración del modo Imágenes es un flujo de tres tarjetas numeradas: imágenes (tabla con lo leído de cada cabecera), qué se va a hacer (plan con avisos en amarillo) y calibrar.

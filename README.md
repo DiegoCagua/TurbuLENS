@@ -9,14 +9,14 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-**Versión actual: 1.3.0.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
+**Versión actual: 1.4.0.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
 
 | Sistema | Descarga directa | Se abre con |
 |---|---|---|
-| Windows 10/11 | [TurbuLENS-v1.3.0-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.3.0/TurbuLENS-v1.3.0-Windows-x64.zip) | `TurbuLENS.exe` |
-| Mac con Apple Silicon | [TurbuLENS-v1.3.0-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.3.0/TurbuLENS-v1.3.0-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
-| Mac con Intel | [TurbuLENS-v1.3.0-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.3.0/TurbuLENS-v1.3.0-macOS-Intel.zip) | `TurbuLENS.app` |
-| Linux | [TurbuLENS-v1.3.0-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.3.0/TurbuLENS-v1.3.0-Linux-x64.tar.gz) | `TurbuLENS` |
+| Windows 10/11 | [TurbuLENS-v1.4.0-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.4.0/TurbuLENS-v1.4.0-Windows-x64.zip) | `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.4.0-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.4.0/TurbuLENS-v1.4.0-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
+| Mac con Intel | [TurbuLENS-v1.4.0-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.4.0/TurbuLENS-v1.4.0-macOS-Intel.zip) | `TurbuLENS.app` |
+| Linux | [TurbuLENS-v1.4.0-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.4.0/TurbuLENS-v1.4.0-Linux-x64.tar.gz) | `TurbuLENS` |
 
 Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
@@ -24,11 +24,13 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 
 ## Qué hace
 
+📘 **Manual completo** (fundamentos, equipos del OAN y uso paso a paso): [docs/Manual_TurbuLENS_v1.4.0.pdf](docs/Manual_TurbuLENS_v1.4.0.pdf). También viene dentro de cada descarga.
+
 **Modo análisis** (mediciones científicas)
 
 1. **Video**: abre cientos de formatos (MOV, MP4, AVI, MKV, WMV, MTS, WebM, SER, FITS, …) con FFmpeg incluido, también de cámaras astronómicas de 16 bits. Arrastra el archivo a la ventana o búscalo.
 2. **Recorte y tramo**: dibuja la región de la estrella **como en Paint** (arrastrar, mover, cuadritos para cambiar el tamaño, zoom con la rueda) o pulsa *Ajustar a la estrella*. Elige el tramo con una línea de tiempo: `<<` `>>` reproducen a velocidad constante (0.25× a 32× respecto al video real; la región sigue a la estrella en vivo), `<` `>` mueven un cuadro, `[ Entrada` y `Salida ]` marcan el tramo, *Ir a* salta a un cuadro o a un minuto.
-3. **Parámetros**: diámetro y separación de los orificios, longitud de onda (con unidades a elegir: µm, mm o cm), escala de placa (con calculadora, lista de cámaras y enlaces para consultarla), altura de la estrella (con decimales, explicada en su botón **!**), calibración opcional con **dark y flat**, y perfiles de equipo que se pueden guardar, actualizar, renombrar y eliminar, compartidos por los dos modos. Si cambias estos valores después de procesar, el seeing se recalcula al instante, sin volver a procesar.
+3. **Parámetros**: botón **Dispositivos del OAN** (telescopios, cámaras y máscaras del observatorio); diámetro y separación de los orificios, longitud de onda (con unidades a elegir: µm, mm o cm), escala de placa (con calculadora, lista de cámaras y enlaces para consultarla), altura de la estrella (con decimales, explicada en su botón **!**), calibración opcional con **dark y flat**, y perfiles de equipo que se pueden guardar, actualizar, renombrar y eliminar, compartidos por los dos modos. Si cambias estos valores después de procesar, el seeing se recalcula al instante, sin volver a procesar.
 4. **Procesar**: no empieza sin escala de placa (lo avisa). Separa el video en imágenes recortadas y **seguidas** (la región encuentra a la estrella aunque haya quedado lejos, se recentra en cada cuadro y ajusta su tamaño al de los spots), en PNG (predeterminado, el más eficiente), TIFF 16 bits, JPG, un cubo NumPy o un cubo FITS. Mide los dos puntos en cada cuadro.
 5. **Resultados**: seeing (longitudinal, transversal y promedio), r₀, corrección al cenit, histograma con la curva normal, σ segundo a segundo (para detectar golpes o ráfagas), diagrama del movimiento diferencial y las **correlaciones r** que dicen si los datos se comportan como turbulencia (explicadas también en el informe PDF).
 6. **Historial**: base de datos local para comparar noches y épocas del año, con etiquetas y notas; es el mismo en el modo análisis y en el educativo (una columna dice en cuál se hizo cada análisis).
@@ -54,7 +56,7 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 
 Cada lección tiene controles interactivos, tablas que cambian con los datos elegidos, fórmulas en LaTeX, una pregunta que se responde una sola vez por sesión (con las opciones en orden al azar), guarda sus datos en **CSV o Excel** y puede usar los datos de ejemplo (Altair) o **el video que procese la clase**. La parte astronómica va primero y se explica en tres pantallas muy sencillas con **animaciones** (por qué titilan las estrellas, el truco de los dos huequitos y un simulador). El historial y los perfiles de equipo son **los mismos** en los dos modos.
 
-**Modo Imágenes**: crea maestros de **bias, dark y flat** (mediana, media o media con recorte de 3 σ), calibra tus imágenes del cielo con (luz − dark) ÷ flat normalizado y guarda todo en FITS de 32 bits. Su **visor de píxeles** funciona como SAOImage DS9: valor del píxel bajo el cursor, escalas lineal, logarítmica, raíz, asinh e histograma ecualizado, límites ZScale o por percentiles, mapas de color, zoom con la rueda, estadística de una región (media, mediana, σ, σ robusta, mínimo, máximo, suma), exportación de los píxeles de la región a CSV y la cabecera FITS. Los maestros se pueden usar directamente en el análisis de video.
+**Modo Imágenes**: agrega imágenes sueltas o **carpetas completas**; TurbuLENS lee la cabecera de cada archivo (FITS o EXIF), las clasifica en luces, darks, flats, darks de flat y bias, y empareja cada luz con los darks de su misma **exposición**, ganancia, temperatura y binning, y con los flats de su **filtro** (si falta el dark de esa exposición, lo escala con el bias). Muestra el plan antes de calibrar, guarda los maestros y las luces calibradas en FITS de 32 bits y los maestros se pueden usar en el análisis de video. Su **visor de píxeles** funciona como SAOImage DS9: valor del píxel bajo el cursor, escalas lineal, logarítmica, raíz, asinh e histograma ecualizado, límites ZScale o por percentiles, mapas de color, zoom con la rueda, estadística de una región, exportación de los píxeles a CSV y la cabecera FITS.
 
 **Modo Satélite**: para saber si había nubes cuando grabaste. Eliges fecha y hora (de Colombia o UTC), coordenadas (por defecto el OAN), los canales del ABI (1 a 16) y una carpeta; TurbuLENS busca la imagen de **disco completo** más cercana en el repositorio abierto de NOAA, usa **GOES-16** hasta el 4 de abril de 2025 y **GOES-19** desde entonces (o el que elijas), descarga los archivos, lee el valor en tu punto (reflectancia o temperatura de brillo, con una lectura sencilla: «nubes altas y frías», «probablemente despejado»…) y guarda un CSV y recortes en FITS y PNG que se pueden abrir en el visor.
 
@@ -130,14 +132,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow, openpyxl y py
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores:
 
-> Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). *TurbuLENS* (versión 1.3.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). *TurbuLENS* (versión 1.4.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
   author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban and Pinto Sanabria, Saray Juliana},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.3.0},
+  version   = {1.4.0},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

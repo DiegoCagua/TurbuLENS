@@ -83,6 +83,7 @@ jobs:
           cp packaging/LEEME.txt paquete/
           cp LICENSE paquete/LICENSE.txt
           cp THIRD_PARTY_NOTICES.md paquete/
+          cp docs/Manual_TurbuLENS_v*.pdf paquete/ 2>/dev/null || true
           N="TurbuLENS-${GITHUB_REF_NAME//\//-}-${{ matrix.nombre }}"
           if [ "$RUNNER_OS" = "Windows" ]; then
             cp dist/TurbuLENS.exe paquete/
@@ -153,6 +154,7 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}", TAG: "${{ needs.lanzamiento.outputs.tag }}" }
         run: |
           mkdir paquete && cp packaging/LEEME.txt paquete/ && cp LICENSE paquete/LICENSE.txt && cp THIRD_PARTY_NOTICES.md paquete/
+          cp docs/Manual_TurbuLENS_v*.pdf paquete/ || true
           cp -R dist/TurbuLENS.app paquete/
           N="TurbuLENS-$TAG-macOS-Intel.zip"
           ditto -c -k --keepParent paquete "$N"
