@@ -1,4 +1,4 @@
-% Manual de TurbuLENS 1.4.0 — compilar con XeLaTeX (o LuaLaTeX), dos pasadas.
+% Manual de TurbuLENS 1.4.1 — compilar con XeLaTeX (o LuaLaTeX), dos pasadas.
 % Overleaf: Menú → Compilador → XeLaTeX. Las imágenes van en la carpeta img/.
 \documentclass[12pt,a4paper]{article}
 
@@ -32,7 +32,7 @@
 \titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
 \titleformat{\subsubsection}{\normalsize\bfseries\color{gris}}{\thesubsubsection}{0.6em}{}
 \pagestyle{fancy}\fancyhf{}
-\fancyhead[L]{\small\color{gris}Manual de TurbuLENS 1.4.0}
+\fancyhead[L]{\small\color{gris}Manual de TurbuLENS 1.4.1}
 \fancyhead[R]{\small\color{gris}\leftmark}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -55,7 +55,7 @@
 \includegraphics[width=3.2cm]{img/logo.png}\par\vspace{1cm}
 {\fontsize{40}{44}\selectfont\color{acento} TurbuLENS}\par\vspace{0.4cm}
 {\Large Manual de usuario y fundamentos}\par\vspace{0.3cm}
-{\large\color{gris} Versión de la aplicación 1.4.0}\par\vspace{1.4cm}
+{\large\color{gris} Versión de la aplicación 1.4.1}\par\vspace{1.4cm}
 \begin{minipage}{0.82\textwidth}\centering\color{gris}
 Medición del \emph{seeing} con un DIMM · enseñanza de la estadística con una estrella ·
 calibración de imágenes con darks y flats · nubes sobre el sitio con el satélite GOES
@@ -64,7 +64,8 @@ calibración de imágenes con darks y flats · nubes sobre el sitio con el saté
 {\small\color{gris} Estudiantes del pregrado de Física · Departamento de Física\\
 Universidad Nacional de Colombia, Bogotá D.C.\\[0.4em]
 Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía\\
-Observatorio Astronómico Nacional}\par\vspace{1cm}
+Observatorio Astronómico Nacional\\[0.4em]
+Interfaz y funcionalidades desarrolladas con ayuda de Claude (Anthropic)}\par\vspace{1cm}
 {\small Noviembre de 2026 · \url{https://github.com/DiegoCagua/TurbuLENS}}
 \end{titlepage}
 
@@ -110,13 +111,13 @@ TurbuLENS no se instala. En la página de versiones del repositorio
 \toprule
 Sistema & Archivo & Cómo se abre\\
 \midrule
-Windows 10/11 & \codigo{TurbuLENS-v1.4.0-Windows-x64.zip} & Descomprimir y doble clic en \codigo{TurbuLENS.exe}.\\
-Mac con Apple Silicon & \codigo{TurbuLENS-v1.4.0-macOS-AppleSilicon.zip} & Arrastrar \codigo{TurbuLENS.app} a Aplicaciones.\\
-Mac con Intel & \codigo{TurbuLENS-v1.4.0-macOS-Intel.zip} & Igual que en Apple Silicon.\\
-Linux & \codigo{TurbuLENS-v1.4.0-Linux-x64.tar.gz} & \codigo{chmod +x TurbuLENS} y doble clic.\\
+Windows 10/11 & \codigo{TurbuLENS-v1.4.1-Windows-x64.zip} & Descomprimir y doble clic en \codigo{TurbuLENS.exe}.\\
+Mac con Apple Silicon & \codigo{TurbuLENS-v1.4.1-macOS-AppleSilicon.zip} & Arrastrar \codigo{TurbuLENS.app} a Aplicaciones.\\
+Mac con Intel & \codigo{TurbuLENS-v1.4.1-macOS-Intel.zip} & Igual que en Apple Silicon.\\
+Linux & \codigo{TurbuLENS-v1.4.1-Linux-x64.tar.gz} & \codigo{chmod +x TurbuLENS} y doble clic.\\
 \bottomrule
 \end{tabularx}
-\caption{Archivos de la versión 1.4.0.}
+\caption{Archivos de la versión 1.4.1.}
 \end{table}
 
 \begin{nota}{Primera apertura.}
@@ -681,6 +682,7 @@ $r$; modos Imágenes y Satélite; animaciones del modo educativo; Saray Juliana 
 \textbf{1.4.0} & Calibración guiada por las cabeceras para imágenes sueltas y carpetas completas (empareja darks por
 exposición, ganancia, temperatura y binning, y flats por filtro; escala darks con el bias); botón \emph{Dispositivos
 del OAN}; interfaz al 100\,\% por defecto; Parámetros y Recorte más limpios; este manual.\\
+1.4.1 & Créditos: la interfaz y las funcionalidades se desarrollaron con ayuda de Claude (Anthropic).\\
 \bottomrule
 \end{tabularx}
 \caption{Versiones de TurbuLENS.}
@@ -694,6 +696,8 @@ pruebas), estudiantes del pregrado de Física, Departamento de Física, Universi
 Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía del Observatorio Astronómico
 Nacional.
 
+\textbf{Desarrollo con inteligencia artificial:} La interfaz y las funcionalidades se desarrollaron con ayuda de Claude (Anthropic), un asistente de inteligencia artificial, bajo la dirección y revisión de los autores.
+
 \textbf{Licencia:} PolyForm Noncommercial 1.0.0. Se puede usar, estudiar, modificar y compartir con fines no comerciales
 (estudio, investigación, enseñanza), conservando la licencia y el crédito a los autores. No se permite el uso
 comercial sin permiso escrito. Los componentes de terceros (Qt/PySide6, FFmpeg/PyAV, NumPy, Pillow, openpyxl, pyfive)
@@ -701,7 +705,7 @@ conservan sus licencias.
 
 \textbf{Cómo citar:}
 \begin{quote}\small
-Cagua Lozada, D. F., Cruz Ospina, F. E., \& Pinto Sanabria, S. J. (2026). \emph{TurbuLENS} (versión 1.4.0)
+Cagua Lozada, D. F., Cruz Ospina, F. E., \& Pinto Sanabria, S. J. (2026). \emph{TurbuLENS} (versión 1.4.1)
 [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia.
 \url{https://github.com/DiegoCagua/TurbuLENS}
 \end{quote}
