@@ -39,6 +39,10 @@ def main():
         video = os.path.join(tmp, "sintetico.mkv")
         make_video(video, n=900, w=960, h=540)
     app = QApplication.instance() or QApplication([])
+    from turbulens.gui import widgets
+
+    # Sin nadie frente a la pantalla: al cerrar, el análisis sin guardar se descarta en lugar de preguntar.
+    widgets.ask_save = lambda *a, **k: "descartar"
     w = MainWindow(data_root=os.path.join(tmp, "datos"))
     w.resize(1440, 900)
     w.show()
