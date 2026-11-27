@@ -72,7 +72,7 @@ if sys.platform == "win32":
     common["version"] = VSVersionInfo(
         ffi=FixedFileInfo(filevers=_v, prodvers=_v),
         kids=[StringFileInfo([StringTable("040A04B0", [
-            StringStruct("CompanyName", "D. F. Cagua Lozada, F. E. Cruz Ospina y S. J. Pinto Sanabria"),
+            StringStruct("CompanyName", "D. F. Cagua Lozada, F. E. Cruz Ospina, S. J. Pinto Sanabria y J. A. López Hernández"),
             StringStruct("FileDescription", "TurbuLENS"),
             StringStruct("FileVersion", VERSION),
             StringStruct("InternalName", "TurbuLENS"),

@@ -2,22 +2,19 @@
 # Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """TurbuLENS: separa videos de un DIMM en imágenes, mide el seeing y enseña estadística.
 
-Autores: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria (coautora y
-pruebas), estudiantes del pregrado de Física,
-Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C. Desarrollada para la asignatura
+Autores: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto Sanabria y José Alejandro
+López Hernández, estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C. Desarrollada para la asignatura
 Técnicas Observacionales de la Maestría en Astronomía del Observatorio Astronómico Nacional.
 """
 
-__version__ = "1.5.0"
+__version__ = "1.5.1"
 
 APP_NAME = "TurbuLENS"
 AFFILIATION = "Estudiante del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C."
-AFFILIATION_TESTER = ("Estudiante del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, "
-                      "Bogotá D.C. · Coautora y pruebas (tester)")
 AUTHORS = [("Diego Fernando Cagua Lozada", AFFILIATION), ("Fredy Esteban Cruz Ospina", AFFILIATION),
-           ("Saray Juliana Pinto Sanabria", AFFILIATION_TESTER)]
-AUTHOR = "Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria"
-AUTHORS_SHORT = "D. F. Cagua Lozada, F. E. Cruz Ospina y S. J. Pinto Sanabria"
+           ("Saray Juliana Pinto Sanabria", AFFILIATION), ("José Alejandro López Hernández", AFFILIATION)]
+AUTHOR = "Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto Sanabria y José Alejandro López Hernández"
+AUTHORS_SHORT = "D. F. Cagua Lozada, F. E. Cruz Ospina, S. J. Pinto Sanabria y J. A. López Hernández"
 AUTHOR_ROLE = "Estudiantes del pregrado de Física · Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C."
 COURSE = ("Desarrollada para la asignatura Técnicas Observacionales de la Maestría en Astronomía del "
           "Observatorio Astronómico Nacional, Universidad Nacional de Colombia, Bogotá D.C.")
@@ -26,10 +23,10 @@ REPO_URL = "https://github.com/DiegoCagua/TurbuLENS"
 LICENSE_NAME = "PolyForm Noncommercial 1.0.0"
 LICENSE_SUMMARY = ("Uso libre sin fines comerciales (estudio, investigación, enseñanza). Toda copia o versión "
                    "modificada debe conservar el crédito a los autores. No se permite el uso comercial sin permiso escrito.")
-CITATION_APA = ("Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). TurbuLENS (versión {v}) [Software]. Observatorio Astronómico Nacional, "
+CITATION_APA = ("Cagua Lozada, D. F., Cruz Ospina, F. E., Pinto Sanabria, S. J., & López Hernández, J. A. (2026). TurbuLENS (versión {v}) [Software]. Observatorio Astronómico Nacional, "
                 "Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS")
 CITATION_BIBTEX = """@software{{cagua_lozada_turbulens_2026,
-  author    = {{Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban and Pinto Sanabria, Saray Juliana}},
+  author    = {{Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban and Pinto Sanabria, Saray Juliana and López Hernández, José Alejandro}},
   title     = {{TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística}},
   year      = {{2026}},
   version   = {{{v}}},

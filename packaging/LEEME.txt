@@ -1,4 +1,4 @@
-TurbuLENS 1.5.0
+TurbuLENS 1.5.1
 Observatorio Astronómico Nacional · Universidad Nacional de Colombia
 Español · English · Português (el idioma se cambia en la pantalla de inicio)
 
@@ -23,8 +23,8 @@ LINUX
 
 Manual: Manual_TurbuLENS_v1.5.0.pdf (en esta misma carpeta).
 Código fuente y novedades: https://github.com/DiegoCagua/TurbuLENS
-Autores: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto
-Sanabria (coautora y pruebas), estudiantes del pregrado de Física, Departamento de
+Autores: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto
+Sanabria y José Alejandro López Hernández, estudiantes del pregrado de Física, Departamento de
 Física, Universidad Nacional de Colombia, Bogotá D.C.
 Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía
 del Observatorio Astronómico Nacional.
@@ -32,6 +32,6 @@ del Observatorio Astronómico Nacional.
 LICENCIA: PolyForm Noncommercial 1.0.0 (ver LICENSE.txt). Uso libre SIN fines
 comerciales. Toda copia o versión modificada debe conservar el crédito a los autores.
 Si usas TurbuLENS en un trabajo o publicación, cítalo:
-  Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). TurbuLENS
-  (versión 1.5.0) [Software].
+  Cagua Lozada, D. F., Cruz Ospina, F. E., Pinto Sanabria, S. J., & López Hernández, J. A. (2026). TurbuLENS
+  (versión 1.5.1) [Software].
   https://github.com/DiegoCagua/TurbuLENS

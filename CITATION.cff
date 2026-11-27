@@ -11,9 +11,11 @@ authors:
     affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
   - family-names: "Pinto Sanabria"
     given-names: "Saray Juliana"
+  - family-names: "López Hernández"
+    given-names: "José Alejandro"
     affiliation: "Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C."
-version: "1.5.0"
-date-released: "2026-11-26"
+version: "1.5.1"
+date-released: "2026-11-27"
 license: LicenseRef-PolyForm-Noncommercial-1.0.0
 license-url: "https://polyformproject.org/licenses/noncommercial/1.0.0"
 repository-code: "https://github.com/DiegoCagua/TurbuLENS"

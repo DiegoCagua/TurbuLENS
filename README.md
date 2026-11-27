@@ -9,14 +9,14 @@ Observatorio Astronómico Nacional · Universidad Nacional de Colombia</p>
 
 ## Descarga
 
-**Versión actual: 1.5.0.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
+**Versión actual: 1.5.1.** Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: **no hay que instalar Python ni nada más**. Funciona en **español, inglés y portugués**.
 
 | Sistema | Descarga directa | Se abre con |
 |---|---|---|
-| Windows 10/11 | [TurbuLENS-v1.5.0-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.0/TurbuLENS-v1.5.0-Windows-x64.zip) | `TurbuLENS.exe` |
-| Mac con Apple Silicon | [TurbuLENS-v1.5.0-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.0/TurbuLENS-v1.5.0-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
-| Mac con Intel | [TurbuLENS-v1.5.0-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.0/TurbuLENS-v1.5.0-macOS-Intel.zip) | `TurbuLENS.app` |
-| Linux | [TurbuLENS-v1.5.0-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.0/TurbuLENS-v1.5.0-Linux-x64.tar.gz) | `TurbuLENS` |
+| Windows 10/11 | [TurbuLENS-v1.5.1-Windows-x64.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.1/TurbuLENS-v1.5.1-Windows-x64.zip) | `TurbuLENS.exe` |
+| Mac con Apple Silicon | [TurbuLENS-v1.5.1-macOS-AppleSilicon.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.1/TurbuLENS-v1.5.1-macOS-AppleSilicon.zip) | `TurbuLENS.app` |
+| Mac con Intel | [TurbuLENS-v1.5.1-macOS-Intel.zip](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.1/TurbuLENS-v1.5.1-macOS-Intel.zip) | `TurbuLENS.app` |
+| Linux | [TurbuLENS-v1.5.1-Linux-x64.tar.gz](https://github.com/DiegoCagua/TurbuLENS/releases/download/v1.5.1/TurbuLENS-v1.5.1-Linux-x64.tar.gz) | `TurbuLENS` |
 
 Las notas de cada versión y las versiones anteriores están en **[Releases](https://github.com/DiegoCagua/TurbuLENS/releases)**.
 
@@ -24,7 +24,7 @@ Las notas de cada versión y las versiones anteriores están en **[Releases](htt
 
 ## Qué hace
 
-📘 **Manual completo** (uso paso a paso, medir con tu propio equipo, fundamentos y código): [docs/Manual_TurbuLENS_v1.5.0.pdf](docs/Manual_TurbuLENS_v1.5.0.pdf). También viene dentro de cada descarga.
+📘 **Manual completo** (uso paso a paso, medir con tu propio equipo, fundamentos y código): [docs/Manual_TurbuLENS_v1.5.1.pdf](docs/Manual_TurbuLENS_v1.5.1.pdf). También viene dentro de cada descarga.
 
 **Medición del seeing** (mediciones reales con un DIMM)
 
@@ -123,7 +123,7 @@ El diseño de la interfaz partió de 10 borradores y tres versiones preliminares
 
 ## Créditos
 
-**Autores:** Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria (coautora y pruebas), estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C.
+**Autores:** Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto Sanabria y José Alejandro López Hernández, estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C.
 
 TurbuLENS se desarrolló para la asignatura **Técnicas Observacionales** de la Maestría en Astronomía del Observatorio Astronómico Nacional, Universidad Nacional de Colombia, Bogotá D.C.
 
@@ -137,14 +137,14 @@ Construido con Python, NumPy, PySide6 (Qt), PyAV (FFmpeg), Pillow, openpyxl y py
 
 Si usas TurbuLENS en un trabajo, informe, clase o publicación, da crédito a los autores:
 
-> Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). *TurbuLENS* (versión 1.5.0) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
+> Cagua Lozada, D. F., Cruz Ospina, F. E., Pinto Sanabria, S. J., & López Hernández, J. A. (2026). *TurbuLENS* (versión 1.5.1) [Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia. https://github.com/DiegoCagua/TurbuLENS
 
 ```bibtex
 @software{cagua_lozada_turbulens_2026,
-  author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban and Pinto Sanabria, Saray Juliana},
+  author    = {Cagua Lozada, Diego Fernando and Cruz Ospina, Fredy Esteban and Pinto Sanabria, Saray Juliana and López Hernández, José Alejandro},
   title     = {TurbuLENS: medición del seeing con un DIMM y enseñanza de la estadística},
   year      = {2026},
-  version   = {1.5.0},
+  version   = {1.5.1},
   publisher = {Observatorio Astronómico Nacional, Universidad Nacional de Colombia},
   url       = {https://github.com/DiegoCagua/TurbuLENS}
 }

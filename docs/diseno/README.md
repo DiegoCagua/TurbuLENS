@@ -53,7 +53,7 @@ Un solo selector de archivos y carpetas en toda la app (el propio, con el tema y
 
 ## 9. Versión 1.3.0
 
-Cuatro modos en la pantalla de inicio (Análisis, Educativo, **Imágenes** y **Satélite**), en una cuadrícula de 2 × 2. El selector de archivos vuelve a ser **el del sistema operativo** (en Windows permite escribir la ruta). En el modo educativo «La estrella» va antes de «Estadística» y tiene **animaciones** dibujadas con Qt (moneda en la piscina, estrella que titila, máscara de dos huequitos con el telescopio que tiembla). El histograma en tema claro usa barras aguamarina suaves, la media en rojo discontinuo y la mediana en azul. El visor de píxeles sigue las convenciones de DS9 (escalas, ZScale, regiones con Mayús + arrastrar). Saray Juliana Pinto Sanabria se suma como coautora y encargada de las pruebas.
+Cuatro modos en la pantalla de inicio (Análisis, Educativo, **Imágenes** y **Satélite**), en una cuadrícula de 2 × 2. El selector de archivos vuelve a ser **el del sistema operativo** (en Windows permite escribir la ruta). En el modo educativo «La estrella» va antes de «Estadística» y tiene **animaciones** dibujadas con Qt (moneda en la piscina, estrella que titila, máscara de dos huequitos con el telescopio que tiembla). El histograma en tema claro usa barras aguamarina suaves, la media en rojo discontinuo y la mediana en azul. El visor de píxeles sigue las convenciones de DS9 (escalas, ZScale, regiones con Mayús + arrastrar). Saray Juliana Pinto Sanabria se suma como coautora.
 
 ## 10. Versión 1.4.0
 

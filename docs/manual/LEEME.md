@@ -1,6 +1,6 @@
 # Manual de TurbuLENS (fuente en LaTeX)
 
-El PDF compilado está en `docs/Manual_TurbuLENS_v1.5.0.pdf` y va dentro de cada descarga.
+El PDF compilado está en `docs/Manual_TurbuLENS_v1.5.1.pdf` y va dentro de cada descarga.
 
 ## Archivos
 

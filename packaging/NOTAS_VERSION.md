@@ -1,13 +1,20 @@
-## TurbuLENS 1.5.0
+## TurbuLENS 1.5.1
 
 Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: no hay que instalar nada más. Funciona en **español, inglés y portugués**.
 
 | Sistema | Archivo | Se abre con |
 |---|---|---|
-| Windows 10/11 (64 bits) | `TurbuLENS-v1.5.0-Windows-x64.zip` | `TurbuLENS.exe` |
-| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.5.0-macOS-AppleSilicon.zip` | `TurbuLENS.app` |
-| Mac con Intel | `TurbuLENS-v1.5.0-macOS-Intel.zip` | `TurbuLENS.app` |
-| Linux (64 bits) | `TurbuLENS-v1.5.0-Linux-x64.tar.gz` | `TurbuLENS` |
+| Windows 10/11 (64 bits) | `TurbuLENS-v1.5.1-Windows-x64.zip` | `TurbuLENS.exe` |
+| Mac con Apple Silicon (M1, M2, M3, M4…) | `TurbuLENS-v1.5.1-macOS-AppleSilicon.zip` | `TurbuLENS.app` |
+| Mac con Intel | `TurbuLENS-v1.5.1-macOS-Intel.zip` | `TurbuLENS.app` |
+| Linux (64 bits) | `TurbuLENS-v1.5.1-Linux-x64.tar.gz` | `TurbuLENS` |
+
+### En esta versión
+- **José Alejandro López Hernández** se suma como autor. Los cuatro autores aparecen de la misma forma en *Acerca de*, en
+  el manual, en la licencia y en la cita: Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto
+  Sanabria y José Alejandro López Hernández.
+
+Lo que trajo la 1.5.0:
 
 ### Medición del seeing
 - El modo de mediciones se llama ahora **Medición del seeing** (antes «Análisis científico»).
@@ -42,4 +49,4 @@ Descarga el archivo de tu sistema, descomprímelo y abre TurbuLENS: no hay que i
 
 La primera vez, Windows puede mostrar «Windows protegió su PC»: pulsa *Más información → Ejecutar de todas formas*. En Mac, abre la app con clic derecho → *Abrir*.
 
-Cómo citar: Cagua Lozada, D. F., Cruz Ospina, F. E., & Pinto Sanabria, S. J. (2026). *TurbuLENS* (versión 1.5.0) [Software]. https://github.com/DiegoCagua/TurbuLENS
+Cómo citar: Cagua Lozada, D. F., Cruz Ospina, F. E., Pinto Sanabria, S. J., & López Hernández, J. A. (2026). *TurbuLENS* (versión 1.5.1) [Software]. https://github.com/DiegoCagua/TurbuLENS
