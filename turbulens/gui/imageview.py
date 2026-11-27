@@ -144,6 +144,9 @@ class ImageView(QWidget):
         self._sel_start = None
         self.marker: Optional[tuple[float, float]] = None
         self.marker_label = ""
+        self.overlays: list = []  # [(lista de arreglos N×2 en píxeles de la imagen, color, grosor)]
+        self.region_shape = "rect"  # «rect», «circle» o «ellipse»
+        self.empty_text = "Abre una imagen para verla aquí"
 
     # ---------------------------------------------------------------- datos
     def set_data(self, a: Optional[np.ndarray], keep_view: bool = False):
@@ -168,6 +171,42 @@ class ImageView(QWidget):
         self.marker = None if col is None else (col, row)
         self.marker_label = text
         self.update()
+
+    def set_overlays(self, overlays: list):
+        """Líneas sobre la imagen (mapas): [(lista de arreglos N×2 con columna, fila), color, grosor]."""
+        self.overlays = overlays or []
+        self.update()
+
+    def set_region_shape(self, shape: str):
+        self.region_shape = shape if shape in ("rect", "circle", "ellipse") else "rect"
+        if self._sel is not None and self.region_shape == "circle":
+            side = max(self._sel.width(), self._sel.height())
+            self._sel = QRectF(self._sel.left(), self._sel.top(), side, side)
+        self.update()
+        self.emit_region()
+
+    def region_mask(self) -> Optional[np.ndarray]:
+        """Máscara booleana (alto × ancho del recuadro) de la región elegida según su forma."""
+        if self._sel is None or self.data is None:
+            return None
+        h, w = self.data.shape
+        x0, y0 = int(max(0, self._sel.left())), int(max(0, self._sel.top()))
+        x1, y1 = int(min(w, self._sel.right())), int(min(h, self._sel.bottom()))
+        if x1 <= x0 or y1 <= y0:
+            return None
+        if self.region_shape == "rect":
+            return np.ones((y1 - y0, x1 - x0), bool)
+        cx, cy = self._sel.center().x(), self._sel.center().y()
+        rx, ry = self._sel.width() / 2, self._sel.height() / 2
+        yy, xx = np.mgrid[y0:y1, x0:x1]
+        return ((xx + 0.5 - cx) / max(rx, 0.5)) ** 2 + ((yy + 0.5 - cy) / max(ry, 0.5)) ** 2 <= 1.0
+
+    def min_zoom(self) -> float:
+        """El zoom más lejano: la imagen completa ocupa la ventana (no se puede alejar más)."""
+        if self.data is None:
+            return 0.02
+        h, w = self.data.shape
+        return max(1e-3, min(self.width() / w, self.height() / h))
 
     def _render(self, fit: bool, manual=None):
         if self.data is None:
@@ -194,7 +233,14 @@ class ImageView(QWidget):
         self.update()
 
     def set_zoom(self, z: float, anchor: Optional[QPointF] = None):
-        z = max(0.02, min(64.0, z))
+        zmin = self.min_zoom()
+        z = max(zmin, min(64.0, z))
+        if z <= zmin * 1.0001 and self.data is not None:
+            h, w = self.data.shape
+            self.zoom = zmin
+            self.center = QPointF(w / 2, h / 2)
+            self.update()
+            return
         if anchor is not None:
             before = self.to_image(anchor)
             self.zoom = z
@@ -225,7 +271,7 @@ class ImageView(QWidget):
         p.fillRect(self.rect(), QColor(theme.pal.get("preview", "#000")))
         if self.img is None:
             p.setPen(QColor(theme.pal.get("muted", "#888")))
-            p.drawText(self.rect(), Qt.AlignCenter, tr("Abre una imagen para verla aquí"))
+            p.drawText(self.rect(), Qt.AlignCenter, tr(self.empty_text))
             p.end()
             return
         h, w = self.data.shape
@@ -233,12 +279,36 @@ class ImageView(QWidget):
         target = QRectF(tl.x(), tl.y(), w * self.zoom, h * self.zoom)
         p.setRenderHint(QPainter.SmoothPixmapTransform, self.zoom < 1)
         p.drawImage(target, self.img)
+        if self.overlays:
+            from PySide6.QtGui import QPainterPath
+
+            p.save()
+            p.setClipRect(target)
+            p.setRenderHint(QPainter.Antialiasing)
+            for lines, color, width in self.overlays:
+                path = QPainterPath()
+                for ln in lines:
+                    if len(ln) < 2:
+                        continue
+                    sx = (ln[:, 0] - self.center.x()) * self.zoom + self.width() / 2
+                    sy = (ln[:, 1] - self.center.y()) * self.zoom + self.height() / 2
+                    path.moveTo(float(sx[0]), float(sy[0]))
+                    for xv, yv in zip(sx[1:], sy[1:]):
+                        path.lineTo(float(xv), float(yv))
+                p.setPen(QPen(QColor(color), width))
+                p.setBrush(Qt.NoBrush)
+                p.drawPath(path)
+            p.restore()
         if self._sel is not None:
             a = self.to_screen(self._sel.left(), self._sel.top())
             b = self.to_screen(self._sel.right(), self._sel.bottom())
             p.setPen(QPen(QColor("#33E07A"), 1.6, Qt.DashLine))
             p.setBrush(Qt.NoBrush)
-            p.drawRect(QRectF(a, b))
+            if self.region_shape == "rect":
+                p.drawRect(QRectF(a, b))
+            else:
+                p.setRenderHint(QPainter.Antialiasing)
+                p.drawEllipse(QRectF(a, b))
         if self.marker is not None:
             c = self.to_screen(self.marker[0] + 0.5, self.marker[1] + 0.5)
             p.setRenderHint(QPainter.Antialiasing)
@@ -284,6 +354,10 @@ class ImageView(QWidget):
             q = self.to_image(ev.position())
             x0, y0 = self._sel_start.x(), self._sel_start.y()
             x1, y1 = math.floor(q.x()), math.floor(q.y())
+            if self.region_shape == "circle":
+                side = max(abs(x1 - x0), abs(y1 - y0))
+                x1 = x0 + side if x1 >= x0 else x0 - side
+                y1 = y0 + side if y1 >= y0 else y0 - side
             self._sel = QRectF(QPointF(min(x0, x1), min(y0, y1)), QPointF(max(x0, x1) + 1, max(y0, y1) + 1))
             self.update()
         q = self.to_image(ev.position())
@@ -324,5 +398,5 @@ class ImageView(QWidget):
 
     def resizeEvent(self, ev):
         super().resizeEvent(ev)
-        if self.data is not None and ev.oldSize().width() <= 0:
+        if self.data is not None and (ev.oldSize().width() <= 0 or self.zoom < self.min_zoom()):
             self.fit()

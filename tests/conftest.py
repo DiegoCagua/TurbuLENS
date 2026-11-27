@@ -6,3 +6,15 @@ import sys
 HERE = os.path.dirname(__file__)
 sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.dirname(HERE))
+
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _no_save_prompt(monkeypatch):
+    """En las pruebas no hay nadie que responda «¿Guardar el análisis?»: se descarta."""
+    try:
+        from turbulens.gui import widgets
+    except Exception:  # sin PySide6
+        return
+    monkeypatch.setattr(widgets, "ask_save", lambda *a, **k: "descartar")

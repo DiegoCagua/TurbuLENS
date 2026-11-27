@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: LicenseRef-PolyForm-Noncommercial-1.0.0
 # Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
-"""Genera las imágenes de las fórmulas (LaTeX con mathtext) del modo educativo.
+"""Genera las imágenes de las fórmulas (LaTeX con mathtext) del modo educativo, del satélite y del visor.
 
 Herramienta de desarrollo: necesita matplotlib, que NO se incluye en la app.
 Uso: python scripts/formulas.py   →   turbulens/assets/formulas/<nombre>_<idioma>_<tema>.png
@@ -19,6 +19,7 @@ COLORS = {"dark": "#ECEDEF", "light": "#1D2622"}
 def formulas(lang):
     dec = "." if lang == "en" else "{,}"
     med = r"\mathrm{median}" if lang == "en" else r"\mathrm{mediana}"
+    tend = {"en": "trend", "pt": "tend"}.get(lang, "tend")
     return {
         "frecuencia": r"$f_k=\dfrac{n_k}{N}$",
         "media": r"$\bar{x}=\dfrac{1}{N}\sum_{i=1}^{N}x_i$",
@@ -27,6 +28,13 @@ def formulas(lang):
         "normal": r"$f(x)=\dfrac{1}{\sigma\sqrt{2\pi}}\;e^{-\frac{(x-\bar{x})^{2}}{2\sigma^{2}}}$",
         "error": r"$\sigma_{\bar{x}}=\dfrac{\sigma}{\sqrt{n}}$",
         "mad": r"$\sigma_{\mathrm{rob}}=1" + dec + r"4826\cdot " + med + r"\left(\left|x_i-\tilde{x}\right|\right)$",
+        "goes_f": r"$F=T_{9}-\left(T_{16}-T_{13}\right)$",
+        "goes_cn2": r"$\int_{4\,\mathrm{km}}^{8\,\mathrm{km}}C_n^{2}(z)\,dz=\Lambda(\theta)\,\dfrac{|F-F^{\mathrm{" + tend
+                    + r"}}|}{z}\qquad\Lambda(\theta)=\dfrac{10^{-12}}{\cos\theta}$",
+        "goes_fwhm": r"$\mathrm{FWHM}_{\mathrm{sat}}=0" + dec + r"58\,\lambda^{-1/5}\left[4\pi^{2}\,\Lambda(\theta)\,\dfrac{|F-F^{\mathrm{"
+                     + tend + r"}}|}{z}\right]^{3/5}$",
+        "gauss2d": r"$I(x,y)=B+A\,\exp\!\left[-\dfrac{(x-x_0)^{2}}{2\sigma_x^{2}}-\dfrac{(y-y_0)^{2}}{2\sigma_y^{2}}\right]$",
+        "fwhm": r"$\mathrm{FWHM}=2\sqrt{2\ln 2}\;\sigma\approx 2" + dec + r"355\,\sigma\qquad\varepsilon\approx\mathrm{FWHM}\cdot s$",
         "correlacion": r"$r=\dfrac{\sum_{i}\left(x_i-\bar{x}\right)\left(y_i-\bar{y}\right)}{\sqrt{\sum_{i}\left(x_i-\bar{x}\right)^{2}\;\sum_{i}\left(y_i-\bar{y}\right)^{2}}}$",
     }
 

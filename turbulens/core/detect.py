@@ -33,8 +33,8 @@ import numpy as np
 
 @dataclass
 class DetectConfig:
-    window: int = 4          # (compatibilidad) semiancho típico de un spot (px)
-    exclusion: float = 5.0   # (compatibilidad)
+    window: int = 4          # semiancho típico de un spot (px), estimado en el primer bloque; queda en los metadatos
+    exclusion: float = 5.0   # radio típico alrededor de cada spot (px), también como referencia en los metadatos
     snr_min: float = 6.0     # brillo mínimo del pico, en unidades de ruido
     second_min_ratio: float = 0.12  # el spot más débil debe tener al menos esta fracción del flujo del otro
     threshold_frac: float = 0.15    # fracción del pico usada como umbral
@@ -73,6 +73,7 @@ def estimate_spot_size(stack: np.ndarray) -> float:
 
 
 def config_for_radius(r: float) -> DetectConfig:
+    """Configuración para spots de radio ``r`` (px). Los umbrales se adaptan solos a cada cuadro."""
     r = float(max(r, 0.7))
     return DetectConfig(window=int(max(3, np.ceil(2.5 * r))), exclusion=float(max(4.0, 3.0 * r)))
 

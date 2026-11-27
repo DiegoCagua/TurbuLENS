@@ -1,0 +1,263 @@
+% ================================================================================================ capítulo 13
+\chapter{Por dentro: el código}\label{cap:codigo}
+
+\begin{resumen}
+\textbf{En este capítulo:} cómo está organizado el código de TurbuLENS y los fragmentos que hacen las mediciones,
+copiados del código fuente de esta versión con sus números de línea reales, cada uno con su explicación. Sirve para
+revisar el método, citarlo con precisión o mejorarlo.
+\end{resumen}
+
+TurbuLENS está escrito en Python 3. La interfaz usa Qt (PySide6); los cálculos, NumPy; los videos se leen con FFmpeg a
+través de PyAV, y los archivos del satélite, con pyfive, un lector de HDF5 escrito en Python puro que viene incluido. El
+código es abierto (licencia PolyForm Noncommercial, apéndice~\ref{sec:licencia}) y está en
+\url{https://github.com/DiegoCagua/TurbuLENS}.
+
+\section{Cómo está organizado}
+
+La regla principal es que \textbf{el motor no sabe que existe una ventana}: todo lo que mide, calcula o escribe archivos
+está en \ruta{turbulens/core/} y no importa Qt. Así se puede probar sin interfaz, usar desde un script y revisar sin
+distraerse con botones.
+
+\begin{center}\small
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily\color{acentoosc}}l Y@{}}
+\toprule
+\normalfont Archivo & Qué hace\\
+\midrule
+core/video.py & Lee videos con PyAV: información, cuadros en bloques, búsqueda por cuadro clave.\\
+core/pipeline.py & El procesamiento: recorte, calibración, seguimiento y detección de cada cuadro.\\
+core/detect.py & La detección de los dos puntos (k-medias con dos grupos y centroides).\\
+core/dimm.py & Del movimiento diferencial al seeing (Tokovinin).\\
+core/stats.py & Estadística: resumen, recorte robusto, histogramas, correlación.\\
+core/devices.py & Telescopios, cámaras y máscaras del OAN y propios; escala de placa.\\
+core/calframes.py & Calibración guiada por las cabeceras: clasificación, plan, maestros.\\
+core/calibration.py & Combinación de imágenes y corrección con dark y flat.\\
+core/starfit.py & Ajuste de una gaussiana 2D a una estrella (Levenberg–Marquardt).\\
+core/goes.py & Satélite GOES: búsqueda de archivos, lectura parcial, proyección, lectura de un punto.\\
+core/satseeing.py & Seeing desde el satélite: $F$, tendencia, Sol, ángulo del satélite.\\
+core/mapdata.py & Costas, fronteras y departamentos de Natural Earth, proyectados sobre el recorte.\\
+core/fits.py, imageio.py & Lectura y escritura de FITS, PNG de 16 bits, TIFF y NumPy.\\
+core/export.py, writers.py & Exportación de datos y escritura de cuadros.\\
+core/history.py & El historial en SQLite.\\
+charts.py, reports.py & Gráficas dibujadas con Qt (pantalla, PNG, SVG, PDF) e informes.\\
+gui/ & La interfaz: una página por pantalla, el visor, las animaciones, los temas y los idiomas.\\
+locales/ & Traducciones al inglés y al portugués (la clave es el texto en español).\\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize,>=Stealth,
+  caja/.style={draw=acento,fill=suave,rounded corners=3pt,align=center,minimum height=1cm,text width=2.45cm},
+  dato/.style={draw=naranja,fill=crema,rounded corners=3pt,align=center,minimum height=0.8cm,text width=2.45cm}]
+  \node[dato] (v) at (0,0) {Video\\\ttfamily video.py};
+  \node[caja] (p) at (3.2,0) {Recorte, calibración\\y seguimiento\\\ttfamily pipeline.py};
+  \node[caja] (d) at (6.4,0) {Dos puntos\\por cuadro\\\ttfamily detect.py};
+  \node[dato] (m) at (9.6,0) {Mediciones\\(arreglo por cuadro)};
+  \node[caja] (a) at (9.6,-1.9) {Seeing, $r_0$,\\controles\\\ttfamily dimm.py};
+  \node[dato] (r) at (6.4,-1.9) {Resultados};
+  \node[caja,fill=white] (e) at (3.2,-1.9) {Exportar, informe\\\ttfamily export.py};
+  \node[caja,fill=white] (h) at (0,-1.9) {Historial\\\ttfamily history.py};
+  \draw[->,gris] (v) -- (p); \draw[->,gris] (p) -- (d); \draw[->,gris] (d) -- (m); \draw[->,gris] (m) -- (a);
+  \draw[->,gris] (a) -- (r); \draw[->,gris] (r) -- (e); \draw[->,gris] (e) -- (h);
+  \draw[->,gris,dashed] (r.south) to[bend left=18] (h.south);
+\end{tikzpicture}
+\caption{El camino de un video hasta el seeing.}
+\end{figure}
+
+Los fragmentos que siguen se copian del código de esta versión con un script (\ruta{scripts/manual\_codigo.py}), así que
+los números de línea son los del archivo. Los comentarios del código están en español, como el resto del proyecto.
+
+% ------------------------------------------------------------------------------------------------ detección
+\section{Detección de los dos puntos}\label{sec:codigo_deteccion}
+
+La función \codigo{\_detect} recibe un bloque de cuadros con forma \codigo{(n, alto, ancho)} y devuelve, para cada
+cuadro, las posiciones de los dos puntos y si el cuadro es válido. Nada se recorre con un bucle de Python: cada línea
+opera sobre todos los cuadros a la vez.
+
+\fragmento{umbral}{Fondo, ruido y umbral}
+
+Para cada cuadro, el fondo \codigo{bg} es la mediana y el ruido, la MAD por 1,4826 (con un mínimo de 0,5 cuentas, para
+cámaras de 8 bits con fondo perfectamente plano). \codigo{s3} es la imagen suavizada con una caja de 3~×~3 hecha con sumas
+acumuladas. El umbral \codigo{thr} es el mayor entre el 15\,\% del pico suavizado y $\frac43$ del ruido; los píxeles de
+luz (\codigo{fg}) deben superarlo en la imagen suavizada y en la original, y su peso \codigo{wgt} es cuánto lo superan.
+Restar el umbral hace que los bordes, más ruidosos, pesen poco en el centroide.
+
+\fragmento{centroides}{k-medias con dos grupos}
+
+\codigo{centroids} asigna cada píxel al centro más cercano (\codigo{A = d1 <= d2}) y calcula el centroide ponderado de
+cada grupo: $\bar x = \sum w_i x_i / \sum w_i$. Si un grupo se queda sin píxeles conserva su centro anterior. El bucle
+repite hasta que ningún centro se mueva más de una milésima de píxel o hasta \codigo{cfg.iterations} (8) veces. Los
+argumentos \codigo{lim1} y \codigo{lim2} se usan en una segunda pasada, que deja fuera los píxeles a más de $3r + 3$
+píxeles de cada centro.
+
+\fragmento{valido}{Cuándo un cuadro es válido}
+
+Cada condición es un arreglo booleano de un elemento por cuadro, y el cuadro es válido si se cumplen todas: los dos
+grupos tienen luz; sus picos superan seis veces el ruido (\codigo{snr\_min}); el flujo del más débil es al menos el
+12\,\% del otro (\codigo{second\_min\_ratio}); están separados más de 2,2 veces el mayor radio de giro; en el punto
+medio la imagen suavizada cae por debajo del 60\,\% del pico menor (\codigo{dip}: hay un valle entre los dos), y ninguno
+toca el borde (\codigo{inside}).
+
+\subsection*{El seguimiento}
+
+Dentro del bucle que recorre los cuadros del video, cuando \campo{Seguir a la estrella} está activo:
+
+\fragmento{seguimiento}{La región sigue a la estrella}
+
+\codigo{light\_center} da el centro de luz del recorte. La región se mueve solo la mitad del camino hacia él: es un filtro
+que sigue la deriva lenta del telescopio sin copiar el temblor rápido de la turbulencia. Si en cinco cuadros seguidos no
+hay estrella, \codigo{locate\_pair} la busca en el cuadro completo.
+
+% ------------------------------------------------------------------------------------------------ DIMM
+\section{Del vector al seeing}
+
+\fragmento{ejebase}{Orientación, atípicos y componentes}
+
+Los dos puntos pueden intercambiarse entre cuadros. Para orientar todos los vectores igual, se calcula la matriz de
+segundos momentos de las separaciones y su vector propio principal (\codigo{np.linalg.eigh}): es la dirección de la línea
+de base. Los vectores que apuntan al revés se invierten (\codigo{sgn}). Después se descartan los atípicos con
+\codigo{sigma\_clip\_mask} y se proyecta cada vector sobre la dirección media (\codigo{ux, uy}): \codigo{lon} es la
+componente longitudinal y \codigo{tra}, la transversal (el producto con el vector perpendicular $(-u_y, u_x)$).
+
+\fragmento{tokovinin}{Coeficientes de Tokovinin, \texorpdfstring{$r_0$}{r0} y seeing}
+
+Son, línea por línea, las ecuaciones \eqref{eq:kl}, \eqref{eq:kt}, \eqref{eq:r0dimm} y \eqref{eq:seeing}. Las funciones
+devuelven \codigo{nan} (\emph{not a number}) si les llega un dato imposible, en lugar de un número sin sentido.
+
+\fragmento{seeingdimm}{El seeing de un análisis}
+
+\codigo{sl} y \codigo{st} son las desviaciones estándar en píxeles. \codigo{conv} pasa píxeles al cuadrado a radianes al
+cuadrado con la escala de placa. El seeing estimado es el promedio de los dos, lo mismo que $r_0$; con la altura de la
+estrella entre 5° y 90° se calcula el seeing en el cenit.
+
+\fragmento{sigmaclip}{Recorte robusto de atípicos}
+
+Hasta \codigo{iters} veces: mediana, MAD escalada y fuera lo que esté a más de \codigo{k} de ellas. Se detiene si ya no
+sale ningún dato o si quedan menos de tres.
+
+\section{Escala de placa}
+
+\fragmento{escala}{Píxel efectivo de una cámara}
+\fragmento{escalaplaca}{Escala de placa}
+
+Si la cámara reduce el sensor al grabar (\codigo{video}) y el análisis es de un video, el píxel es el ancho del sensor
+entre el ancho del video. La constante 206,265 sale de pasar radianes a segundos de arco (206\,265) con el píxel en
+micrómetros y la focal en milímetros ($10^{-3}$).
+
+% ------------------------------------------------------------------------------------------------ calibración
+\section{Calibración}
+
+\fragmento{combinar}{Combinar una serie en un maestro}
+
+\codigo{stack} tiene forma \codigo{(n, alto, ancho)} y todo se calcula a lo largo del primer eje, píxel por píxel. En la
+media con recorte, \codigo{ok} marca los valores a menos de \codigo{sigma} desviaciones robustas de la mediana de su
+píxel; se suman solo esos y se dividen entre cuántos son. Para series que no caben en la memoria, \codigo{calframes}
+llama a esta función por franjas de filas.
+
+\fragmento{darkescalado}{El dark que se resta}
+
+El plan decide para cada grupo un modo: el dark de la misma exposición (\codigo{"igual"}), solo el bias, nada, o el
+\codigo{"escalado"}, que aplica la ecuación de la sección~\ref{sec:dark_escalado} con el factor $t_\text{luz}/t_\text{dark}$
+guardado en \codigo{c.scale}. Los maestros se calculan una vez y se guardan en una caché.
+
+\fragmento{corregir}{Corregir una imagen}
+
+Resta el dark (o, si no hay, el bias) y divide por el flat. Si un maestro no mide lo mismo que la imagen, el mensaje de
+error dice los dos tamaños.
+
+% ------------------------------------------------------------------------------------------------ estrella
+\section{Ajuste de una estrella}\label{sec:codigo_gauss}
+
+\fragmento{gauss}{Levenberg–Marquardt}
+
+\codigo{p} son los seis parámetros $(A, x_0, y_0, \sigma_x, \sigma_y, B)$, que arrancan en los momentos de la imagen.
+\codigo{\_model\_jac} da el modelo y su matriz jacobiana (las derivadas respecto a cada parámetro). En cada iteración se
+resuelve $(J^TJ + \lambda\,\operatorname{diag}J^TJ)\,\Delta p = J^T r$: con $\lambda$ pequeño es un paso de Gauss–Newton,
+con $\lambda$ grande un paso corto por el gradiente. Si el paso mejora el ajuste, se acepta y $\lambda$ se divide entre 3;
+si no, se multiplica por 4 y se intenta otro. Los anchos se mantienen positivos y de al menos 0,2~px. Termina cuando ningún
+parámetro cambia más de una parte en diez millones.
+
+% ------------------------------------------------------------------------------------------------ satélite
+\section{Satélite}
+
+\fragmento{satformulas}{Función de estabilidad y seeing}
+
+\codigo{big\_l} es $\Lambda(\theta)$; \codigo{cn2}, la integral de $C_n^2$; \codigo{fwhm}, la fórmula del seeing en
+radianes por \codigo{ARCSEC} para tenerlo en segundos de arco, y \codigo{r0}, la ecuación~\eqref{eq:r0} con $k = 2\pi/\lambda$.
+
+\fragmento{tendencia}{La tendencia de la noche}
+
+\codigo{np.polyfit} con grado 1 es la recta de mínimos cuadrados. \codigo{use} marca las horas que cumplen el criterio del
+Sol; la tendencia se evalúa en todas las horas, también en las excluidas, para dibujarla completa.
+
+\fragmento{cenitsat}{Ángulo cenital del satélite}
+
+\fragmento{sol}{Altura del Sol}
+
+Las fórmulas del \emph{Almanaque Astronómico}: \codigo{n} son los días desde el mediodía del 1 de enero de 2000 (J2000);
+\codigo{L} y \codigo{g}, la longitud media y la anomalía media del Sol; \codigo{lam}, su longitud eclíptica; \codigo{eps},
+la oblicuidad de la eclíptica; \codigo{ra} y \codigo{dec}, sus coordenadas ecuatoriales; \codigo{gmst}, el tiempo sidéreo
+de Greenwich, y \codigo{ha}, el ángulo horario en el sitio. La última línea es la altura sobre el horizonte.
+
+\fragmento{proyeccion}{De latitud y longitud a ángulos de barrido}
+
+La transcripción de las fórmulas de la guía de usuario de GOES-R. Una prueba compara el resultado con el ejemplo numérico
+de esa guía.
+
+\subsection*{Lectura parcial}\label{sec:codigo_rango}
+
+\fragmento{rango}{Un bloque de un archivo remoto}
+
+El archivo remoto se divide en bloques de 128~KB. Para leer el bloque \codigo{i} se pide al servidor el rango de bytes
+correspondiente; la respuesta debe ser \codigo{206 Partial Content}, y si no lo es se lanza \codigo{RangeNotSupported}
+para que TurbuLENS descargue el archivo completo. Los bloques se guardan en una caché de hasta 96 (12~MB): leer la
+cabecera del HDF5 y los bloques comprimidos de un recorte vuelve muchas veces a los mismos.
+
+\fragmento{carpeta}{El nombre de la carpeta de cada evaluación}
+
+% ------------------------------------------------------------------------------------------------ pruebas
+\section{Las pruebas}
+
+TurbuLENS tiene casi cincuenta pruebas automáticas en \ruta{tests/}, que corren en GitHub Actions con cada cambio; además, los ejecutables de Windows, macOS y Linux se prueban antes de publicarse.
+La mayoría usan datos sintéticos de valores conocidos, de modo que se sabe cuál debe ser la respuesta:
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\ttfamily}l Y@{}}
+\toprule
+\normalfont Archivo & Qué comprueba (algunos ejemplos)\\
+\midrule
+test\_core.py & Que la detección encuentra los centroides con precisión de centésimas de píxel, con puntos pequeños,
+grandes y en anillo; que rechaza los cuadros con un solo punto; los coeficientes de Tokovinin y un valor de referencia del
+seeing; que el análisis recupera una $\sigma$ conocida y cancela un movimiento común; el recorte de atípicos; el ajuste de
+una estrella; que sin detecciones las gráficas quedan vacías.\\
+test\_calframes.py & La clasificación por cabecera, nombre y carpeta; que el plan empareja exposiciones y filtros y escala
+darks; que la calibración quita un píxel caliente y el viñeteo; las series grandes por franjas; el aviso de flats
+saturados; la escala de placa de los equipos del OAN.\\
+test\_modes.py & La proyección contra el ejemplo de la guía de GOES-R; la elección del satélite por fecha; la lectura de
+archivos HDF5 comprimidos; que la lectura parcial por HTTP da los mismos valores que el archivo local; las fórmulas del seeing
+satelital y el nombre de las carpetas.\\
+test\_gui.py, test\_i18n.py & La interfaz completa sin pantalla: entrar a cada modo, procesar un video, las lecciones con
+\emph{Mi video}; que los tres idiomas tienen los mismos textos.\\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Correr TurbuLENS desde el código}
+
+\begin{tcolorbox}[enhanced,colback=codigofondo,colframe=grisclaro,boxrule=0.6pt,arc=1.5mm,fontupper=\ttfamily\small,
+  left=4mm,top=2mm,bottom=2mm]
+git clone https://github.com/DiegoCagua/TurbuLENS\\
+cd TurbuLENS\\
+pip install -r requirements.txt\\
+python -m turbulens\hfill\normalfont\color{gris}abre la aplicación\\
+\ttfamily python -m turbulens --autoprueba\hfill\normalfont\color{gris}prueba sin ventana\\
+\ttfamily python -m pytest\hfill\normalfont\color{gris}las pruebas\\
+\ttfamily pyinstaller packaging/turbulens.spec\hfill\normalfont\color{gris}el ejecutable de tu sistema
+\end{tcolorbox}
+
+Los textos de la interfaz están en español en el código y pasan por la función \codigo{tr()}, que busca su traducción en
+\ruta{locales/en.json} y \ruta{locales/pt.json}. Para agregar un idioma basta con un archivo más con las mismas claves.
+Las capturas de este manual se generan con \ruta{scripts/capturas\_manual.py} y los fragmentos de código con
+\ruta{scripts/manual\_codigo.py}; después de cambiar la aplicación, se corren los dos y se compila el manual otra vez.

@@ -63,9 +63,38 @@ class EduData:
                 "name": tr("Mi video ({})").format(s.result.video.get('name'))}
 
 
+    _sample_rec = None
+
+    @classmethod
+    def sample_record(cls) -> dict:
+        """Correlaciones y cocientes del ejemplo de Altair (máscara del grupo, 8SE + Nikon D5600 en video)."""
+        if cls._sample_rec is None:
+            from ...core.dimm import DimmParams, analyze
+
+            z = cls.sample()
+            n = z["t"].size
+            meas = np.zeros(n, dtype=[("t", "f8"), ("x1", "f8"), ("y1", "f8"), ("x2", "f8"), ("y2", "f8"), ("valid", "?")])
+            for k in ("t", "x1", "y1", "x2", "y2"):
+                meas[k] = z[k]
+            meas["valid"] = np.isfinite(z["x1"]) & np.isfinite(z["x2"])
+            p = DimmParams(D_cm=4.2, B_cm=14.4, lambda_nm=550, scale_arcsec_px=1.242)
+            d = analyze(meas, p)
+            cls._sample_rec = {"corr_lt": d.corr_lt, "corr_spots_l": d.corr_spots_l, "corr_spots_t": d.corr_spots_t,
+                               "sigma_ratio": d.sigma_ratio, "sigma_ratio_expected": d.sigma_ratio_expected,
+                               "B_cm": p.B_cm, "D_cm": p.D_cm}
+        return cls._sample_rec
+
+    @staticmethod
+    def own_record(main) -> dict | None:
+        for mode in ("educativo", "analisis"):
+            s = main.sessions[mode]
+            if s.dimm is not None and s.result is not None:
+                return s.record()
+        return None
+
     @staticmethod
     def own(main) -> dict | None:
-        """El video propio: el procesado en el modo educativo o, si no hay, el del modo análisis."""
+        """El video propio: el procesado en el modo educativo o, si no hay, el del modo medición."""
         for mode in ("educativo", "analisis"):
             d = EduData.from_session(main.sessions[mode])
             if d is not None:
@@ -205,6 +234,8 @@ class LessonPage(Page):
         left.addWidget(tc)
         if self.quiz:
             left.addWidget(MiniQuiz(*self.quiz, store=self.main.sessions["educativo"].answers))
+        for extra in self.extra_left():
+            left.addWidget(extra)
         left.addStretch(1)
         right = QVBoxLayout()
         right.setSpacing(12)
@@ -271,6 +302,10 @@ class LessonPage(Page):
         self.export_msg.setText(tr("Guardado: {} ({} filas)").format(os.path.basename(p), len(rows)))
 
     # Datos activos
+    def extra_left(self) -> list:
+        """Tarjetas adicionales bajo el texto de la lección (por defecto ninguna)."""
+        return []
+
     def data(self) -> dict:
         if self.src.value() == "propio":
             d = EduData.own(self.main)
@@ -667,6 +702,35 @@ class L8Correlacion(LessonPage):
                                                           "Una es el doble de la otra"], 1,
             "Correcto.", "r mide qué tan bien se alinean los puntos en una recta.")
 
+    def extra_left(self):
+        card = Card("Cómo leer r en un DIMM", help_text=(
+            "Los tres controles de calidad que TurbuLENS calcula en cada análisis, explicados con números reales: los "
+            "del ejemplo de Altair o, con «Mi video», los de tu propio video."))
+        self.dimm_lbl = label("", wrap=True, rich=True)
+        self.dimm_lbl.setStyleSheet("line-height:140%;")
+        card.add(self.dimm_lbl)
+        return [card]
+
+    def _dimm_text(self):
+        from ...reports import correlation_explanation
+
+        rec = EduData.own_record(self.main) if self.src.value() == "propio" else None
+        _, text = correlation_explanation(rec or EduData.sample_record())
+        paras = text.split("\n\n")
+        heads = [tr("Qué es r."), "r ", "r ", tr("Comprobación adicional:"), tr("Diagnóstico:")]
+        import html
+
+        out = []
+        for ptxt in paras:
+            ptxt = html.escape(ptxt, quote=False)
+            for h in heads:
+                if ptxt.startswith(h) and h.strip():
+                    cut = ptxt.find(". ") + 1 if h == "r " else len(h)
+                    ptxt = f"<b>{ptxt[:cut]}</b>{ptxt[cut:]}"
+                    break
+            out.append(ptxt)
+        self.dimm_lbl.setText("<br><br>".join(out))
+
     def build(self):
         self.mode = QComboBox()
         for t in ("Un cuadro y el siguiente", "Un cuadro y 5 cuadros después", "Un cuadro y medio segundo después",
@@ -692,6 +756,7 @@ class L8Correlacion(LessonPage):
         self.show_chart(ChartSpec(title="Diagrama de dispersión", xlabel=xl, ylabel=yl, legend=False,
                                   series=[Series("scatter", x=x[::step], y=y[::step], color="accent", alpha=0.35, size=2.0)]))
         self.read.set([("Correlación r", f(r, 2)), ("Puntos", str(x.size)), ("r²", f(r * r, 2))])
+        self._dimm_text()
 
 
 class L9Laboratorio(LessonPage):

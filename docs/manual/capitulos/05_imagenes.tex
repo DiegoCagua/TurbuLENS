@@ -1,0 +1,159 @@
+% ================================================================================================ capítulo 5
+\chapter{Modo Imágenes}\label{cap:imagenes}
+
+\begin{resumen}
+\textbf{En este capítulo:} el \menu{Visor de píxeles} (escalas, regiones, cabecera FITS), la medición del FWHM y del
+seeing de una estrella, y la calibración de una noche completa con \menu{Darks y flats}.
+\end{resumen}
+
+% ------------------------------------------------------------------------------------------------ visor
+\section{Visor de píxeles}\label{sec:visor}
+
+El visor abre imágenes FITS (también cubos de varios cuadros), PNG, TIFF de 16 bits, JPG y arreglos de NumPy, y funciona
+como SAOImage DS9: cambias cómo se ve la imagen sin tocar sus datos, y lees el valor exacto de cada píxel. Puedes abrir
+una imagen con \botonp{Abrir imagen…} o arrastrarla a la ventana.
+
+\begin{capturam}{visor}{El visor con un campo de estrellas y una región rectangular.}
+\item \textbf{Escala}: lineal, logarítmica, raíz cuadrada, asinh o histograma ecualizado.
+\item \textbf{Límites}: mínimo–máximo, percentiles (99,5, 99 y 95\,\%), ZScale (el de DS9) o manual.
+\item \textbf{Colores}: grises, grises invertidos, calor, viridis o frío–cálido.
+\item \textbf{Forma de la región}: rectángulo, círculo o elipse.
+\item \textbf{La imagen}. Rueda: zoom alrededor del cursor. Arrastrar: mover. \tecla{Mayús}\,+\,arrastrar o clic derecho
+y arrastrar: dibujar una región. \boton{Ajustar} y \boton{1:1} cambian el zoom.
+\item \textbf{Posición y valor} del píxel bajo el cursor (columna y fila desde 1; la fila 1 es la de arriba), y los
+valores del negro y del blanco.
+\item \textbf{Estadística de la región}: píxeles, media, mediana, σ, σ robusta, mínimo, máximo y suma, como en DS9.
+\boton{Exportar CSV…} guarda la posición y el valor de cada píxel de la región.
+\item \textbf{Cabecera FITS} completa.
+\end{capturam}
+
+La imagen se puede guardar en FITS de 32 bits o en PNG de 16 bits con \boton{Guardar FITS…} y \boton{Guardar PNG…}. En
+un cubo, el número de cuadro aparece en la barra de arriba. El zoom no se aleja más allá de la imagen completa: siempre
+la ves entera o más grande.
+
+\subsection{Escala como en DS9}
+
+La tarjeta \campo{Escala (como en DS9)} muestra el histograma de los valores de la imagen, en escala logarítmica, con dos
+líneas: el \textbf{negro} (todo lo que esté por debajo se ve negro) y el \textbf{blanco}. Escribir otros valores en
+\campo{Negro} y \campo{Blanco} cambia el contraste al instante y pone los límites en «Manual»; \boton{Automático} vuelve
+a ZScale. Con \campo{Mismos límites en todos los cuadros}, al pasar de un cuadro a otro de un cubo los límites no cambian:
+es la forma correcta de comparar dos imágenes, porque con ZScale cada una se ajusta por separado y una diferencia pequeña
+desaparece.
+
+\subsection{Medir una estrella: FWHM y seeing}\label{sec:fwhm_app}
+
+Dibuja una región (mejor circular) alrededor de una estrella aislada y que no esté saturada, y pulsa
+\botonp{Medir la estrella de la región}. TurbuLENS ajusta una gaussiana de dos dimensiones con fondo
+(sección~\ref{sec:psf}) y dibuja sobre la imagen dos elipses: la verde a un sigma del centro, donde el brillo cae al
+61\,\% del pico, y la amarilla a medio FWHM, donde cae a la mitad.
+
+\begin{capturam}{visor_estrella}{Escala variable, medición de una estrella y su perfil radial.}
+\item \textbf{Histograma} de la imagen con el negro (azul) y el blanco (rojo).
+\item \campo{Negro} y \campo{Blanco}: los límites, a mano.
+\item \campo{Mismos límites en todos los cuadros}.
+\item \textbf{Escala de placa}, escrita o tomada con \boton{De Parámetros}.
+\item \botonp{Medir la estrella de la región}.
+\item \textbf{Resultado} del ajuste.
+\item \textbf{Qué graficar}: perfil radial, histograma de la región, perfil horizontal o vertical.
+\item \textbf{La gráfica}: aquí, el perfil radial con los píxeles, su promedio por anillos, la gaussiana ajustada y las
+líneas de σ y de FWHM/2.
+\end{capturam}
+
+El resultado da el centro de la estrella con centésimas de píxel, el pico sobre el fondo, $\sigma_x$ y $\sigma_y$, la
+elipticidad, el radio al primer sigma y el FWHM en píxeles. Con la escala de placa, el FWHM pasa a segundos de arco:
+\[
+\text{FWHM}\,('') = \text{FWHM}\,(\text{px}) \times s\,(''/\text{px}) .
+\]
+
+\begin{cuidado}[¿Cuándo el FWHM es el seeing?]
+En una \textbf{exposición larga} (varios segundos) y \textbf{bien enfocada}, el tamaño de una estrella lo pone la
+atmósfera y el FWHM es el seeing. En un cuadro de video de milisegundos, no: la estrella está «congelada» y sale más
+pequeña. Tampoco si la imagen está desenfocada, si el seguimiento se corrió o si la estrella está saturada (la cima
+plana engaña al ajuste). Por eso el DIMM es más confiable: mide movimientos, no tamaños. Las dos medidas juntas, en la
+misma noche, son una buena comprobación.
+\end{cuidado}
+
+Si la región es muy pequeña, si solo tiene fondo o si la estrella es más grande que la región, el ajuste no se hace y el
+mensaje dice qué cambiar.
+
+% ------------------------------------------------------------------------------------------------ calibración
+\section{Darks y flats}\label{sec:calibracion_app}
+
+Una noche de observación deja muchas imágenes: las de los objetos (\textbf{luces}) y las de calibración (\textbf{bias},
+\textbf{darks} y \textbf{flats}). Esta página las clasifica, decide qué calibración necesita cada luz y la aplica, todo a
+partir de las cabeceras. Funciona con imágenes sueltas o con carpetas enteras, subcarpetas incluidas.
+
+\begin{capturam}{calibracion_plan}{Una noche con luces de 30~s en filtro R y de 60~s en filtro V, darks de 30 y 120~s,
+bias y flats de los dos filtros.}
+\item \boton{Agregar carpeta…} y \boton{Agregar imágenes…}; también se pueden soltar en la ventana.
+\item \textbf{La tabla}: cada archivo con su tipo, de dónde salió el tipo, exposición, ganancia o ISO, temperatura,
+filtro, tamaño y binning.
+\item \campo{márcala como}: corrige el tipo de las imágenes seleccionadas.
+\item \textbf{Combinar con}: mediana (recomendado), media con recorte a 3~σ o media.
+\item \campo{Escalar darks con el bias si no hay de la misma exposición}.
+\item \textbf{El plan}: qué se resta y qué se divide en cada grupo de luces, con los avisos.
+\item \botonp{Crear maestros y calibrar}.
+\end{capturam}
+
+\subsection{1. Imágenes}
+
+TurbuLENS lee solo la \textbf{cabecera} de cada archivo (no la imagen entera, así que cientos de archivos se leen en
+segundos): el tipo (\codigo{IMAGETYP}, \codigo{FRAME}), la exposición (\codigo{EXPTIME}, \codigo{EXPOSURE}), la ganancia o
+el ISO, la temperatura (\codigo{CCD-TEMP}), el filtro, el binning, el tamaño y la cámara. En los TIFF y JPG de cámaras de
+fotos lee los datos EXIF.
+
+Si un archivo no dice qué es, el tipo sale del nombre del archivo («dark\_30s\_001») o de la carpeta («Darks/»,
+«Flats/»). La columna \campo{Según} dice de dónde salió; lo que no se pudo saber se toma como luz y se marca en amarillo.
+Si alguna quedó mal clasificada, selecciónala y cámbiala con \campo{márcala como}.
+
+\subsection{2. Qué se va a hacer}
+
+El plan agrupa las luces por exposición, filtro, ganancia y tamaño, y dice para cada grupo:
+\begin{itemize}
+\item \textbf{qué se resta}: el dark de la misma exposición; si no lo hay, un dark de otra exposición escalado con el
+bias (sección~\ref{sec:dark_escalado}); si tampoco, solo el bias; o nada;
+\item \textbf{qué se divide}: el flat del mismo filtro, al que antes se le restó su propio dark o el bias.
+\end{itemize}
+Los avisos salen en amarillo: darks a otra temperatura, luces sin exposición en la cabecera, falta de bias para
+escalar\ldots{} En la captura, las luces de 60~s no tienen darks de 60~s y el plan escala el de 120~s por 0,5.
+
+\subsection{3. Calibrar}
+
+Elige la carpeta de salida y pulsa \botonp{Crear maestros y calibrar}. Cada maestro se crea una sola vez y se guarda en
+\ruta{maestros/}; cada luz calibrada, en \ruta{calibradas/}, con su cabecera original más \codigo{CALSTAT},
+\codigo{NDARK}, \codigo{NFLAT} y, si se escaló el dark, \codigo{DARKSCAL}. Las series grandes se combinan por franjas, con
+un archivo temporal, sin llenar la memoria. Puedes cancelar en cualquier momento.
+
+\captura{calibracion_resultado.png}{Al terminar: los maestros creados, el diagnóstico de cada flat y los botones para
+revisar el resultado.}
+
+Al terminar aparecen:
+\begin{itemize}
+\item \boton{Ver dark maestro}, \boton{Ver flat maestro}, \boton{Ver bias maestro} y \boton{Ver la primera calibrada},
+que abren cada imagen en el visor.
+\item \boton{Comparar antes y después}: abre la primera luz original y la calibrada como un cubo de dos cuadros, con
+\campo{Mismos límites en todos los cuadros} activado. Pasa de un cuadro al otro y verás la corrección.
+\item \boton{Usar en el modo medición}: pasa los maestros del grupo principal a la calibración de \menu{Parámetros}.
+\end{itemize}
+
+\subsection{El diagnóstico del flat}
+
+Para cada flat, TurbuLENS informa cuánto corrige: «el flat normalizado va de 0,675 a 1,186; la corrección cambia el
+brillo hasta un 32,5\,\%». Y avisa en dos casos:
+\begin{itemize}
+\item \textbf{Flats saturados.} Si muchos píxeles están en el valor máximo, el flat sale casi plano y no corrige nada.
+Hay que tomarlos con menos exposición, con el histograma cerca de la mitad del rango.
+\item \textbf{Flat casi uniforme.} Si varía menos del 1\,\%, la corrección es imperceptible. Es normal con un
+telescopio sin viñeteo ni polvo, pero vale la pena revisarlo.
+\end{itemize}
+
+\begin{nota}[«El flat no cambia nada».]
+Es la duda más común. Casi siempre tiene una de dos causas: los flats estaban saturados (el diagnóstico lo dice) o se
+compararon las imágenes con ZScale, que ajusta el contraste de cada una por separado y esconde una corrección de pocos
+por ciento. Con \boton{Comparar antes y después} los límites son los mismos y la diferencia se ve.
+\end{nota}
+
+\begin{consejo}[Solo calibraciones.]
+Si agregas solo bias, darks o flats, sin luces, TurbuLENS crea los maestros (bias, darks por exposición y flats por
+filtro) y los deja listos para otra noche.
+\end{consejo}

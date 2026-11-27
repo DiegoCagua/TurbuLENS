@@ -40,10 +40,10 @@ NAV_IMAGENES = [
     ("IMÁGENES", [("img_ver", "Visor de píxeles"), ("img_cal", "Darks y flats")]),
 ]
 NAV_SATELITE = [
-    ("SATÉLITE", [("goes", "GOES: nubes y canales"), ("img_ver", "Visor de píxeles")]),
+    ("SATÉLITE", [("goes", "GOES: nubes y seeing"), ("goes_info", "Cómo funciona"), ("img_ver", "Visor de píxeles")]),
 ]
 NAVS = {"analisis": NAV_ANALISIS, "educativo": NAV_EDU, "imagenes": NAV_IMAGENES, "satelite": NAV_SATELITE}
-MODE_NAMES = {"analisis": "Modo análisis", "educativo": "Modo educativo", "imagenes": "Modo imágenes",
+MODE_NAMES = {"analisis": "Modo medición", "educativo": "Modo educativo", "imagenes": "Modo imágenes",
               "satelite": "Modo satélite"}
 FIRST_PAGE = {"analisis": "video", "educativo": "bienvenida", "imagenes": "img_ver", "satelite": "goes"}
 
@@ -130,7 +130,7 @@ class MainWindow(QMainWindow):
                          ("acerca", misc.AboutPage), ("bienvenida", edu.Welcome), ("quiz", edu.QuizPage),
                          ("titilan", edu.AstroTitilan), ("dimm", edu.AstroDimm), ("simulador", edu.AstroSim),
                          ("img_ver", images.ImageViewerPage), ("img_cal", images.CalibrationPage),
-                         ("goes", satellite.GoesPage)]:
+                         ("goes", satellite.GoesPage), ("goes_info", satellite.GoesInfoPage)]:
             self._add_page(key, cls(self))
         for i, cls in enumerate(edu.LESSONS, start=1):
             self._add_page(f"l{i}", cls(self))
@@ -373,7 +373,29 @@ class MainWindow(QMainWindow):
         if ov is not None:
             ov.setGeometry(self.rect())
 
+    def keep_unsaved(self, session, why: str) -> bool:
+        """Si ``session`` tiene un análisis sin guardar, pregunta qué hacer. Devuelve False si el usuario cancela."""
+        from .widgets import ask_save
+
+        if not session.unsaved():
+            return True
+        name = session.result.video.get("name", "")
+        ans = ask_save(self, "Análisis sin guardar",
+                       tr("El análisis de «{}» no está en el historial. ¿Guardarlo {}?").format(name, tr(why)))
+        if ans == "cancelar":
+            return False
+        if ans == "guardar":
+            res_page = self.page_by_key.get("resultados")
+            lab = res_page.labelEdit.text().strip() if res_page is not None and session is self.session else ""
+            session.save_to_history(lab)
+        return True
+
     def closeEvent(self, ev):
+        for mode in ("analisis", "educativo"):
+            s = self.sessions.get(mode)
+            if s is not None and not self.keep_unsaved(s, "antes de salir"):
+                ev.ignore()
+                return
         pg = self.page_by_key.get("procesar")
         if pg is not None and pg.worker is not None:
             pg.cancel()

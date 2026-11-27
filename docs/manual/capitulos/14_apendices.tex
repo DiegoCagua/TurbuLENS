@@ -1,0 +1,150 @@
+% ================================================================================================ apéndices
+\chapter{Equipos del OAN}\label{ap:oan}
+
+Estos son los equipos que trae \boton{Dispositivos}. Los datos de los telescopios son los nominales del fabricante;
+comprueba la focal de tu tubo en su etiqueta.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l r r Y@{}}
+\toprule
+Telescopio & Apertura & Focal & Notas\\
+\midrule
+Celestron NexStar 8SE & 203~mm & 2032~mm (f/10) & Schmidt-Cassegrain; el de las mediciones del grupo.\\
+Meade 10″ (LX200) & 254~mm & 2500~mm (f/10) & Con un reductor f/6,3 la focal es de unos 1600~mm.\\
+\bottomrule
+\end{tabularx}
+\caption{Telescopios.}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l l r Y@{}}
+\toprule
+Cámara & Sensor & Píxel & En video\\
+\midrule
+Nikon D5600 & APS-C 23,5~×~15,6~mm, 6000~×~4000 & 3,92~µm & Reduce el sensor a 1920~px: píxel efectivo de 12,24~µm.\\
+Canon T5i (700D) & APS-C 22,3~×~14,9~mm, 5184~×~3456 & 4,30~µm & Reduce el sensor a 1920~px: píxel efectivo de 11,61~µm.\\
+QHY174M-GPS & IMX174, 11,25~×~7,03~mm, 1920~×~1200 & 5,86~µm & Graba con los píxeles reales.\\
+\bottomrule
+\end{tabularx}
+\caption{Cámaras.}
+\end{table}
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l c c c@{}}
+\toprule
+ & Nikon D5600 (video 1920) & Canon T5i (video 1920) & QHY174M-GPS\\
+\midrule
+Celestron NexStar 8SE & 1,242 & 1,179 & 0,595\\
+Meade 10″ (2500~mm) & 1,010 & 0,958 & 0,483\\
+\bottomrule
+\end{tabular}
+\caption{Escalas de placa resultantes, en $''/\text{px}$.}
+\end{table}
+
+\textbf{Máscaras.} La del grupo, para el 8SE, tiene orificios de $D = 4{,}2$~cm separados $B = 14{,}4$~cm. La del
+protocolo «Determina la nitidez del cielo nocturno» de ANDEAN ROAD, para telescopios de 8 pulgadas, $D = 2{,}5$~cm y
+$B = 14$~cm. \emph{Conservar D y B} deja los valores que ya escribiste en \menu{Parámetros}.
+
+% ------------------------------------------------------------------------------------------------ versiones
+\chapter{Historial de versiones}\label{ap:versiones}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+Versión & Cambios principales\\
+\midrule
+1.0.0 & Primera versión: extracción de cuadros, medición vectorizada, seeing con el modelo de Tokovinin, modo educativo,
+historial.\\
+1.1 & Animación de los centroides; Fredy Esteban Cruz Ospina como coautor; licencia PolyForm Noncommercial.\\
+1.2 & Tres idiomas; los mismos controles de reproducción en toda la aplicación; ejecutables para descomprimir y abrir;
+historial y perfiles compartidos entre modos; exportación con nombres automáticos.\\
+1.3 & Detector de dos grupos (puntos grandes y en anillo); seguimiento cuadro a cuadro y tamaño automático; no se procesa
+sin escala de placa; calculadora con el píxel efectivo del video; unidades; perfiles editables; modos Imágenes y Satélite;
+animaciones del modo educativo; Saray Juliana Pinto Sanabria como coautora.\\
+1.4 & Calibración guiada por las cabeceras, para imágenes sueltas y carpetas completas; botón de los equipos del OAN;
+interfaz al 100\,\% por defecto; primer manual completo.\\
+\textbf{1.5.0} & \textbf{Medición:} el modo se llama \emph{Medición del seeing}; equipos propios (telescopio, cámara y
+máscara) guardados junto a los del OAN; rangos permitidos a la vista; gráficas interactivas (valores con el cursor, ver en
+grande, guardar y copiar); gráficas vacías cuando no se detecta la estrella; guardar en el historial varias veces;
+exportar en dos pasos con \emph{Generar}; aviso antes de perder un análisis sin guardar; la explicación de las
+correlaciones pasa al modo educativo.
+\textbf{Satélite:} una noche completa cada 30 o 60 minutos; seeing con los canales 9, 13 y 16 y criterio del Sol; lectura
+solo de la zona; mapa sobre el recorte; una subcarpeta por evaluación; la página \emph{Cómo funciona}.
+\textbf{Imágenes:} regiones circulares y elípticas; escala variable como en DS9; FWHM y seeing de una estrella; gráficas
+de la imagen; diagnóstico del flat; comparar antes y después.
+\textbf{Manual} nuevo, con la teoría, capturas numeradas y el código comentado.\\
+\bottomrule
+\end{tabularx}
+\caption{Versiones de TurbuLENS.}
+\end{table}
+
+% ------------------------------------------------------------------------------------------------ créditos
+\chapter{Créditos, licencia y cómo citar}\label{ap:creditos}
+
+\section*{Autores}
+
+\textbf{Diego Fernando Cagua Lozada}, \textbf{Fredy Esteban Cruz Ospina} y \textbf{Saray Juliana Pinto Sanabria}
+(coautora y pruebas), estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, sede
+Bogotá. TurbuLENS se desarrolló para la asignatura Técnicas Observacionales de la Maestría en Astronomía del Observatorio
+Astronómico Nacional.
+
+\section*{Desarrollo con inteligencia artificial}
+
+La interfaz y las funcionalidades de TurbuLENS se desarrollaron con ayuda de Claude (Anthropic), un asistente de
+inteligencia artificial, bajo la dirección y la revisión de los autores, que definieron el método, validaron los
+resultados con datos reales y sintéticos y son responsables del programa.
+
+\section*{Datos y componentes de terceros}
+
+Imágenes del satélite: NOAA GOES-R Series, producto ABI L2 \emph{Cloud and Moisture Imagery} (CMIPF), del repositorio
+NOAA Open Data Dissemination en Amazon Web Services. Mapas: Natural Earth (dominio público). TurbuLENS usa Qt para Python
+(PySide6, LGPL), FFmpeg a través de PyAV, NumPy, Pillow, openpyxl y pyfive (BSD); cada componente conserva su licencia,
+como se detalla en \ruta{THIRD\_PARTY\_NOTICES.md}.
+
+\section*{Licencia}\label{sec:licencia}
+
+PolyForm Noncommercial 1.0.0. Puedes usar, estudiar, modificar y compartir TurbuLENS con fines no comerciales (estudio,
+investigación, enseñanza, divulgación), conservando la licencia y el crédito a los autores. El uso comercial requiere
+permiso escrito de los autores.
+
+\section*{Cómo citar}\label{sec:citar}
+
+Si usas TurbuLENS en un trabajo, una tesis o una publicación, cítalo así:
+\begin{tcolorbox}[enhanced,colback=suave,colframe=suave,arc=2mm,left=4mm,right=4mm,fontupper=\small]
+Cagua Lozada, D. F., Cruz Ospina, F. E., \& Pinto Sanabria, S. J. (2026). \emph{TurbuLENS} (versión 1.5.0) [Software].
+Observatorio Astronómico Nacional, Universidad Nacional de Colombia. \url{https://github.com/DiegoCagua/TurbuLENS}
+\end{tcolorbox}
+El repositorio incluye un archivo \ruta{CITATION.cff} con estos datos, que GitHub muestra como «Cite this repository».
+
+\captura{acerca.png}{\menu{Acerca de}: idioma, tamaño de la interfaz, créditos, licencia, cómo citar y referencias.}
+
+% ------------------------------------------------------------------------------------------------ referencias
+\chapter{Referencias}\label{ap:referencias}
+
+\begin{enumerate}[label={[\arabic*]},leftmargin=*,itemsep=0.5em]
+\item A. Tokovinin, «From differential image motion to seeing», \emph{Publications of the Astronomical Society of the
+Pacific} \textbf{114}, 1156–1166 (2002). \url{https://arxiv.org/abs/astro-ph/0111022}
+\item M. Sarazin y F. Roddier, «The ESO differential image motion monitor», \emph{Astronomy \& Astrophysics}
+\textbf{227}, 294–300 (1990).
+\item D. L. Fried, «Optical resolution through a randomly inhomogeneous medium for very long and very short exposures»,
+\emph{Journal of the Optical Society of America} \textbf{56}, 1372–1379 (1966).
+\item A. N. Kolmogorov, «The local structure of turbulence in incompressible viscous fluid for very large Reynolds
+numbers», \emph{Doklady Akademii Nauk SSSR} \textbf{30}, 301 (1941).
+\item F. Roddier, «The effects of atmospheric turbulence in optical astronomy», \emph{Progress in Optics} \textbf{19},
+281–376 (1981).
+\item S. Cavazzani, S. Ortolani y V. Zitelli, «Site testing at astronomical sites: seeing evaluation from satellite based
+data» (2012). \url{https://arxiv.org/abs/1112.3497}
+\item NOAA/NASA, \emph{GOES-R Series Product Definition and Users' Guide}, vol. 3 (Level 1b) y vol. 5 (Level 2+).
+\item NOAA, aviso de la transición de GOES-19 a GOES-Este, 4 de abril de 2025.
+\item ANDEAN ROAD, Oficina Regional Andina de la Astronomía para el Desarrollo, \emph{Determina la nitidez del cielo
+nocturno en tu lugar de observación} (protocolo, 2026).
+\item IRAF, documentación de la tarea \texttt{display}: el algoritmo ZSCALE (el que usa SAOImage DS9).
+\item K. Levenberg, «A method for the solution of certain non-linear problems in least squares», \emph{Quarterly of
+Applied Mathematics} \textbf{2}, 164–168 (1944); D. W. Marquardt, \emph{Journal of the Society for Industrial and Applied
+Mathematics} \textbf{11}, 431–441 (1963).
+\item The Astronomical Almanac, «Low precision formulas for the Sun», sección C.
+\end{enumerate}

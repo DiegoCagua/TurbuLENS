@@ -97,3 +97,58 @@ def by_key(items, key):
 def plate_scale(tel: Telescope, cam: Camera, video_width: Optional[int] = None, as_video: bool = True) -> float:
     """Escala de placa en ″/px."""
     return 206.265 * cam.effective_pixel_um(video_width, as_video) / tel.focal_mm
+
+
+# ---------------------------------------------------------------------------------------------- equipos propios
+# Los equipos que agrega el usuario se guardan como JSON en la configuración («equipos/propios») y aparecen junto a
+# los del OAN. Sus claves empiezan con «u:» para no chocar con las del OAN.
+
+def custom_from_json(text: str) -> tuple[list, list, list]:
+    import json
+
+    try:
+        data = json.loads(text or "{}")
+    except (ValueError, TypeError):
+        data = {}
+    tels, cams, masks = [], [], []
+    for t in data.get("telescopios", []):
+        try:
+            tels.append(Telescope(str(t["key"]), str(t["name"]), float(t["aperture_mm"]), float(t["focal_mm"]),
+                                  "Telescopio propio."))
+        except (KeyError, TypeError, ValueError):
+            pass
+    for c in data.get("camaras", []):
+        try:
+            w = int(c["width_px"])
+            sw = float(c["sensor_w_mm"])
+            vw = tuple(int(v) for v in c.get("video_widths", []) if int(v) > 0)
+            cams.append(Camera(str(c["key"]), str(c["name"]), sw, float(c.get("sensor_h_mm", sw * 2 / 3)), w,
+                               int(c.get("height_px", round(w * 2 / 3))), bool(c.get("video")), vw, "Cámara propia."))
+        except (KeyError, TypeError, ValueError):
+            pass
+    for m in data.get("mascaras", []):
+        try:
+            masks.append(Mask(str(m["key"]), str(m["name"]), float(m["D_cm"]), float(m["B_cm"]), "Máscara propia."))
+        except (KeyError, TypeError, ValueError):
+            pass
+    return tels, cams, masks
+
+
+def custom_to_json(tels, cams, masks) -> str:
+    import json
+
+    return json.dumps({
+        "telescopios": [{"key": t.key, "name": t.name, "aperture_mm": t.aperture_mm, "focal_mm": t.focal_mm} for t in tels],
+        "camaras": [{"key": c.key, "name": c.name, "sensor_w_mm": c.sensor_w_mm, "sensor_h_mm": c.sensor_h_mm,
+                     "width_px": c.width_px, "height_px": c.height_px, "video": c.video,
+                     "video_widths": list(c.video_widths)} for c in cams],
+        "mascaras": [{"key": m.key, "name": m.name, "D_cm": m.D_cm, "B_cm": m.B_cm} for m in masks],
+    }, ensure_ascii=False)
+
+
+def new_key(existing) -> str:
+    keys = {x.key for x in existing}
+    i = 1
+    while f"u:{i}" in keys:
+        i += 1
+    return f"u:{i}"

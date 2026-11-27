@@ -1,0 +1,167 @@
+% ================================================================================================ capítulo 3
+\chapter{Medir con tu propio equipo}\label{cap:propio}
+
+\begin{resumen}
+\textbf{En este capítulo:} qué datos de tu telescopio, tu cámara y tu máscara necesita TurbuLENS, cómo agregarlos en
+\boton{Dispositivos} para que queden guardados, cómo convertirlos en un perfil y cómo medir la escala de placa con el
+cielo cuando no tienes los datos del fabricante. No hace falta ser del OAN ni tener sus equipos.
+\end{resumen}
+
+TurbuLENS trae los telescopios, las cámaras y las máscaras del Observatorio Astronómico Nacional porque son los que
+usamos. Pero el método no depende de ellos: cualquier telescopio con una máscara de dos orificios y cualquier cámara que
+grabe video sirven. Lo único que cambia es de dónde salen tres números: $D$, $B$ y la escala de placa.
+
+\section{Lo que necesitas saber de tu equipo}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l Y Y@{}}
+\toprule
+Equipo & Dato & Dónde se encuentra\\
+\midrule
+Telescopio & Apertura y \textbf{distancia focal}, en mm. & En la etiqueta del tubo («D = 80 mm, F = 480 mm») o en el
+manual. Con un reductor o una lente de Barlow, multiplica la focal por su factor (×0,63, ×2\ldots).\\
+Cámara & \textbf{Ancho del sensor} en mm y en píxeles (o el tamaño del píxel en µm). & En la ficha técnica
+(«sensor de 4,8 × 3,6 mm, 1280 × 960 px, píxel de 3,75 µm»).\\
+ & Si es una cámara de fotos o un celular: el \textbf{ancho del video} en píxeles. & En la información del video
+(\menu{Video}): 1920 en Full HD, 1280 en HD, 3840 en 4K.\\
+Máscara & \textbf{$D$}, diámetro de cada orificio, y \textbf{$B$}, la distancia entre sus centros. & Mídelos con una regla
+o un calibrador.\\
+\bottomrule
+\end{tabularx}
+\caption{Los datos que hacen falta.}
+\end{table}
+
+\subsection{Hacer una máscara}
+
+La máscara es un disco opaco (cartón paja, plástico negro, una tapa impresa en 3D) del diámetro de la boca del tubo, con
+dos orificios circulares iguales. Unas reglas sencillas:
+\begin{itemize}
+\item Los dos orificios deben quedar \textbf{enteros dentro de la apertura} y, en un telescopio con espejo secundario
+(Schmidt-Cassegrain, Newton), \textbf{fuera de su sombra}. Ponlos a lado y lado del centro, a la misma distancia.
+\item $B$ debe ser al menos el doble de $D$; entre 3 y 5 veces es lo habitual. El modelo de Tokovinin que usa TurbuLENS
+está pensado para orificios bien separados, y con ellos los dos puntos no se tocan al desenfocar.
+\item $D$ entre 2,5 y 6~cm funciona bien con estrellas brillantes. Orificios más grandes dan más luz; más pequeños, puntos
+más grandes y débiles.
+\item Bordes limpios y sin rebabas: un borde irregular deforma los puntos.
+\end{itemize}
+Con la máscara puesta y el telescopio enfocado, las dos imágenes se superponen. Desenfoca un poco, hasta que se vean
+\textbf{dos puntos separados} unas dos o tres veces su tamaño: esa es la imagen que mide TurbuLENS.
+
+\section{Agregar tus equipos}\label{sec:agregar}
+
+En \menu{Parámetros}, pulsa \botonp{Dispositivos (OAN y propios)…}. La ventana tiene una fila para el telescopio, otra
+para la cámara y otra para la máscara, con los equipos del OAN y los tuyos.
+
+\begin{capturam}[0.94\linewidth]{oan_propio}{La ventana \menu{Dispositivos} con un telescopio, una cámara y una máscara
+propios elegidos (marcados con ★).}
+\item Los \textbf{equipos}: los del OAN y los tuyos, marcados con ★. Haz clic en uno para elegirlo.
+\item \boton{+ Propio…} agrega uno nuevo en esa fila.
+\item \boton{Quitar} borra el equipo propio elegido (los del OAN no se pueden quitar).
+\item \campo{Grabé en video} y el ancho del video, tomado del video cargado.
+\item El \textbf{resultado}: la escala de placa, $D$, $B$, la focal, el píxel (efectivo, si es video) y una nota de cada equipo.
+\item \botonp{Aplicar} pasa los valores a \menu{Parámetros}.
+\end{capturam}
+
+Con \boton{+ Propio…} se abre un formulario según la fila:
+
+\begin{description}[style=nextline,leftmargin=1.2em,font=\bfseries\color{acentoosc}]
+\item[Telescopio] Nombre, apertura (10 a 2000~mm) y distancia focal (50 a 20\,000~mm).
+\item[Cámara] Nombre, ancho del sensor (1 a 60~mm) y ancho del sensor en píxeles. Si es una cámara de fotos o un
+celular, marca \campo{El video sale con menos píxeles que el sensor} y escribe el ancho del video.
+\item[Máscara] Nombre, $D$ y $B$. TurbuLENS no deja guardar una máscara con $B \le D$, porque los orificios se tocarían.
+\end{description}
+
+\begin{capturam}[0.62\linewidth]{dispositivo_propio}{El formulario de una cámara propia.}
+\item El nombre con que aparecerá en la lista.
+\item El ancho del sensor, en mm.
+\item El ancho del sensor, en píxeles.
+\item Márcala si es una cámara de fotos o un celular.
+\item El ancho del video en píxeles.
+\end{capturam}
+
+Los equipos propios quedan guardados en la configuración de TurbuLENS de tu computador: aparecen la próxima vez que
+abras el programa, en el modo medición y en el educativo.
+
+\begin{nota}[¿Por qué solo el ancho?]
+La escala de placa se calcula con el tamaño de un píxel, y para eso basta el ancho del sensor dividido entre su número
+de píxeles. En las cámaras de fotos, ese mismo ancho se reparte entre los píxeles del video, que son menos: por eso
+importa el ancho del video.
+\end{nota}
+
+\section{Un ejemplo completo}
+
+Un club de astronomía mide con un refractor de 80~mm f/6 (focal de 480~mm), una cámara astronómica ZWO ASI120MM (sensor de
+4,8~mm de ancho y 1280~px) y una máscara con orificios de 2~cm separados 7~cm:
+
+\begin{enumerate}
+\item En \boton{Dispositivos}, \boton{+ Propio…} en la fila del telescopio: «Refractor 80 mm f/6», apertura 80~mm, focal
+480~mm.
+\item \boton{+ Propio…} en la fila de la cámara: «ZWO ASI120MM», 4,8~mm y 1280~px. La casilla del video queda desmarcada:
+una cámara astronómica graba con todos sus píxeles.
+\item \boton{+ Propio…} en la fila de la máscara: «Máscara del club», $D = 2$~cm, $B = 7$~cm.
+\item El resultado se ve al instante:
+\[
+p = \frac{4{,}8\ \text{mm}}{1280\ \text{px}} = 3{,}75\ \text{µm},\qquad
+s = \frac{206{,}265 \times 3{,}75}{480} = 1{,}611\,''/\text{px}.
+\]
+\item \botonp{Aplicar}. En \menu{Parámetros}, \boton{Guardar…} en la fila del perfil: «Club: refractor 80 + ASI120».
+\end{enumerate}
+
+La próxima noche basta con elegir el perfil.
+
+\begin{cuidado}[Celular en el ocular.]
+Si grabas con un celular apoyado en el ocular (fotografía afocal), la escala depende del ocular, del celular y de su
+zoom, y no sale de la focal del telescopio. En ese caso mídela con el cielo, como se explica a continuación, y escríbela a
+mano en \menu{Parámetros}.
+\end{cuidado}
+
+\section{Medir la escala con el cielo}\label{sec:medir_escala}
+
+Los datos de fábrica tienen tolerancias: una focal «de 2032~mm» puede ser de 2000 o de 2080 según dónde quede el foco,
+y un reductor rara vez da exactamente su factor nominal. Si quieres el valor real de tu montaje, mídelo con una
+estrella. Hay dos maneras.
+
+\subsection{Con una estrella doble}
+
+Graba, con el mismo montaje y la misma cámara, una estrella doble de separación conocida, \textbf{sin la máscara} y
+enfocada. Albireo ($\beta$~Cyg, unos 34,4″) y Mizar A–B ($\zeta$~UMa, unos 14,4″) son fáciles; consulta el valor actual en
+un catálogo de dobles, porque las separaciones cambian lentamente con la órbita. Luego:
+\begin{enumerate}
+\item Guarda un cuadro como imagen (en \menu{Parámetros}, \campo{Guardar los cuadros como imágenes}, en FITS o PNG) o
+toma una foto con la misma cámara.
+\item Ábrelo en el \menu{Visor de píxeles} del modo Imágenes, dibuja una región alrededor de la primera estrella y pulsa
+\boton{Medir la estrella de la región}: anota su centro $(x_1, y_1)$. Repite con la segunda $(x_2, y_2)$.
+\item La escala es
+\[
+s = \frac{\text{separación en el cielo}\ ('')}{\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2}\ (\text{px})} .
+\]
+\end{enumerate}
+
+\subsection{Con el movimiento del cielo}
+
+Apaga el motor de seguimiento y deja que una estrella cruce la imagen: el cielo gira $15{,}041''$ por segundo de tiempo
+multiplicado por $\cos\delta$, con $\delta$ la declinación de la estrella. Graba unos 30 segundos, procesa el video en el
+modo medición con \campo{Seguir a la estrella} y exporta las mediciones en CSV. Las columnas \codigo{tiempo\_s}, \codigo{x1\_px} y \codigo{y1\_px} (la posición en el cuadro completo, no
+en la región) dan la velocidad $v$ de la estrella en píxeles por
+segundo; un ajuste lineal en una hoja de cálculo basta. Entonces
+\[
+s = \frac{15{,}041\,\cos\delta}{v}\quad[''/\text{px}] .
+\]
+Con una estrella cerca del ecuador celeste (Altair, Rigel, Procyon) el movimiento es más rápido y la medida más precisa.
+Aquí puedes dejar la máscara puesta: los dos puntos se mueven igual.
+
+\section{Antes de salir a medir}
+
+\begin{pasos}[Lista de chequeo]
+\begin{itemize}[label=$\square$,leftmargin=1.4em]
+\item El perfil de tu montaje está guardado, o tienes a mano la focal, el sensor y $D$ y $B$.
+\item La cámara graba al máximo de cuadros por segundo posible, con la exposición más corta que deje ver bien los dos
+puntos y la ganancia (o el ISO) necesaria para que no se saturen.
+\item Si es una cámara de fotos: sabes a qué resolución graba (1920 o 1280 de ancho).
+\item Elegiste una estrella brillante y alta (más de 45° sobre el horizonte si puedes) y anotas la hora, para calcular su
+altura después.
+\item El telescopio está estable y lejos de paredes y techos calientes (el calor que sueltan es turbulencia local).
+\item Grabas varios videos de 30 a 60 segundos en lugar de uno muy largo.
+\end{itemize}
+\end{pasos}

@@ -1,0 +1,180 @@
+% ================================================================================================ capítulo 10
+\chapter{Medir los puntos y confiar en los números}\label{cap:estadistica}
+
+\begin{resumen}
+\textbf{En este capítulo:} cómo encuentra TurbuLENS los dos puntos de la estrella en cada cuadro, qué estadística usa
+para resumirlos, por qué descarta los datos atípicos con la mediana y la MAD, y cómo leer los tres controles de calidad
+de \menu{Resultados}.
+\end{resumen}
+
+\section{Cómo se encuentran los dos puntos}\label{sec:deteccion}
+
+Cada cuadro del tramo, recortado a la región, pasa por seis pasos. Se procesan bloques de muchos cuadros a la vez, con
+operaciones de NumPy sobre arreglos de forma (cuadros, alto, ancho), sin recorrer los píxeles uno por uno.
+
+\begin{enumerate}
+\item \textbf{Fondo y ruido.} El fondo es la mediana del recorte y el ruido, $1{,}4826$ veces la desviación absoluta
+mediana (MAD, sección~\ref{sec:robusta}). Si hay maestros de calibración, el cuadro se corrige antes como
+$(\text{cuadro} - \text{dark})/\text{flat}$.
+\item \textbf{Píxeles con luz.} Se suaviza la imagen con un promedio de 3~×~3 píxeles, para que un píxel caliente aislado
+no parezca una estrella, y se toman los píxeles que superan
+$\max(0{,}15\times\text{pico},\ \tfrac43\times\text{ruido})$.
+\item \textbf{Dos grupos.} Esos píxeles se reparten en dos grupos con \emph{k-medias} ($k = 2$) ponderado por el
+brillo: el primer grupo arranca en el píxel más brillante y el segundo en el píxel brillante más lejano de él; cada píxel
+se asigna al centro más cercano y los centros se recalculan, hasta ocho veces o hasta que no se muevan. Así se separan bien
+puntos pequeños, grandes, en forma de anillo (desenfocados) o partidos en pedazos por la turbulencia.
+\item \textbf{Centroides.} El centro de cada punto es el promedio de las posiciones de sus píxeles, ponderado por su
+brillo. Los píxeles a más de $3r + 3$ píxeles del centro (con $r$ el radio de giro del grupo) se descartan y el centro se
+recalcula: así un reflejo o una estrella vecina no lo arrastran. La precisión es de centésimas de píxel.
+\item \textbf{Validación.} El cuadro cuenta solo si los dos grupos son dos puntos de verdad: los dos con un pico de más de
+seis veces el ruido, el más débil con al menos el 12\,\% de la luz del otro, separados más de 2,2 veces su tamaño, con una
+\textbf{caída de luz} entre ellos (en el punto medio, menos del 60\,\% del pico menor) y sin tocar el borde del recorte.
+Si se ve un solo punto, no se parte en dos.
+\item \textbf{Orientación.} Los dos puntos pueden intercambiar su orden de un cuadro a otro (cambia cuál es el más
+brillante). TurbuLENS orienta todos los vectores según el eje principal de la nube de separaciones, de modo que la
+componente longitudinal tenga siempre el mismo sentido.
+\end{enumerate}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \foreach \i/\t in {0/Cuadro,1/Píxeles con luz,2/Dos grupos,3/Centroides}{
+    \begin{scope}[shift={(\i*3.6,0)}]
+      \fill[tinta] (0,0) rectangle (3,3);
+      \node[anchor=north,font=\sffamily\small] at (1.5,-0.1) {\t};
+    \end{scope}}
+  % cuadro con ruido
+  \foreach \k in {1,...,70}{\pgfmathsetmacro{\xx}{0.1+2.8*rnd}\pgfmathsetmacro{\yy}{0.1+2.8*rnd}
+    \fill[white!30!gris] (\xx,\yy) circle (0.02);}
+  \shade[inner color=white,outer color=tinta] (1.0,1.9) circle (0.42);
+  \shade[inner color=white!80!naranja,outer color=tinta] (2.0,1.05) circle (0.38);
+  % umbral
+  \begin{scope}[shift={(3.6,0)}]
+    \foreach \dx/\dy in {0/0,0.12/0,-0.12/0,0/0.12,0/-0.12,0.12/0.12,-0.12/-0.12,0.12/-0.12,-0.12/0.12,0.24/0,-0.24/0,0/0.24,0/-0.24}{
+      \fill[white] (1.0+\dx-0.05,1.9+\dy-0.05) rectangle ++(0.1,0.1);
+      \fill[white] (2.0+\dx-0.05,1.05+\dy-0.05) rectangle ++(0.1,0.1);}
+  \end{scope}
+  % grupos
+  \begin{scope}[shift={(7.2,0)}]
+    \foreach \dx/\dy in {0/0,0.12/0,-0.12/0,0/0.12,0/-0.12,0.12/0.12,-0.12/-0.12,0.12/-0.12,-0.12/0.12,0.24/0,-0.24/0,0/0.24,0/-0.24}{
+      \fill[acento!60!white] (1.0+\dx-0.05,1.9+\dy-0.05) rectangle ++(0.1,0.1);
+      \fill[naranja] (2.0+\dx-0.05,1.05+\dy-0.05) rectangle ++(0.1,0.1);}
+    \draw[white,dashed] (0.3,0.4) -- (2.7,2.6);
+  \end{scope}
+  % centroides
+  \begin{scope}[shift={(10.8,0)}]
+    \shade[inner color=white,outer color=tinta] (1.0,1.9) circle (0.42);
+    \shade[inner color=white!80!naranja,outer color=tinta] (2.0,1.05) circle (0.38);
+    \draw[acento!50!white,line width=0.8pt] (1.0,1.9) -- (2.0,1.05);
+    \draw[white,line width=0.8pt] (0.88,1.9) -- (1.12,1.9) (1.0,1.78) -- (1.0,2.02);
+    \draw[white,line width=0.8pt] (1.88,1.05) -- (2.12,1.05) (2.0,0.93) -- (2.0,1.17);
+    \node[text=white] at (1.75,1.7) {$\vec d$};
+  \end{scope}
+\end{tikzpicture}
+\caption{De un cuadro al vector $\vec d$ entre los dos centroides.}
+\end{figure}
+
+Después de procesar todos los cuadros, los que tienen una separación a más de 5 desviaciones robustas de la mediana se
+descartan como atípicos (sección~\ref{sec:robusta}). Con los que quedan se calculan $\sigma_\ell$ y $\sigma_t$.
+
+\begin{nota}[Probado con valores conocidos.]
+La detección se prueba con videos sintéticos en los que sabemos dónde está cada punto: con puntos pequeños, grandes, en
+anillo y con ruido, el error típico del centroide es de 0,02 a 0,05 píxeles. En un video real de puntos grandes y
+desenfocados, el programa con el que empezó este proyecto, que usaba un umbral fijo, encontraba un solo objeto en 163 de
+462 cuadros; con los dos grupos, 457 de los 462 cuadros son válidos.
+\end{nota}
+
+\section{Media, desviación estándar y error}
+
+Para $N$ datos $x_i$ (las separaciones, o sus componentes):
+\begin{align}
+\bar x &= \frac{1}{N}\sum_{i=1}^{N} x_i, &
+s &= \sqrt{\frac{1}{N-1}\sum_{i=1}^{N}(x_i - \bar x)^2}, &
+\text{EEM} &= \frac{s}{\sqrt N}.
+\end{align}
+La desviación estándar usa $N-1$ (la versión muestral) y el error estándar de la media (EEM) dice cuánto variaría
+$\bar x$ si se repitiera la medición. Para el DIMM lo que importa es $s$, no $\bar x$: la separación media depende de
+cuánto se desenfocó y no dice nada de la atmósfera; su variación sí.
+
+\textbf{Histogramas.} El número de intervalos sigue la regla de Freedman–Diaconis: ancho
+$h = 2\,\text{RIC}/N^{1/3}$, con RIC el rango intercuartílico, limitado a entre 8 y 60 intervalos.
+
+\section{Estadística robusta}\label{sec:robusta}
+
+La media y la desviación estándar tienen un defecto: \textbf{un solo dato muy lejano las arrastra}. En la lección 7 del
+modo educativo se cuenta un caso real: 68 cuadros mal medidos, con distancias cercanas a cero, entre 8\,484 buenos, casi
+duplicaron la desviación estándar, y con ella el seeing.
+
+La \textbf{mediana} y la \textbf{desviación absoluta mediana} no tienen ese problema:
+\begin{equation}
+\text{MAD} = \operatorname{mediana}\left(|x_i - \operatorname{mediana}(x)|\right),
+\qquad \sigma_\text{robusta} = 1{,}4826 \times \text{MAD}.
+\end{equation}
+El factor 1,4826 hace que, para datos normales, $\sigma_\text{robusta}$ coincida con la desviación estándar. Hasta la
+mitad de los datos pueden ser basura sin que la mediana y la MAD se muevan mucho.
+
+TurbuLENS descarta los cuadros con
+\begin{equation}
+|x_i - \operatorname{mediana}(x)| > 5\,\sigma_\text{robusta} ,
+\end{equation}
+y repite el recorte hasta tres veces o hasta que no salga ningún dato más. El umbral de 5 es deliberadamente generoso:
+en una distribución normal, solo uno de cada 1,7 millones de datos buenos estaría tan lejos, así que no se recortan las
+colas reales de la turbulencia, solo los errores.
+
+\section{Correlación}
+
+El \textbf{coeficiente de correlación de Pearson} entre dos variables medidas en los mismos cuadros es
+\begin{equation}
+r = \frac{\sum_i (x_i - \bar x)(y_i - \bar y)}{\sqrt{\sum_i (x_i - \bar x)^2\,\sum_i (y_i - \bar y)^2}},\qquad -1\le r\le 1 .
+\end{equation}
+Vale 1 si los puntos $(x_i, y_i)$ están sobre una recta que sube, $-1$ si están sobre una que baja, y 0 si no hay
+relación lineal. $r^2$ es la fracción de la variación de una variable que «explica» la otra.
+
+\section{Los tres controles de calidad}\label{sec:controles}
+
+Con los mismos datos, TurbuLENS calcula tres números que dicen si lo medido se comporta como turbulencia. Aparecen debajo
+del diagrama de movimiento diferencial de \menu{Resultados} y se explican, con los valores de cada medición, en la lección 8
+del modo educativo.
+
+\begin{description}[style=nextline,leftmargin=1.2em,font=\bfseries\color{acentoosc}]
+\item[$r$ longitudinal–transversal]
+La turbulencia mueve las dos componentes de forma independiente, así que lo esperado es un valor cercano a 0. TurbuLENS
+considera bueno $|r| < 0{,}2$. Un $|r|$ grande, positivo o negativo, delata algo que no es turbulencia: vibración o viento
+en una sola dirección, cambios de foco, una línea de base mal estimada o puntos confundidos. El signo solo depende de cómo
+quedaron los ejes.
+\item[$r$ entre los dos puntos]
+Mide cuánto se mueven juntas las dos imágenes, por separado en cada componente, después de quitar la deriva lenta (un
+promedio móvil de un segundo, que saca el desplazamiento del seguimiento). Cerca de 1: domina el movimiento común, como
+la vibración del telescopio; el DIMM lo cancela al medir la diferencia, así que el seeing sigue valiendo, pero si es muy
+grande puede emborronar los puntos. Entre 0 y 1: lo normal, porque los dos orificios ven parte de la misma turbulencia.
+Cerca de 0: cada orificio ve turbulencia independiente. Negativo: los puntos se acercan y se alejan de forma opuesta
+(cambios de foco o errores de detección).
+\item[$\sigma_t/\sigma_\ell$ medido frente al teórico]
+El teórico es $\sqrt{K_t/K_\ell}$, que depende solo de $B/D$. Si el medido se aparta más de un 25\,\% del teórico,
+TurbuLENS lo señala.
+\end{description}
+
+\begin{center}
+\begin{tikzpicture}[font=\sffamily\scriptsize]
+  \foreach \i/\t/\c in {0/{Turbulencia: nube redonda, $r\approx0$}/acento,1/{Vibración en diagonal: $|r|$ grande}/naranja}{
+    \begin{scope}[shift={(\i*6.4,0)}]
+      \draw[gris!50] (-2.2,0) -- (2.2,0) (0,-1.6) -- (0,1.6);
+      \node[anchor=north,font=\sffamily\small] at (0,-1.75) {\t};
+    \end{scope}}
+  \pgfmathsetseed{7}
+  \foreach \k in {1,...,160}{
+    \pgfmathsetmacro{\a}{0.55*(rnd+rnd+rnd+rnd-2)*1.6}\pgfmathsetmacro{\b}{0.5*(rnd+rnd+rnd+rnd-2)*1.6}
+    \fill[acento,opacity=0.55] (\a,\b) circle (0.035);
+    \pgfmathsetmacro{\u}{0.55*(rnd+rnd+rnd+rnd-2)*1.6}\pgfmathsetmacro{\v}{0.18*(rnd+rnd+rnd+rnd-2)*1.6}
+    \fill[naranja,opacity=0.6] ({6.4+0.8*\u-0.6*\v},{0.6*\u+0.8*\v}) circle (0.035);}
+  \node[text=gris] at (2.0,1.45) {$t$}; \node[text=gris] at (2.25,-0.18) {$\ell$};
+\end{tikzpicture}
+\end{center}
+
+\section{La desviación estándar en el tiempo}
+
+La gráfica \emph{Dispersión segundo a segundo} de \menu{Resultados} divide el tramo en ventanas de un segundo y calcula
+la desviación estándar de la separación en cada una. Si la turbulencia fuera estable, la línea sería casi plana; en la
+práctica sube y baja un poco porque el seeing cambia de verdad. Lo que hay que mirar son los \textbf{saltos aislados}:
+un golpe al telescopio o una ráfaga de viento sobre el tubo dura uno o dos segundos y dispara $\sigma$ en esas ventanas.
+Dejarlos fuera del tramo da un seeing más honesto.

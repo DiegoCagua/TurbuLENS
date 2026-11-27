@@ -1,0 +1,221 @@
+% ================================================================================================ capítulo 9
+\chapter{El DIMM}\label{cap:dimm}
+
+\begin{resumen}
+\textbf{En este capítulo:} cómo un telescopio con una máscara de dos orificios mide el seeing sin que le importen las
+vibraciones; las fórmulas de Tokovinin que usa TurbuLENS; la escala de placa y por qué pesa tanto; un ejemplo completo
+con números; cuántos cuadros hacen falta y qué puede sesgar el resultado.
+\end{resumen}
+
+\section{Medir diferencias, no posiciones}\label{sec:principio}
+
+Se podría pensar en medir el seeing con el tamaño de la imagen de una estrella. Con un telescopio pequeño no funciona: el
+foco, el seguimiento, el viento sobre el tubo y la óptica también ensanchan la imagen, y no hay forma de separar esos
+efectos de la atmósfera. El \textbf{DIMM} (\emph{Differential Image Motion Monitor}, Sarazin y Roddier, 1990) resuelve el
+problema con una idea sencilla.
+
+Sobre la boca del telescopio se pone una \textbf{máscara con dos orificios} de diámetro $D$, separados una distancia $B$
+entre centros. La luz entra por dos caminos y la cámara, un poco desenfocada, ve \textbf{dos imágenes} de la misma estrella.
+\begin{itemize}
+\item Si el telescopio tiembla o el seguimiento falla, las dos imágenes se mueven \textbf{juntas}: la distancia entre
+ellas no cambia.
+\item La turbulencia, en cambio, inclina el frente de onda de manera distinta en cada orificio: las imágenes se acercan
+y se alejan \textbf{entre sí}.
+\end{itemize}
+Por eso el DIMM no mide dónde está la estrella sino la \textbf{distancia entre las dos imágenes}, cuadro a cuadro. La
+varianza de esa distancia depende solo de la turbulencia y de la geometría de la máscara.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small,>=Stealth,scale=0.95]
+  % frentes de onda inclinados distinto en cada orificio
+  \draw[acento,line width=1pt] (0.2,5.0) -- (2.6,5.25);
+  \draw[acento,line width=1pt] (3.6,5.2) -- (6.0,4.95);
+  \draw[->,acento] (1.4,5.8) -- (1.45,5.25);
+  \draw[->,acento] (4.8,5.8) -- (4.75,5.2);
+  \node[text=gris,anchor=south] at (3.1,5.9) {frente de onda inclinado distinto en cada orificio};
+  % máscara
+  \fill[tinta] (-0.3,4.2) rectangle (0.5,4.45);
+  \fill[tinta] (2.3,4.2) rectangle (3.9,4.45);
+  \fill[tinta] (5.7,4.2) rectangle (6.5,4.45);
+  \draw[<->,naranja] (0.5,3.95) -- node[below,text=cobre] {$D$} (2.3,3.95);
+  \draw[<->,naranja] (1.4,4.75) -- node[above,text=cobre,fill=white,inner sep=1pt] {$B$} (4.8,4.75);
+  % rayos
+  \draw[acento!60] (0.5,4.2) -- (3.05,0.75); \draw[acento!60] (2.3,4.2) -- (3.05,0.75);
+  \draw[acento!60] (3.9,4.2) -- (3.35,0.75); \draw[acento!60] (5.7,4.2) -- (3.35,0.75);
+  \draw[gris] (2.0,0.75) -- (4.4,0.75);
+  \node[text=gris,anchor=east] at (2.0,0.75) {cámara};
+  \fill[white,draw=acento] (2.95,0.75) circle (0.1);
+  \fill[naranja] (3.45,0.75) circle (0.1);
+  % detalle de las dos imágenes
+  \begin{scope}[shift={(9.2,2.6)}]
+    \draw[gris!40,fill=tinta] (-2,-1.8) rectangle (2,1.8);
+    \fill[white] (-0.8,0.45) circle (0.22);
+    \fill[naranja] (0.85,-0.35) circle (0.22);
+    \draw[white,dashed] (-0.8,0.45) -- (0.85,-0.35);
+    \draw[->,acento!40!white,line width=1pt] (-0.8,0.45) -- ++(1.95,-0.95) node[right,font=\sffamily\scriptsize,text=white] {$\ell$};
+    \draw[->,acento!40!white,line width=1pt] (-0.8,0.45) -- ++(0.55,1.12) node[above,font=\sffamily\scriptsize,text=white] {$t$};
+    \node[font=\sffamily\scriptsize,text=white,anchor=south] at (0,-1.75) {lo que ve la cámara};
+  \end{scope}
+\end{tikzpicture}
+\caption{El DIMM: la luz entra por dos orificios y forma dos imágenes. Se mide el movimiento de una respecto a la otra, a lo
+largo de la línea que las une ($\ell$, longitudinal) y perpendicular a ella ($t$, transversal).}
+\label{fig:dimm}
+\end{figure}
+
+\section{Del movimiento diferencial al seeing}
+
+Sea $\vec d$ el vector que une los centroides de las dos imágenes en un cuadro. Su movimiento se separa en dos
+componentes: la \textbf{longitudinal} $\ell$, a lo largo de la línea de base (la que une los orificios), y la
+\textbf{transversal} $t$, perpendicular. La teoría de la turbulencia de Kolmogorov predice sus varianzas. Tokovinin
+(2002) las calculó para el caso en que la posición de cada imagen se mide con su \textbf{centroide} (la inclinación
+media del frente de onda sobre el orificio, que los especialistas llaman inclinación G), que es lo que hace TurbuLENS:
+\begin{align}
+\sigma_\ell^2 &= K_\ell\,\lambda^2\,r_0^{-5/3}\,D^{-1/3}, &
+K_\ell &= 0{,}364\left(1 - 0{,}532\,b^{-1/3} - 0{,}024\,b^{-7/3}\right),\label{eq:kl}\\
+\sigma_t^2 &= K_t\,\lambda^2\,r_0^{-5/3}\,D^{-1/3}, &
+K_t &= 0{,}364\left(1 - 0{,}798\,b^{-1/3} + 0{,}018\,b^{-7/3}\right),\label{eq:kt}
+\end{align}
+con $b = B/D$ y las varianzas en radianes al cuadrado. Despejando $r_0$,
+\begin{equation}
+r_0 = \left(\frac{K\,\lambda^2\,D^{-1/3}}{\sigma^2}\right)^{3/5},
+\label{eq:r0dimm}
+\end{equation}
+y con la ecuación~\eqref{eq:seeing} sale un seeing con cada componente, $\varepsilon_\ell$ y $\varepsilon_t$. TurbuLENS
+reporta los dos y su promedio, que es el seeing estimado, y el promedio de los dos $r_0$.
+
+\begin{nota}[La longitud de onda casi no importa.]
+Como $r_0 \propto \lambda^{6/5}$, la varianza $\sigma^2 \propto \lambda^2 r_0^{-5/3} \propto \lambda^2 \lambda^{-2}$ no
+depende de $\lambda$: el temblor de la imagen es el mismo en todos los colores. La longitud de onda solo entra al pasar a
+$r_0$ y a $\varepsilon$, que se definen a una $\lambda$ dada, y el seeing resultante va como $\lambda^{-1/5}$. Un error
+del 10\,\% en $\lambda$ cambia el seeing un 2\,\%.
+\end{nota}
+
+\subsection{Por qué dos componentes}
+
+$K_t$ es menor que $K_\ell$: el movimiento transversal es algo menor que el longitudinal. Que las dos componentes den el
+mismo seeing es la primera prueba de que el movimiento medido es turbulencia; el cociente esperado,
+\begin{equation}
+\frac{\sigma_t}{\sigma_\ell} = \sqrt{\frac{K_t}{K_\ell}},
+\end{equation}
+es uno de los controles de calidad de la sección~\ref{sec:controles}. Para la máscara del grupo ($b = 3{,}43$) vale 0,855.
+
+\section{La escala de placa}\label{sec:escala_teoria}
+
+Las varianzas que mide TurbuLENS están en píxeles al cuadrado. Para pasarlas a radianes hace falta la \textbf{escala de
+placa} $s$, el ángulo del cielo que cubre un píxel. Un píxel de tamaño $p$ en el plano focal de un telescopio de focal $f$
+subtiende un ángulo $p/f$:
+\begin{equation}
+s\,[''/\text{px}] = 206\,265\,\frac{p}{f} = \frac{206{,}265 \times p\,[\text{µm}]}{f\,[\text{mm}]},
+\qquad
+\sigma^2\,[\text{rad}^2] = \sigma^2\,[\text{px}^2]\left(\frac{s}{206\,264{,}8}\right)^2 .
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small,>=Stealth]
+  \draw[gris] (0,0) -- (7,0.45); \draw[gris] (0,0) -- (7,-0.45);
+  \draw[acento,line width=1.2pt] (7,-0.45) -- (7,0.45);
+  \node[right,text=acentoosc] at (7.1,0) {$p$ (un píxel)};
+  \draw[<->,naranja] (0,-0.9) -- node[below,text=cobre] {$f$ (focal)} (7,-0.9);
+  \draw[naranja] (1.4,0.09) arc (3.7:-3.7:1.4);
+  \node[text=cobre] at (2.1,0) {$s$};
+  \fill[tinta] (0,0) circle (0.06);
+  \node[left,text=gris] at (-0.1,0) {objetivo};
+\end{tikzpicture}
+\caption{La escala de placa es el ángulo que subtiende un píxel visto desde el objetivo: $s = p/f$.}
+\end{figure}
+
+Es el dato que más pesa en el resultado. Como $\sigma^2 \propto s^2$ y $\varepsilon \propto r_0^{-1} \propto
+(\sigma^2)^{3/5}$,
+\begin{equation}
+\varepsilon \propto s^{6/5}.
+\end{equation}
+Un error del 10\,\% en la escala da un 12\,\% en el seeing; usar el píxel del sensor en lugar del píxel efectivo del
+video, como en el recuadro siguiente, da un seeing casi cuatro veces menor.
+
+\begin{cuidado}[El píxel efectivo del video.]
+Una Nikon D5600 tiene un sensor de 23,5~mm con 6000 píxeles de ancho: píxeles de 3,92~µm. Pero su video Full HD tiene
+1920 píxeles de ancho y \textbf{usa todo el ancho del sensor}: cada píxel del video abarca unos tres del sensor. El píxel
+que vale es el efectivo,
+\[
+p_\text{efectivo} = \frac{\text{ancho del sensor}}{\text{ancho del video}} = \frac{23{,}5\ \text{mm}}{1920\ \text{px}}
+= 12{,}24\ \text{µm},
+\]
+y con el Celestron 8SE ($f = 2032$~mm) la escala es $206{,}265 \times 12{,}24 / 2032 = 1{,}242''/\text{px}$. Con el píxel
+del sensor saldría $0{,}398''/\text{px}$ y el seeing, $(1{,}242/0{,}398)^{6/5} \approx 3{,}9$ veces menor. Así nos pasó
+en las primeras mediciones del grupo: un seeing de 1″ en Bogotá, que no tenía sentido, resultó ser de 3,8″.
+\end{cuidado}
+
+\section{Un ejemplo completo: Altair}\label{sec:ejemplo_altair}
+
+Los datos de ejemplo del modo educativo son una medición real: Altair, 8\,484 cuadros (141,5~s a 59,94 cuadros por
+segundo), con el Celestron 8SE, la Nikon D5600 en video Full HD ($s = 1{,}242''/\text{px}$) y la máscara de
+$D = 4{,}2$~cm y $B = 14{,}4$~cm, a $\lambda = 550$~nm. Paso a paso:
+
+\begin{center}\small
+\begin{tabular}{@{}l l r@{}}
+\toprule
+Paso & Cuenta & Resultado\\
+\midrule
+Geometría & $b = B/D = 14{,}4/4{,}2$ & 3,43\\
+Coeficientes & $K_\ell$ y $K_t$, ecuaciones~\eqref{eq:kl} y \eqref{eq:kt} & 0,2351 y 0,1717\\
+Varianzas medidas & $\sigma_\ell$, $\sigma_t$ en píxeles & 0,715 y 0,675~px\\
+En el cielo & $\times\,1{,}242''/\text{px}$ & 0,888″ y 0,838″\\
+En radianes & $\div\,206\,265$ & $4{,}31$ y $4{,}06\times10^{-6}$\\
+$r_0$ & ecuación~\eqref{eq:r0dimm} & 6,70 y 5,95~cm\\
+Seeing & $0{,}98\,\lambda/r_0$ & 1,66″ y 1,87″\\
+\midrule
+\textbf{Resultado} & promedio & \textbf{$\varepsilon = 1{,}77''$, $r_0 = 6{,}3$~cm}\\
+Al cenit & altura 81,4°: $\times(\cos 8{,}6°)^{3/5}$ & 1,75″\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Los controles de calidad de esa medición: $r_{\ell t} = -0{,}12$ (menor que 0,2 en valor absoluto), correlación entre
+los puntos de 0,38 (longitudinal) y 0,75 (transversal), y $\sigma_t/\sigma_\ell = 0{,}944$ frente a 0,855 teórico, un 10\,\%
+de diferencia. Todo es coherente con turbulencia.
+
+\section{Cuántos cuadros hacen falta}\label{sec:incertidumbre}
+
+La varianza de $N$ datos normales independientes tiene un error relativo de $\sqrt{2/(N-1)}$. Como
+$\varepsilon \propto (\sigma^2)^{3/5}$,
+\begin{equation}
+\frac{\delta\varepsilon}{\varepsilon} \approx \frac{3}{5}\sqrt{\frac{2}{N-1}} .
+\end{equation}
+Con 600 cuadros (10~s a 60 cuadros por segundo) eso es un 3,5\,\%; con 8\,484, un 0,9\,\%. Pero los cuadros
+\textbf{no son independientes}: dos cuadros seguidos ven casi la misma turbulencia, y el número efectivo de datos es mucho
+menor. Además, el seeing mismo cambia de un minuto a otro.
+
+La forma honesta de estimar la incertidumbre es partir el video en \textbf{bloques} de unos 10 segundos, medir el seeing
+de cada uno y tomar la desviación estándar de esos valores dividida entre la raíz del número de bloques. En TurbuLENS se
+hace con el tramo: procesa cada bloque, guárdalo en el historial y compáralos ahí. En el ejemplo de Altair, 14 bloques
+de 10~s dan seeings entre 1,31″ y 1,99″ y un error de la media de $\pm0{,}05''$, tres veces mayor que el de la fórmula
+para datos independientes. Por eso recomendamos tramos de al menos 15 segundos y, mejor, varios videos por noche.
+
+\section{Lo que puede sesgar el resultado}\label{sec:sesgos}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight}p{3.6cm} >{\RaggedRight}p{2.4cm} Y@{}}
+\toprule
+Causa & Efecto & Qué hacer\\
+\midrule
+Exposición larga de cada cuadro & Seeing \textbf{menor} de lo real & Si la turbulencia cambia durante la exposición, el
+movimiento se promedia y la varianza baja. Los DIMM profesionales exponen unos 5~ms. Usa la exposición más corta que deje
+ver bien los puntos.\\
+Ruido en los centroides & Seeing \textbf{mayor} & El ruido agrega varianza. Con estrellas brillantes es despreciable;
+con estrellas débiles, sube la ganancia o usa una estrella más brillante.\\
+Escala de placa mal calculada & Cualquiera & $\varepsilon \propto s^{6/5}$. Revisa el píxel efectivo o mide la escala
+con el cielo (sección~\ref{sec:medir_escala}).\\
+Vibración en una dirección & Seeing \textbf{mayor} en una componente & Parte del movimiento común se cuela en la
+diferencia si las dos imágenes no se mueven igual. Lo delatan $|r_{\ell t}| > 0{,}2$ y $\varepsilon_\ell$ muy distinto
+de $\varepsilon_t$.\\
+Turbulencia del propio telescopio & Seeing \textbf{mayor} & Un tubo más caliente que el aire o un techo cercano crean
+turbulencia local. Deja que el telescopio se enfríe afuera media hora antes de medir.\\
+Puntos saturados & Centroides peores & La cima plana reduce la precisión. Baja la ganancia o la exposición.\\
+Estrella baja & Seeing \textbf{mayor} & Es real: más aire. Corrígelo al cenit con la altura de la estrella.\\
+\bottomrule
+\end{tabularx}
+\caption{Sesgos habituales de un DIMM de aficionado.}
+\end{table}

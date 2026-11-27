@@ -146,16 +146,26 @@ def list_hour(sat: int, when: dt.datetime, opener=_open_url) -> list[RemoteFile]
 
 
 def find_files(when: dt.datetime, channels, sat: Optional[int] = None, opener=_open_url,
-               log: Callable[[str], None] = lambda s: None) -> tuple[int, list[RemoteFile]]:
-    """La imagen más cercana a ``when`` para cada canal. Devuelve (satélite usado, archivos)."""
+               log: Callable[[str], None] = lambda s: None, cache: Optional[dict] = None) -> tuple[int, list[RemoteFile]]:
+    """La imagen más cercana a ``when`` para cada canal. Devuelve (satélite usado, archivos).
+
+    ``cache`` (un diccionario) guarda los listados por hora para no repetirlos en una serie de varias horas.
+    """
     when = when.astimezone(dt.timezone.utc)
     sats = [sat] if sat else [satellite_for(when)]
     sats += [s for s in (16, 19) if s not in sats]
     for s in sats:
         files: list[RemoteFile] = []
         for h in (when - dt.timedelta(hours=1), when, when + dt.timedelta(hours=1)):
+            key = (s, h.strftime("%Y%j%H"))
+            if cache is not None and key in cache:
+                files += cache[key]
+                continue
             try:
-                files += list_hour(s, h, opener)
+                got = list_hour(s, h, opener)
+                files += got
+                if cache is not None:
+                    cache[key] = got
             except Exception as exc:  # una hora sin datos o sin conexión
                 log(f"GOES-{s} {h:%Y-%m-%d %H} h: {exc}")
         chosen = []
@@ -191,6 +201,105 @@ def download(rf: RemoteFile, folder: str, progress: Callable[[int, int], bool] =
                 raise InterruptedError("descarga cancelada")
     os.replace(tmp, path)
     return path
+
+
+class RangeNotSupported(OSError):
+    """El servidor no acepta pedir solo una parte del archivo (cabecera «Range»)."""
+
+
+class HttpRangeFile:
+    """Archivo remoto de solo lectura que descarga por bloques solo las partes que se leen.
+
+    Con él ``pyfive`` lee la cabecera del NetCDF y los bloques comprimidos del recorte pedido, sin bajar el archivo
+    completo (unos pocos MB en lugar de ≈25 MB por canal). Los bloques se guardan en memoria mientras se usa.
+    """
+
+    def __init__(self, url: str, size: int, opener=_open_url, block: int = 128 * 1024, name: str = "",
+                 progress: Optional[Callable[[int], None]] = None):
+        self.url = url
+        self.size = int(size)
+        self.name = name or url.rsplit("/", 1)[-1]
+        self._opener = opener
+        self._block = block
+        self._cache: dict[int, bytes] = {}
+        self._order: list[int] = []
+        self._pos = 0
+        self.downloaded = 0
+        self._progress = progress
+        self.closed = False
+
+    # interfaz de archivo
+    def seekable(self) -> bool:
+        return True
+
+    def readable(self) -> bool:
+        return True
+
+    def tell(self) -> int:
+        return self._pos
+
+    def seek(self, off: int, whence: int = 0) -> int:
+        if whence == 1:
+            off += self._pos
+        elif whence == 2:
+            off += self.size
+        self._pos = max(0, int(off))
+        return self._pos
+
+    def close(self) -> None:
+        self.closed = True
+        self._cache.clear()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        self.close()
+
+    def _get(self, i: int) -> bytes:
+        b = self._cache.get(i)
+        if b is not None:
+            return b
+        a = i * self._block
+        z = min(self.size, a + self._block) - 1
+        with self._opener(self.url, timeout=60, headers={"Range": f"bytes={a}-{z}"}) as r:
+            status = getattr(r, "status", None) or getattr(r, "code", 206)
+            if status != 206:
+                raise RangeNotSupported("el servidor no permite descargas parciales")
+            data = r.read()
+        self.downloaded += len(data)
+        if self._progress:
+            self._progress(self.downloaded)
+        self._cache[i] = data
+        self._order.append(i)
+        if len(self._order) > 96:  # como máximo 96 bloques en memoria (12 MB con bloques de 128 KB)
+            self._cache.pop(self._order.pop(0), None)
+        return data
+
+    def read(self, n: int = -1) -> bytes:
+        if n is None or n < 0:
+            n = self.size - self._pos
+        n = max(0, min(n, self.size - self._pos))
+        out = bytearray()
+        pos = self._pos
+        while len(out) < n:
+            i, off = divmod(pos, self._block)
+            chunk = self._get(i)[off:off + n - len(out)]
+            if not chunk:
+                break
+            out += chunk
+            pos += len(chunk)
+        self._pos = pos
+        return bytes(out)
+
+    def readinto(self, buf) -> int:
+        data = self.read(len(buf))
+        buf[:len(data)] = data
+        return len(data)
+
+
+def open_remote(rf: "RemoteFile", opener=_open_url, progress: Optional[Callable[[int], None]] = None) -> HttpRangeFile:
+    return HttpRangeFile(rf.url, rf.size, opener, name=rf.name, progress=progress)
 
 
 # ------------------------------------------------------------------ geometría
@@ -249,6 +358,21 @@ class Projection:
     @property
     def pixel_km(self) -> float:
         return abs(self.dx) * (self.h - self.r_eq) / 1000
+
+    def pixels(self, lat, lon) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+        """Versión vectorizada de :meth:`pixel` (columna, fila, visible) para arreglos de latitud y longitud."""
+        phi = np.radians(np.asarray(lat, dtype=np.float64))
+        lam = np.radians(np.asarray(lon, dtype=np.float64) - self.lon0)
+        e2 = (self.r_eq ** 2 - self.r_pol ** 2) / self.r_eq ** 2
+        phic = np.arctan((self.r_pol ** 2 / self.r_eq ** 2) * np.tan(phi))
+        rc = self.r_pol / np.sqrt(1 - e2 * np.cos(phic) ** 2)
+        sx = self.h - rc * np.cos(phic) * np.cos(lam)
+        sy = -rc * np.cos(phic) * np.sin(lam)
+        sz = rc * np.sin(phic)
+        vis = self.h * (self.h - sx) >= sy ** 2 + (self.r_eq ** 2 / self.r_pol ** 2) * sz ** 2
+        y = np.arctan(sz / sx)
+        x = np.arcsin(-sy / np.sqrt(sx ** 2 + sy ** 2 + sz ** 2))
+        return (x - self.x0) / self.dx, (y - self.y0) / self.dy, vis
 
 
 def _attr(obj, name, default=None):
@@ -322,17 +446,27 @@ class ChannelReading:
     cutout: Optional[np.ndarray] = None  # recorte (fila 0 = norte)
     cut_origin: tuple[int, int] = (0, 0)  # (fila, columna) del primer píxel del recorte
     notes: list = field(default_factory=list)
+    box_mean: float = float("nan")  # promedio en el cuadro elegido para el seeing (``box_km``)
+    box_px: int = 0  # lado de ese cuadro en píxeles
+    proj: Optional["Projection"] = None
 
 
-def read_point(path, lat: float, lon: float, half_km: float = 150.0) -> ChannelReading:
+def read_point(path, lat: float, lon: float, half_km: float = 150.0, box_km: float = 0.0) -> ChannelReading:
     """Valor en (lat, lon) y un recorte cuadrado de ±``half_km`` alrededor, de un archivo CMIP de GOES.
 
-    ``path`` es la ruta del archivo NetCDF o un objeto ya abierto con la interfaz de h5py/pyfive.
+    ``path`` es la ruta del archivo NetCDF, un archivo remoto que se lee por partes (:class:`HttpRangeFile`) o un
+    objeto ya abierto con la interfaz de h5py/pyfive. Con ``box_km`` > 0 también calcula el promedio en un cuadro de
+    ese lado centrado en el punto (para el seeing desde el satélite).
     """
     if isinstance(path, (str, os.PathLike)):
         from .._vendor import pyfive
 
         f = pyfive.File(str(path))
+    elif hasattr(path, "read") and hasattr(path, "seek"):
+        from .._vendor import pyfive
+
+        f = pyfive.File(path)
+        path = getattr(path, "name", "")
     else:
         f, path = path, getattr(path, "filename", "")
     info = parse_name(str(path)) or {}
@@ -343,12 +477,13 @@ def read_point(path, lat: float, lon: float, half_km: float = 150.0) -> ChannelR
         sat = int(info.get("sat") or 0)
         col, row, ok = proj.pixel(lat, lon)
         res = ChannelReading(ch, path, sat, info.get("start"), lat, lon, col, row, ok, unit=channel_unit(ch),
-                             pixel_km=proj.pixel_km)
+                             pixel_km=proj.pixel_km, proj=proj)
         if not ok:
             res.notes.append("El punto no se ve desde el satélite o cae fuera de la imagen.")
             return res
         r, c = int(round(row)), int(round(col))
-        half = max(2, int(round(half_km / max(proj.pixel_km, 1e-3))))
+        bhalf = int(round(box_km / 2 / max(proj.pixel_km, 1e-3))) if box_km > 0 else 1
+        half = max(2, int(round(half_km / max(proj.pixel_km, 1e-3))), bhalf)
         r0, r1 = max(0, r - half), min(proj.ny, r + half + 1)
         c0, c1 = max(0, c - half), min(proj.nx, c + half + 1)
         cut = decode_cmi(cmi, cmi[r0:r1, c0:c1])
@@ -357,6 +492,9 @@ def read_point(path, lat: float, lon: float, half_km: float = 150.0) -> ChannelR
         res.value = float(cut[r - r0, c - c0])
         win = cut[max(0, r - r0 - 1):r - r0 + 2, max(0, c - c0 - 1):c - c0 + 2]
         res.mean3 = float(np.nanmean(win)) if np.isfinite(win).any() else float("nan")
+        box = cut[max(0, r - r0 - bhalf):r - r0 + bhalf + 1, max(0, c - c0 - bhalf):c - c0 + bhalf + 1]
+        res.box_px = 2 * bhalf + 1
+        res.box_mean = float(np.nanmean(box)) if np.isfinite(box).any() else float("nan")
         return res
     finally:
         fh = getattr(f, "_fh", None)

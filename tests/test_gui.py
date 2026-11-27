@@ -147,7 +147,7 @@ def test_one_file_chooser_everywhere():
 
 
 def test_processing_blocked_without_scale(app, errors, tmp_path):
-    """Sin escala de placa no se puede procesar: aviso visible y botón desactivado (antes se perdía el seeing)."""
+    """Sin escala de placa no se puede procesar: aviso visible y botón desactivado."""
     from synthetic import make_video
 
     vid = str(tmp_path / "v.mkv")
@@ -164,3 +164,20 @@ def test_processing_blocked_without_scale(app, errors, tmp_path):
     w.go("procesar")
     assert pg.start_b.isEnabled() and pg.scale_warn.isHidden()
     w.close()
+
+
+def test_device_chips_wrap_instead_of_clipping(app, errors, tmp_path):
+    """Con nombres largos o muchos equipos propios, las fichas pasan a otra línea en lugar de recortarse."""
+    from turbulens.gui.widgets import ChipGroup
+
+    g = ChipGroup([(str(i), f"Máscara propia número {i} · 2,5 / 14 cm") for i in range(6)], wrap=True)
+    g.resize(420, 40)
+    g.show()
+    for _ in range(5):
+        QApplication.processEvents()
+    one_row = max(b.sizeHint().height() for b in g.buttons.values())
+    assert g.minimumHeight() > 2 * one_row
+    for b in g.buttons.values():
+        assert b.width() >= b.sizeHint().width()  # ninguna ficha queda más angosta que su texto
+    g.close()
+    assert not errors

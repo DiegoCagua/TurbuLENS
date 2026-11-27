@@ -565,8 +565,10 @@ def _fmt_exp(e) -> str:
 class CalResult:
     outputs: list = field(default_factory=list)
     masters: dict = field(default_factory=dict)  # etiqueta → ruta
-    first: dict = field(default_factory=dict)  # dark/flat/bias del primer grupo, para el análisis de video
+    first: dict = field(default_factory=dict)  # dark/flat/bias del primer grupo, para el modo medición
     cancelled: bool = False
+    notes: list = field(default_factory=list)  # [(texto con «{}», argumentos)] diagnósticos (p. ej. del flat)
+    pairs: list = field(default_factory=list)  # [(luz original, calibrada)] para comparar antes y después
 
 
 class Calibrator:
@@ -672,12 +674,19 @@ class Calibrator:
             return None
         key = ("flat", tuple(sorted(c.paths)))
         if key not in self._cache:
+            sat = {"n": 0, "sat": 0, "ratio": 0.0}
+
             def gen():
                 for dc, paths in c.darks:
                     d = self.dark_for(dc)
                     for p in paths:
                         for fr in _frames_of(p):
                             fr = np.asarray(fr, np.float32)
+                            top = float(np.nanmax(fr)) if fr.size else 0.0
+                            if top > 0:
+                                sat["n"] += fr.size
+                                sat["sat"] += int(np.count_nonzero(fr >= top * 0.999))
+                                sat["ratio"] = max(sat["ratio"], float(np.median(fr)) / top)
                             if d is not None:
                                 if d.shape != fr.shape:
                                     raise ValueError("el dark del flat no tiene el tamaño del flat")
@@ -693,6 +702,18 @@ class Calibrator:
             med = float(np.median(m[m > 0])) if np.any(m > 0) else 1.0
             m = m / (med if med > 0 else 1.0)
             m[~np.isfinite(m) | (m < 0.05)] = 1.0  # píxeles muertos o sin luz: no se dividen
+            lo, hi = (float(v) for v in np.percentile(m[::max(1, m.shape[0] // 400), ::max(1, m.shape[1] // 400)], [1, 99]))
+            tag = c.filter or "—"
+            self.result.notes.append(("Flat ({}): el flat normalizado va de {} a {}; la corrección cambia el brillo hasta "
+                                      "un {} %.", (tag, f"{lo:.3f}", f"{hi:.3f}", f"{100 * max(1 - lo, hi - 1):.1f}")))
+            frac = sat["sat"] / max(1, sat["n"])
+            if frac > 0.05 or sat["ratio"] > 0.97:
+                self.result.notes.append(("Flat ({}): los flats parecen saturados ({} % de los píxeles en el valor "
+                                          "máximo). Un flat saturado sale casi plano y no corrige nada: toma los flats con "
+                                          "menos exposición, con el histograma cerca de la mitad.", (tag, f"{100 * frac:.0f}")))
+            elif hi - lo < 0.01:
+                self.result.notes.append(("Flat ({}): el flat casi no varía (menos del 1 %), así que la corrección es "
+                                          "imperceptible. Es normal si el telescopio casi no tiene viñeteo ni polvo.", (tag,)))
             ref = self.infos.get(c.paths[0])
             path = self._save_master("flat", self._label(ref, None, c.filter), m.astype(np.float32), n,
                                      {"FILTER": c.filter} if c.filter else {})
@@ -728,7 +749,7 @@ class Calibrator:
             for g in plan.groups:
                 dark = self.dark_for(g.dark)
                 flat = self.flat(g.flat)
-                if g is main:  # el grupo principal: sus maestros se pueden usar en el análisis de video
+                if g is main:  # el grupo principal: sus maestros se pueden usar en el modo medición
                     self.result.first = {"dark": self._path_of("dark", g.dark.paths) if g.dark.mode == "igual" else "",
                                          "bias": self._path_of("bias", g.dark.bias_paths),
                                          "flat": self._path_of("flat", g.flat.paths) if g.flat else ""}
@@ -749,6 +770,8 @@ class Calibrator:
                             hdr["DARKEXP"] = float(g.dark.exptime)
                         write_fits(q, out, hdr)
                         self.result.outputs.append(q)
+                        if len(self.result.pairs) < 50:
+                            self.result.pairs.append((f.path, j, q))
                         self._tick()
         except InterruptedError:
             self.result.cancelled = True

@@ -131,3 +131,22 @@ def test_oan_devices_plate_scale():
     assert dv.plate_scale(se, nikon, as_video=False) == pytest.approx(0.398, abs=0.002)  # la escala que se había usado
     assert dv.plate_scale(se, qhy) == pytest.approx(0.595, abs=0.002)
     assert dv.by_key(dv.MASKS, "grupo8").D_cm == 4.2 and dv.by_key(dv.MASKS, "grupo8").B_cm == 14.4
+
+
+def test_flat_diagnostics_warn_about_saturated_flats(tmp_path):
+    rng = np.random.default_rng(2)
+    lights = tmp_path / "luces"
+    flats = tmp_path / "flats"
+    lights.mkdir()
+    flats.mkdir()
+    for i in range(3):
+        write_fits(str(lights / f"luz_{i}.fits"), (500 + rng.normal(0, 5, (40, 50))).astype(np.float32),
+                   {"IMAGETYP": "Light Frame", "EXPTIME": 10.0})
+        write_fits(str(flats / f"flat_{i}.fits"), np.full((40, 50), 65535, np.float32),
+                   {"IMAGETYP": "Flat Field", "EXPTIME": 1.0})
+    frames = cf.scan([str(tmp_path)])
+    plan = cf.build_plan(frames)
+    res = cf.Calibrator(str(tmp_path / "out")).run(plan, frames)
+    texts = [t for t, _ in res.notes]
+    assert any("saturados" in t for t in texts)
+    assert res.pairs and os.path.exists(res.pairs[0][2])

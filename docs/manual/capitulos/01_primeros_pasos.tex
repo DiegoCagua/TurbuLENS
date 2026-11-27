@@ -1,0 +1,189 @@
+% ================================================================================================ capítulo 1
+\chapter{TurbuLENS en diez minutos}\label{cap:primeros}
+
+\begin{resumen}
+\textbf{En este capítulo:} qué hace cada modo, cómo descargar y abrir TurbuLENS en Windows, macOS y Linux, cómo está
+organizada la ventana y una primera medición completa, del video al resultado guardado.
+\end{resumen}
+
+\section{Qué hace TurbuLENS}
+
+Cuando miras una estrella por un telescopio no ves un punto quieto: ves una mancha que tiembla y cambia de forma. Esa
+es la huella de la turbulencia del aire, y el número que la resume es el \textbf{seeing}: el ancho angular, en segundos
+de arco, al que la atmósfera borronea una estrella. TurbuLENS lo mide a partir de un video grabado con un
+\textbf{DIMM}, un telescopio con una máscara de dos orificios que forma dos imágenes de la misma estrella
+(capítulo~\ref{cap:dimm}). Alrededor de esa medición hay tres herramientas más, cada una en su propio modo:
+
+\begin{center}
+\begin{tcbraster}[raster columns=2,raster equal height,raster column skip=3mm,raster row skip=3mm,
+  colback=white,colframe=acento!40,boxrule=0.6pt,arc=2mm,fonttitle=\bfseries\large,coltitle=acentoosc,
+  colbacktitle=suave,left=3mm,right=3mm,top=2mm,bottom=2mm]
+\begin{tcolorbox}[title=Medición del seeing]
+\small Cargas el video, eliges la estrella y el tramo, escribes los datos del equipo y TurbuLENS mide los dos puntos
+en cada cuadro. Da el seeing, el parámetro de Fried $r_0$, gráficas, un informe PDF y un historial para comparar
+noches. \hfill\textcolor{acento}{→ cap.~\ref{cap:medicion}}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Educativo]
+\small Nueve lecciones de estadística (histograma, media, desviación estándar, la campana de Gauss, errores,
+atípicos, correlación) con datos reales de una estrella, tres pantallas de astronomía sencilla y una prueba final.
+\hfill\textcolor{acento}{→ cap.~\ref{cap:educativo}}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Imágenes]
+\small Calibra fotos astronómicas con bias, darks y flats emparejados por sus cabeceras, y las revisa en un visor de
+píxeles al estilo de SAOImage DS9 que además mide el FWHM y el seeing de una estrella.
+\hfill\textcolor{acento}{→ cap.~\ref{cap:imagenes}}
+\end{tcolorbox}
+\begin{tcolorbox}[title=Satélite]
+\small Lee las imágenes del satélite GOES-Este para una noche, hora por hora, muestra si había nubes sobre un mapa y
+estima el seeing de las capas medias de la atmósfera con tres canales infrarrojos.
+\hfill\textcolor{acento}{→ cap.~\ref{cap:satelite}}
+\end{tcolorbox}
+\end{tcbraster}
+\end{center}
+
+Los modos de medición y educativo comparten el historial y los perfiles de equipo: lo que guardas en uno aparece en el
+otro. El visor de píxeles está en los modos Imágenes y Satélite.
+
+\section{Descargar y abrir}\label{sec:descarga}
+
+TurbuLENS no se instala. En la página de versiones del repositorio,
+\url{https://github.com/DiegoCagua/TurbuLENS/releases/latest}, descarga el archivo de tu sistema, descomprímelo y abre
+el programa. Todo lo que necesita (Python, Qt, FFmpeg) viene adentro.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+Sistema & Archivo (\codigo{TurbuLENS-v1.5.0-…}) & Cómo se abre\\
+\midrule
+Windows 10 y 11 & \codigo{…-Windows-x64.zip} & Descomprime y haz doble clic en \ruta{TurbuLENS.exe}.\\
+Mac con Apple Silicon (M1–M4) & \codigo{…-macOS-AppleSilicon.zip} & Arrastra \ruta{TurbuLENS.app} a Aplicaciones.\\
+Mac con Intel & \codigo{…-macOS-Intel.zip} & Igual que en Apple Silicon.\\
+Linux (x86-64) & \codigo{…-Linux-x64.tar.gz} & \codigo{chmod +x TurbuLENS} y doble clic, o \codigo{./TurbuLENS} en la
+terminal.\\
+\bottomrule
+\end{tabularx}
+\caption{Archivos de la versión 1.5.0. Cada uno trae además este manual, un \ruta{LEEME.txt}, la licencia y los avisos
+de los componentes de terceros.}
+\end{table}
+
+\begin{cuidado}[La primera vez.]
+TurbuLENS no tiene firma digital de Microsoft ni de Apple, así que el sistema pregunta antes de abrirlo. En Windows,
+si aparece «Windows protegió su PC», pulsa \boton{Más información} y luego \boton{Ejecutar de todas formas}. En Mac, la
+primera vez ábrelo con clic derecho → \boton{Abrir} → \boton{Abrir}. Después abre normal. La primera apertura tarda unos
+segundos porque el sistema revisa el programa.
+\end{cuidado}
+
+\section{La ventana}\label{sec:ventana}
+
+Al abrir aparece la pantalla de inicio con los cuatro modos. Arriba a la derecha están el idioma y el botón del tema.
+
+\captura{inicio.png}{La pantalla de inicio. Cada tarjeta entra a un modo; abajo está \menu{Acerca de}.}
+
+Dentro de un modo, la ventana siempre tiene las mismas tres partes:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small,x=1cm,y=1cm]
+  \draw[gris!50,fill=white,rounded corners=2pt] (0,0) rectangle (14,7.6);
+  \fill[grisclaro] (0,6.8) rectangle (14,7.6);
+  \draw[gris!40] (0,6.8) -- (14,6.8);
+  \draw[gris!50,line width=1pt] (0.45,7.2) circle (0.18);
+  \node[anchor=west,font=\sffamily\bfseries\small] at (0.75,7.28) {TurbuLENS};
+  \node[anchor=west,font=\sffamily\tiny,text=gris] at (0.75,7.0) {Observatorio Astronómico Nacional · UNAL};
+  \node[fill=suave,text=acentoosc,rounded corners=3pt,font=\sffamily\scriptsize\bfseries] at (9.25,7.2) {Modo medición};
+  \node[draw=gris!50,rounded corners=3pt,font=\sffamily\scriptsize] at (11.75,7.2) {Cambiar de modo};
+  \draw[gris!50] (13.35,7.2) circle (0.22); \fill[tinta] (13.33,7.2) circle (0.1); \fill[grisclaro] (13.38,7.24) circle (0.085);
+  \fill[white] (0,0) rectangle (3,6.8); \draw[gris!40] (3,0) -- (3,6.8);
+  \node[anchor=west,font=\sffamily\tiny,text=gris] at (0.25,6.4) {FLUJO DE ANÁLISIS};
+  \draw[acento,fill=suave,rounded corners=2pt] (0.15,4.83) rectangle (2.85,5.27);
+  \foreach \i/\t in {1/Video,2/Recorte y tramo,4/Procesar,5/Resultados}{
+    \node[anchor=west,font=\sffamily\scriptsize] at (0.25,6.4-0.45*\i) {\i\ \ \t};}
+  \node[anchor=west,font=\sffamily\scriptsize\bfseries] at (0.25,5.05) {3\ \ Parámetros};
+  \node[anchor=west,font=\sffamily\tiny,text=gris] at (0.25,3.6) {DATOS};
+  \node[anchor=west,font=\sffamily\scriptsize] at (0.25,3.2) {Historial};
+  \node[anchor=west,font=\sffamily\scriptsize] at (0.25,0.55) {Acerca de};
+  \node[anchor=west,font=\sffamily\tiny,text=gris] at (0.25,0.25) {Versión 1.5.0};
+  \fill[grisclaro!60] (3,0) rectangle (14,6.8);
+  \node[anchor=west,font=\sffamily\bfseries] at (3.35,6.35) {Parámetros};
+  \node[anchor=west,font=\sffamily\tiny,text=gris] at (3.35,6.0) {Datos de tu telescopio y de la máscara};
+  \draw[white,fill=white,rounded corners=3pt] (3.35,0.4) rectangle (8.5,5.6);
+  \draw[white,fill=white,rounded corners=3pt] (8.8,2.4) rectangle (13.65,5.6);
+  \draw[white,fill=white,rounded corners=3pt] (8.8,0.4) rectangle (13.65,2.1);
+  \node[font=\sffamily\scriptsize,text=gris] at (5.9,3) {tarjeta};
+  \node[font=\sffamily\scriptsize,text=gris] at (11.2,4) {tarjeta};
+  \draw[gris!60,fill=white] (8.15,5.35) circle (0.14); \node[font=\tiny\bfseries,text=gris] at (8.15,5.35) {!};
+  % marcas
+  \marca{0.8}{7.7}{1}\marca{8.3}{7.7}{2}\marca{13.35}{7.75}{3}\marca{3.15}{6.5}{4}\marca{0.15}{5.45}{5}
+  \marca{8.5}{5.62}{6}\marca{0.15}{0.85}{7}
+\end{tikzpicture}
+\caption{Las partes de la ventana.}\label{fig:ventana}
+\vspace{-0.3em}\small\RaggedRight
+\begin{multicols}{2}\begin{enumerate}[label=\marcanum{\arabic*},leftmargin=*,labelsep=0.5em,itemsep=0.25em]
+\item \textbf{Barra superior} con el nombre del programa y la institución.
+\item \textbf{El modo en que estás} y \boton{Cambiar de modo}, que lleva de vuelta a la pantalla de inicio.
+\item \textbf{Tema} claro u oscuro (sol o luna).
+\item \textbf{La página.} Su título, una línea que dice para qué sirve y sus tarjetas.
+\item \textbf{El menú de la izquierda.} En la medición, los pasos van numerados; puedes ir y volver sin perder nada.
+\item \textbf{Ayuda} de la tarjeta (el botón con \textbf{!}).
+\item \menu{Acerca de}: idioma, tamaño de la interfaz, créditos, licencia, cómo citar y la versión.
+\end{enumerate}\end{multicols}
+\end{figure}
+
+\subsection*{Idioma, tema y tamaño}
+
+\begin{itemize}
+\item \textbf{Idioma.} Español, inglés o portugués. Se cambia en la pantalla de inicio o en \menu{Acerca de}; las
+mediciones guardadas no se pierden. Los diálogos del sistema (abrir archivo, elegir carpeta) también salen en el
+idioma elegido.
+\item \textbf{Tema.} El oscuro usa naranja sobre negro para no deslumbrar en la noche de observación; el claro, verde
+azulado sobre blanco, es el de las capturas de este manual y el que mejor se ve en un proyector.
+\item \textbf{Tamaño de la interfaz.} TurbuLENS se dibuja al 100\,\% aunque Windows o Linux tengan la pantalla al 125 o
+al 150\,\%: así todas las páginas caben completas en un portátil de 1366~×~768. En \menu{Acerca de} puedes elegir
+125\,\%, 150\,\% o «Como el sistema»; el cambio se aplica al volver a abrir el programa. En Mac siempre se respeta la
+pantalla Retina.
+\item \textbf{Pantalla completa:} \tecla{F11}; \tecla{Esc} para salir.
+\end{itemize}
+
+\section{Tu primera medición}\label{sec:primera}
+
+Esta es la medición completa en el modo \textbf{Medición del seeing}. Cada paso tiene su sección en el
+capítulo~\ref{cap:medicion}; aquí va lo indispensable.
+
+\begin{pasos}[Del video al seeing]
+\begin{enumerate}[label=\textbf{\arabic*.},leftmargin=1.6em,itemsep=0.45em]
+\item En el inicio, entra a \botonp{Entrar al modo medición}.
+\item \menu{Video}: arrastra tu video a la ventana (MOV, MP4, AVI, MKV, SER, FITS y muchos más). A la derecha aparece su
+información. Pulsa \botonp{Siguiente: recorte y tramo}.
+\item \menu{Recorte y tramo}: pulsa \boton{◎ Ajustar a la estrella}; la región se pone alrededor de los dos puntos.
+Deja marcadas \campo{Seguir a la estrella} y \campo{Tamaño automático}. Si el principio o el final del video tiene
+golpes, marca la \boton{[ Entrada} y la \boton{Salida ]} para dejarlos fuera. Usa al menos 15~segundos.
+\item \menu{Parámetros}: pulsa \botonp{Dispositivos (OAN y propios)…}, elige tu telescopio, tu cámara y tu máscara, y
+\botonp{Aplicar}. TurbuLENS llena $D$, $B$ y la escala de placa. Si tu equipo no está en la lista, el
+capítulo~\ref{cap:propio} explica cómo agregarlo.
+\item \menu{Procesar}: \botonp{▶ Iniciar}. La barra muestra cuántos cuadros por segundo se procesan y cuánto falta.
+\item \menu{Resultados}: el seeing estimado sale arriba a la izquierda, con su calidad en palabras. Escribe una
+etiqueta («Altair, noche 1») y pulsa \botonp{Guardar en historial}.
+\item Si quieres los datos o un informe, en la tarjeta \campo{Exportar} elige los formatos, revisa la carpeta y pulsa
+\botonp{Generar}.
+\end{enumerate}
+\end{pasos}
+
+\begin{consejo}[¿No tienes un video todavía?]
+El modo educativo trae los datos de una medición real de la estrella Altair (8\,484 cuadros, dos minutos y medio). Con
+ellos puedes ver todas las gráficas y practicar la lectura de los resultados antes de salir a grabar.
+\end{consejo}
+
+\section{Lo que TurbuLENS nunca hace}
+
+Hay tres cosas que decidimos desde el principio y que vale la pena saber:
+\begin{itemize}
+\item \textbf{No modifica tus archivos.} El video se lee desde su carpeta y no se copia. Las imágenes calibradas, los
+cuadros y las exportaciones se escriben en carpetas nuevas.
+\item \textbf{No sobrescribe nada.} Si un archivo ya existe, el nuevo lleva un número al final
+(\ruta{altair\_dimm\_2.csv}). Cada evaluación del satélite va en su propia subcarpeta con la fecha y la hora.
+\item \textbf{No inventa resultados.} Sin escala de placa no se procesa; si en el tramo no se detectan los dos puntos
+de la estrella, las gráficas quedan vacías con un aviso y los indicadores muestran «—».
+\end{itemize}
+Y una más: si cierras el programa, abres otro video o vuelves a procesar con un análisis que no está en el historial,
+TurbuLENS pregunta si quieres \boton{Guardar}, \boton{Descartar} o \boton{Cancelar}.

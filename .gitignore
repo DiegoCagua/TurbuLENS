@@ -7,3 +7,10 @@ dist/
 /capturas/
 *_TurbuLENS/
 .venv/
+
+# LaTeX del manual
+docs/manual/*.aux
+docs/manual/*.log
+docs/manual/*.out
+docs/manual/*.toc
+docs/manual/*.pdf

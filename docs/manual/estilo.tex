@@ -1,0 +1,207 @@
+% =====================================================================================================
+%  Estilo del manual de TurbuLENS: colores de la aplicación, recuadros, botones, capturas con marcas
+%  numeradas y fragmentos de código con sus números de línea reales.
+% =====================================================================================================
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setdefaultlanguage{spanish}
+\setotherlanguage{english}
+\IfFontExistsTF{Inter}
+  {\setmainfont{Inter}[Scale=0.92]\setsansfont{Inter}[Scale=0.92]}
+  {\IfFontExistsTF{Roboto}{\setmainfont{Roboto}\setsansfont{Roboto}}{}}
+\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=0.8]}{}
+\usepackage{amsmath,amssymb}
+\usepackage{newunicodechar}
+% Símbolos de los botones de la aplicación que la fuente del texto no tiene
+\IfFontExistsTF{DejaVu Sans}{\newfontfamily\simbolos{DejaVu Sans}[Scale=0.85]}{\let\simbolos\relax}
+\newunicodechar{◎}{{\simbolos ◎}}
+\newunicodechar{⋯}{{\simbolos ⋯}}
+\newunicodechar{★}{{\simbolos ★}}
+\newunicodechar{■}{{\simbolos ■}}
+\newunicodechar{▶}{{\simbolos ▶}}
+\usepackage[a4paper,top=2.5cm,bottom=2.4cm,left=2.5cm,right=2.5cm,headheight=16pt]{geometry}
+\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,multicol,caption,fancyhdr,titlesec,ragged2e}
+\usepackage[shortlabels]{enumitem}
+\usepackage[most,listings]{tcolorbox}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,calc,decorations.pathmorphing,shapes.misc,fit,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.16}
+\usepackage{listings}
+\usepackage[hyphens]{url}
+\usepackage[hidelinks,bookmarksnumbered]{hyperref}
+
+% ---------------------------------------------------------------------------------------------- colores
+\definecolor{acento}{HTML}{3E7C72}      % verde azulado del tema claro
+\definecolor{acentoosc}{HTML}{2A5A52}
+\definecolor{naranja}{HTML}{F28C28}     % naranja del tema oscuro
+\definecolor{cobre}{HTML}{B4652A}
+\definecolor{suave}{HTML}{E8F1EF}
+\definecolor{crema}{HTML}{FFF6EC}
+\definecolor{gris}{HTML}{5B6661}
+\definecolor{grisclaro}{HTML}{EEF0EF}
+\definecolor{tinta}{HTML}{1F2623}
+\definecolor{codigofondo}{HTML}{F6F8F7}
+\definecolor{grisflecha}{HTML}{9AA39F}
+\definecolor{grisnum}{HTML}{8E9893}
+\hypersetup{colorlinks=true,linkcolor=acentoosc,urlcolor=acento,citecolor=acento,
+  pdftitle={Manual de TurbuLENS},pdfauthor={Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina, Saray Juliana Pinto Sanabria}}
+\color{tinta}
+
+% ---------------------------------------------------------------------------------------------- párrafos
+\setlength{\parindent}{0pt}
+\setlength{\emergencystretch}{2.5em}
+\setlength{\parskip}{0.55em}
+\RaggedRight
+\setlist{itemsep=0.2em,topsep=0.35em,parsep=0.1em}
+\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
+\renewcommand{\arraystretch}{1.22}
+\captionsetup{font=small,labelfont={bf,color=acento},labelsep=period,justification=RaggedRight,singlelinecheck=false}
+\setcounter{tocdepth}{1}
+\addto\captionsspanish{\renewcommand{\contentsname}{Contenido}\renewcommand{\tablename}{Tabla}}
+\setcounter{secnumdepth}{2}
+
+% ---------------------------------------------------------------------------------------------- títulos
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries\color{tinta}}
+  {\begin{tikzpicture}[baseline]
+     \node[fill=acento,text=white,rounded corners=3pt,inner sep=6pt,font=\Large\bfseries] {\thechapter};
+   \end{tikzpicture}}
+  {0.6em}{\fontsize{26}{30}\selectfont}
+  [\vspace{0.2em}{\color{acento}\titlerule[1.2pt]}]
+\titlespacing*{\chapter}{0pt}{-12pt}{18pt}
+\titleformat{\section}{\Large\bfseries\color{acentoosc}}{\thesection}{0.7em}{}
+\titleformat{\subsection}{\large\bfseries\color{tinta}}{\thesubsection}{0.7em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{gris}}{}{0em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.5em}
+\titlespacing*{\subsection}{0pt}{1.1em}{0.35em}
+\titlespacing*{\subsubsection}{0pt}{0.9em}{0.2em}
+
+% Página de cada parte: fondo de color, número grande y una frase de qué contiene.
+\newcommand{\parte}[3]{%
+  \cleardoublepage\thispagestyle{empty}%
+  \addcontentsline{toc}{part}{Parte #1\quad #2}%
+  \begin{tikzpicture}[remember picture,overlay]
+    \fill[acento] (current page.south west) rectangle (current page.north east);
+    \fill[acentoosc] (current page.south west) rectangle ([yshift=7cm]current page.south east);
+    \node[anchor=north west,text=white!85!acento,font=\fontsize{120}{120}\selectfont\bfseries]
+      at ([xshift=2.3cm,yshift=-3cm]current page.north west) {#1};
+    \node[anchor=north west,text=white,font=\fontsize{34}{40}\selectfont\bfseries,text width=15cm,align=left]
+      at ([xshift=2.4cm,yshift=-8.4cm]current page.north west) {#2};
+    \node[anchor=north west,text=white!90!acento,font=\large,text width=14cm,align=left]
+      at ([xshift=2.4cm,yshift=-10.6cm]current page.north west) {#3};
+    \node[anchor=south west,text=white!80!acento,font=\small]
+      at ([xshift=2.4cm,yshift=2.2cm]current page.south west) {TurbuLENS · Manual de usuario y fundamentos};
+  \end{tikzpicture}%
+  \clearpage}
+
+% ---------------------------------------------------------------------------------------------- encabezados
+\pagestyle{fancy}\fancyhf{}
+\fancyhead[L]{\small\color{gris}\textbf{TurbuLENS} 1.5.0}
+\fancyhead[R]{\small\color{gris}\leftmark}
+\fancyfoot[C]{\small\color{gris}\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\headrule}{{\color{grisclaro}\hrule width\headwidth height\headrulewidth}}
+\renewcommand{\chaptermark}[1]{\markboth{\thechapter.\ #1}{}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\color{gris}\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---------------------------------------------------------------------------------------------- índice
+\makeatletter
+\renewcommand*\l@part[2]{%
+  \addpenalty{-\@highpenalty}\vskip 1.1em plus 2pt
+  {\setlength\@tempdima{3em}\parindent\z@\rightskip\@pnumwidth\parfillskip-\@pnumwidth
+   \leavevmode\large\bfseries\color{acento}#1\hfil\hb@xt@\@pnumwidth{\hss}\par\nobreak}}
+\makeatother
+
+% ---------------------------------------------------------------------------------------------- texto de la app
+\newcommand{\codigo}[1]{\texttt{#1}}
+\newcommand{\ruta}[1]{\texttt{\color{acentoosc}#1}}
+\newtcbox{\boton}{on line,colback=white,colframe=gris!45,boxrule=0.5pt,arc=3pt,
+  left=3pt,right=3pt,top=1pt,bottom=1pt,boxsep=0pt,fontupper=\small\sffamily}
+\newtcbox{\botonp}{on line,colback=acento,colframe=acento,coltext=white,boxrule=0.5pt,arc=3pt,
+  left=3pt,right=3pt,top=1pt,bottom=1pt,boxsep=0pt,fontupper=\small\sffamily\bfseries}
+\newtcbox{\tecla}{on line,colback=grisclaro,colframe=gris!60,boxrule=0.4pt,arc=2pt,
+  left=2.5pt,right=2.5pt,top=0.5pt,bottom=0.5pt,boxsep=0pt,fontupper=\footnotesize\sffamily}
+\newcommand{\menu}[1]{\textsf{\color{acentoosc}#1}}
+\newcommand{\campo}[1]{\emph{#1}}
+
+% ---------------------------------------------------------------------------------------------- recuadros
+\newtcolorbox{nota}[1][Nota]{enhanced,breakable,colback=suave,colframe=acento,boxrule=0pt,leftrule=3pt,arc=0pt,
+  left=4mm,right=3mm,top=2mm,bottom=2mm,fonttitle=\bfseries,coltitle=acentoosc,title={#1},
+  attach title to upper={\ \ }}
+\newtcolorbox{cuidado}[1][Cuidado]{enhanced,breakable,colback=crema,colframe=naranja,boxrule=0pt,leftrule=3pt,arc=0pt,
+  left=4mm,right=3mm,top=2mm,bottom=2mm,fonttitle=\bfseries,coltitle=cobre,title={#1},attach title to upper={\ \ }}
+\newtcolorbox{consejo}[1][Consejo]{enhanced,breakable,colback=white,colframe=acento!45,boxrule=0.6pt,arc=2mm,
+  left=4mm,right=3mm,top=2mm,bottom=2mm,fonttitle=\bfseries,coltitle=acento,title={#1},attach title to upper={\ \ }}
+\newtcolorbox{resumen}{enhanced,colback=grisclaro,colframe=grisclaro,arc=2mm,left=5mm,right=5mm,top=3mm,bottom=3mm,
+  fontupper=\small,before skip=0.4em,after skip=1em}
+\newtcolorbox{pasos}[1][Paso a paso]{enhanced,breakable,colback=white,colframe=acento,boxrule=0.8pt,arc=2mm,
+  left=4mm,right=4mm,top=2mm,bottom=2mm,colbacktitle=acento,coltitle=white,fonttitle=\bfseries,title={#1}}
+
+% ---------------------------------------------------------------------------------------------- capturas
+\newtcbox{\marcanumcaja}{on line,colback=naranja,colframe=naranja,coltext=white,boxrule=0pt,arc=5.5pt,
+  left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=1.7pt,fontupper=\sffamily\bfseries\scriptsize}
+\newcommand{\marcanum}[1]{\marcanumcaja{\makebox[0.62em][c]{\vphantom{8}#1}}}
+\newcommand{\marca}[3]{\node[circle,fill=naranja,text=white,draw=white,line width=1pt,inner sep=0pt,
+  minimum size=15pt,font=\sffamily\bfseries\footnotesize] at (#1,#2) {#3};}
+% \captura[ancho]{archivo}{pie}: captura con borde suave.
+\newcommand{\captura}[3][\linewidth]{%
+  \begin{figure}[H]\centering
+  \tcbox[colback=white,colframe=gris!30,boxrule=0.5pt,arc=1.5mm,left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt]{%
+    \includegraphics[width=#1]{img/#2}}%
+  \caption{#3}\label{fig:#2}\end{figure}}
+% \capturamarcas[ancho]{archivo}{pie}: lo mismo, con las marcas numeradas de img/<archivo>_marcas.tex.
+\newcommand{\capturamarcas}[3][\linewidth]{%
+  \begin{figure}[H]\centering
+  \tcbox[colback=white,colframe=gris!30,boxrule=0.5pt,arc=1.5mm,left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt]{%
+  \begin{tikzpicture}
+    \node[anchor=south west,inner sep=0] (img) at (0,0) {\includegraphics[width=#1]{img/#2}};
+    \begin{scope}[x={(img.south east)},y={(img.north west)}]
+      \input{img/#2_marcas.tex}
+    \end{scope}
+  \end{tikzpicture}}%
+  \caption{#3}\label{fig:#2}\end{figure}}
+% Captura con marcas y su leyenda en un solo bloque, para que nunca queden en páginas distintas:
+% \begin{capturam}[ancho]{archivo}{pie}[columnas] \item ... \end{capturam}
+\NewDocumentEnvironment{capturam}{O{\linewidth} m m O{2}}
+  {\begin{figure}[H]\centering
+   \tcbox[colback=white,colframe=gris!30,boxrule=0.5pt,arc=1.5mm,left=0pt,right=0pt,top=0pt,bottom=0pt,boxsep=0pt]{%
+   \begin{tikzpicture}
+     \node[anchor=south west,inner sep=0] (img) at (0,0) {\includegraphics[width=#1]{img/#2}};
+     \begin{scope}[x={(img.south east)},y={(img.north west)}]
+       \input{img/#2_marcas.tex}
+     \end{scope}
+   \end{tikzpicture}}%
+   \caption{#3}\label{fig:#2}
+   \vspace{-0.3em}\small\RaggedRight
+   \begin{multicols}{#4}\begin{enumerate}[label=\marcanum{\arabic*},leftmargin=*,labelsep=0.5em,itemsep=0.25em]}
+  {\end{enumerate}\end{multicols}\end{figure}}
+% Leyenda suelta: \begin{leyenda} \item ... \end{leyenda}
+\newenvironment{leyenda}[1][2]
+  {\small\begin{multicols}{#1}\begin{enumerate}[label=\marcanum{\arabic*},leftmargin=*,labelsep=0.5em,itemsep=0.25em]}
+  {\end{enumerate}\end{multicols}}
+
+% ---------------------------------------------------------------------------------------------- código
+\input{codigo/lineas.tex}
+\lstdefinestyle{turbulens}{
+  language=Python,
+  basicstyle=\ttfamily\footnotesize\color{tinta},
+  keywordstyle=\color{acentoosc}\bfseries,
+  commentstyle=\color{gris}\itshape,
+  stringstyle=\color{cobre},
+  numbers=left, numberstyle=\tiny\color{grisnum}, numbersep=8pt,
+  columns=fullflexible, keepspaces=true, showstringspaces=false,
+  breaklines=true, breakatwhitespace=false, postbreak=\mbox{\textcolor{grisflecha}{$\hookrightarrow$}\space},
+  tabsize=4, upquote=true,
+  morekeywords={self,True,False,None}
+}
+\lstset{style=turbulens}
+% \fragmento{id}{título}: el fragmento docs/manual/codigo/<id>.py, numerado como en el archivo original.
+\newcommand{\fragmento}[2]{%
+  \edef\fragprimera{\csname primera#1\endcsname}%
+  \edef\fragultima{\csname ultima#1\endcsname}%
+  \tcbinputlisting{enhanced,breakable,listing only,listing file={codigo/#1.py},
+    listing options={style=turbulens,firstnumber=\fragprimera},
+    colback=codigofondo,colframe=grisclaro,boxrule=0.6pt,arc=1.5mm,left=6mm,right=2mm,top=1mm,bottom=1mm,
+    colbacktitle=grisclaro,coltitle=tinta,fonttitle=\footnotesize,
+    title={\textbf{#2}\hfill\ttfamily\csname archivo#1\endcsname\ ·\ líneas \fragprimera–\fragultima}}}

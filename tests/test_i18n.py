@@ -43,6 +43,11 @@ def test_tr_templates_and_numbers():
         assert i18n.tr("Resultados") == "Resultados" and i18n.tr("Historial") == "Histórico"
         assert i18n.num(1.25) == "1,25" and i18n.integer(8484) == "8.484"
         assert "versão" in __import__("turbulens").citation_apa()
+        assert i18n.sci(1.00483e-12) == "1,005 × 10⁻¹²"
+        i18n.load("en")
+        assert i18n.sci(2.5e-7, 2) == "2.50 × 10⁻⁷"
+        assert i18n.tr("Listo: se crearon {} archivos con el prefijo «{}».").format(3, "v") == \
+            "Done: 3 files created with the prefix «v»."
     finally:
         i18n.load("es")
     assert i18n.tr("Resultados") == "Resultados" and i18n.num(1.25) == "1,25"

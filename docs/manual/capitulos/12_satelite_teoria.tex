@@ -1,0 +1,159 @@
+% ================================================================================================ capítulo 12
+\chapter{El satélite GOES y el seeing desde el espacio}\label{cap:satelite_teoria}
+
+\begin{resumen}
+\textbf{En este capítulo:} qué mide el instrumento ABI de los satélites GOES, qué es una temperatura de brillo, cómo se
+pasa de una latitud y una longitud a un píxel de la imagen, cómo lee TurbuLENS solo un pedazo de un archivo remoto, y
+el método de Cavazzani, Ortolani y Zitelli para estimar el seeing con tres canales infrarrojos.
+\end{resumen}
+
+\section{GOES-Este y su instrumento ABI}
+
+Los satélites GOES (\emph{Geostationary Operational Environmental Satellites}) de la NOAA giran sobre el ecuador a
+35\,786~km de altura, con la misma velocidad angular que la Tierra: desde el suelo parecen quietos. El que mira a América
+desde unos 75° de longitud oeste se llama \textbf{GOES-Este}: fue GOES-16 desde diciembre de 2017 hasta el 4 de abril
+de 2025, y desde entonces es GOES-19.
+
+Su cámara principal, el ABI (\emph{Advanced Baseline Imager}), toma una imagen del \textbf{disco completo} de la Tierra cada
+10 minutos en \textbf{16 canales}: dos visibles, cuatro del infrarrojo cercano y diez del infrarrojo térmico. En el
+infrarrojo térmico cada píxel mide unos 2~km bajo el satélite, y un poco más hacia el borde del disco; Bogotá está muy
+cerca del punto bajo el satélite, así que allí los píxeles son de casi 2~km. TurbuLENS
+usa el producto \codigo{ABI-L2-CMIPF}, las imágenes ya calibradas del disco completo:
+\begin{itemize}
+\item en los canales 1 a 6 el valor es la \textbf{reflectancia} (la fracción de la luz del Sol que se refleja; de noche no
+sirve);
+\item en los canales 7 a 16, la \textbf{temperatura de brillo} en kelvin, de día y de noche.
+\end{itemize}
+
+\subsection{Temperatura de brillo}
+
+La temperatura de brillo de un píxel es la temperatura que tendría un cuerpo negro que emitiera, en la longitud de onda
+del canal, la misma radiación que mide el satélite. Si lo que ve el canal es la superficie despejada, es parecida a la
+temperatura del suelo; si es el tope de una nube alta, es mucho más fría. En el canal 13 (10,3~µm, el «infrarrojo
+limpio»), el aire es casi transparente y se ve hasta la superficie o hasta el tope de las nubes:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l l@{}}
+\toprule
+Temperatura en el canal 13 & Lectura\\
+\midrule
+menos de $-40$~°C & Topes de nubes altas y frías\\
+de $-40$ a $-10$~°C & Nubes medias o altas\\
+de $-10$ a $5$~°C & Posibles nubes bajas o neblina\\
+más de $5$~°C & Probablemente despejado (se ve la superficie)\\
+\bottomrule
+\end{tabular}
+\caption{La lectura sencilla que muestra TurbuLENS para los canales infrarrojos limpios.}
+\end{table}
+
+En otros canales el aire absorbe: el canal 9 (6,9~µm) ve el vapor de agua de la troposfera media, así que su temperatura
+es la de esa capa y no la del suelo; el canal 16 (13,3~µm) está en una banda del CO$_2$ y mezcla la emisión de capas bajas
+y medias. Cada canal, en la práctica, «mira» a una altura distinta, y eso es lo que aprovecha el método del seeing.
+
+\section{Del lugar al píxel}
+
+Las imágenes del ABI no están en latitud y longitud sino en \textbf{ángulos de barrido} $(x, y)$: hacia dónde apuntaba el
+espejo del instrumento. La guía de usuario de GOES-R da la conversión para un elipsoide terrestre (GRS80, con radio
+ecuatorial $r_\text{eq}$ y polar $r_\text{pol}$) y un satélite a una distancia $H$ del centro de la Tierra, sobre la
+longitud $\lambda_0$. Para un punto de latitud $\varphi$ y longitud $\lambda$:
+\begin{gather}
+\varphi_c = \arctan\!\left(\frac{r_\text{pol}^2}{r_\text{eq}^2}\tan\varphi\right),\qquad
+r_c = \frac{r_\text{pol}}{\sqrt{1 - e^2\cos^2\varphi_c}},\qquad e^2 = \frac{r_\text{eq}^2 - r_\text{pol}^2}{r_\text{eq}^2},\\
+s_x = H - r_c\cos\varphi_c\cos(\lambda-\lambda_0),\qquad s_y = -r_c\cos\varphi_c\sin(\lambda-\lambda_0),\qquad
+s_z = r_c\sin\varphi_c,\\
+y = \arctan\frac{s_z}{s_x},\qquad x = \arcsin\frac{-s_y}{\sqrt{s_x^2 + s_y^2 + s_z^2}} .
+\end{gather}
+El punto se ve desde el satélite si $H(H - s_x) \ge s_y^2 + (r_\text{eq}^2/r_\text{pol}^2)\,s_z^2$. La columna y la fila
+salen de los ángulos con el primer valor y el paso de los ejes del archivo: $\text{columna} = (x - x_0)/\Delta x$. Todos
+los parámetros ($H$, los radios, $\lambda_0$, los ejes) se leen de cada archivo. Con las mismas fórmulas, aplicadas a miles
+de puntos a la vez, TurbuLENS dibuja sobre el recorte las costas, las fronteras y los departamentos de Natural Earth.
+
+\section{Leer solo lo necesario}\label{sec:lectura_parcial}
+
+Los archivos del ABI son NetCDF-4, que por dentro es HDF5: una cabecera y la imagen partida en bloques comprimidos. Para
+leer un recorte de 600~km no hace falta el archivo entero, solo la cabecera y los bloques que lo cubren. El servidor de
+la NOAA (en Amazon S3) acepta pedidos con la cabecera HTTP \codigo{Range: bytes=a-b}, que devuelve solo ese pedazo.
+
+TurbuLENS presenta el archivo remoto como si fuera un archivo local: cuando el lector de HDF5 (pyfive, escrito en Python
+puro) pide leer en una posición, se descarga el bloque de 128~KB que la contiene, y se guarda en memoria por si se vuelve a
+necesitar (sección~\ref{sec:codigo_rango}). Así una imagen de unos 25~MB se lee bajando unos 2~MB. Si el servidor no
+acepta pedidos parciales, TurbuLENS descarga el archivo completo.
+
+\section{El seeing desde el satélite}\label{sec:metodo_cavazzani}
+
+Cavazzani, Ortolani y Zitelli (2012) propusieron estimar el seeing con las imágenes infrarrojas nocturnas de un satélite
+geoestacionario, y lo compararon con el seeing medido en Cerro Paranal (Chile) y en el Roque de los Muchachos (La Palma),
+con una correlación cercana al 90\,\%. La idea es que tres canales que ven a alturas distintas permiten seguir la
+estabilidad de la columna de aire.
+
+\subsection{La función de estabilidad}
+
+Con las temperaturas de brillo de los canales 9, 13 y 16, promediadas en un cuadro alrededor del sitio (1°~×~1° en el
+artículo), se forma
+\begin{equation}
+F = T_9 - (T_{16} - T_{13}) .
+\end{equation}
+Durante la noche, $F$ cambia lentamente con el enfriamiento de la atmósfera. Lo que indica turbulencia son las
+\textbf{desviaciones} de ese cambio lento: con todas las horas válidas de la noche se ajusta una recta $F_\text{tend}(t)$
+por mínimos cuadrados, y en cada hora se toma $|F - F_\text{tend}|$. TurbuLENS necesita al menos tres horas para la recta;
+con una o dos usa su promedio.
+
+\subsection{De \texorpdfstring{$F$}{F} al seeing}
+
+El método relaciona la desviación con la turbulencia integrada entre 4 y 8~km de altura:
+\begin{equation}
+\int_{4\,\text{km}}^{8\,\text{km}} C_n^2(h)\,dh = \Lambda(\theta)\,\frac{|F - F_\text{tend}|}{z},
+\qquad \Lambda(\theta) = \frac{10^{-12}}{\cos\theta},
+\end{equation}
+con $\theta$ el ángulo cenital del satélite visto desde el sitio y $z$ el espesor de la capa, 4~km. Seguimos la
+convención del artículo: $|F - F_\text{tend}|$ en kelvin y $z$ en kilómetros, con la constante $10^{-12}$ que ellos
+ajustaron. Con la integral en la ecuación~\eqref{eq:r0} y el seeing de la ecuación~\eqref{eq:seeing}:
+\begin{gather}
+r_0 = \left[0{,}423\,\frac{4\pi^2}{\lambda^2}\int C_n^2\,dh\right]^{-3/5},\\
+\text{FWHM}_\text{sat} = 0{,}98\,\frac{\lambda}{r_0}
+= 0{,}58\,\lambda^{-1/5}\left[4\pi^2\,\Lambda(\theta)\,\frac{|F - F_\text{tend}|}{z}\right]^{3/5}
+\quad\text{(radianes, con $\lambda$ en metros)} .
+\end{gather}
+El 0,58 sale de $0{,}98 \times 0{,}423^{3/5}$. TurbuLENS lo pasa a segundos de arco y calcula también $r_0$. Como el seeing
+va como $z^{-3/5}$, cambiar el espesor de la capa cambia todos los valores en la misma proporción: la forma de la serie
+no cambia.
+
+\subsection{El ángulo del satélite}
+
+El factor $\Lambda(\theta)$ tiene en cuenta que el satélite ve la columna de aire de lado si el sitio está lejos del punto
+bajo él. Para un satélite geoestacionario a una distancia $r = 42\,164$~km del centro de la Tierra, sobre la longitud
+$\lambda_s$, visto desde un sitio de latitud $\varphi$ y longitud $\lambda$ (con $R = 6371$~km):
+\begin{equation}
+\cos\gamma = \cos\varphi\,\cos(\lambda - \lambda_s),\qquad
+d = \sqrt{R^2 + r^2 - 2Rr\cos\gamma},\qquad
+\cos\theta = \frac{r\cos\gamma - R}{d}.
+\end{equation}
+Desde el OAN ($4{,}64°$~N, $74{,}08°$~O) y con GOES-Este en $75{,}2°$~O, $\theta = 5{,}62°$ y $\Lambda = 1{,}005\times10^{-12}$:
+Bogotá está casi debajo del satélite.
+
+\subsection{El Sol}
+
+De día el Sol calienta el suelo y las capas bajas, y las temperaturas de brillo cambian por razones que no son la
+turbulencia nocturna; el método se pensó para la noche. TurbuLENS calcula la altura del Sol en cada instante con las
+fórmulas aproximadas del \emph{Almanaque Astronómico} (precisión de medio grado, de sobra para esto) y clasifica cada hora:
+\begin{center}\small
+\begin{tabular}{@{}l l@{}}
+\toprule
+Altura del Sol & Estado\\
+\midrule
+más de 0° & día\\
+entre 0° y $-18°$ & crepúsculo\\
+menos de $-18°$ & noche (astronómica)\\
+\bottomrule
+\end{tabular}
+\end{center}
+Según el criterio elegido, las horas de día (o también las de crepúsculo) quedan fuera de la tendencia y del seeing.
+
+\begin{nota}[Lo que este método puede y no puede decir.]
+Mide la capa de 4 a 8~km, no la turbulencia cerca del suelo, que en un sitio urbano o en un techo suele ser la mayor
+parte. Las nubes lo invalidan (por eso el canal 13 se muestra al lado). Sus constantes se ajustaron en sitios de
+montaña, así que en otro lugar el valor absoluto es incierto. Lo que sí da, con buena confianza, es la \textbf{evolución}
+de la noche: qué horas fueron más turbulentas en las capas medias. Comparar esa serie con mediciones del DIMM en las
+mismas horas es un buen ejercicio de investigación.
+\end{nota}

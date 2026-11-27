@@ -1,730 +1,92 @@
-% Manual de TurbuLENS 1.4.1 — compilar con XeLaTeX (o LuaLaTeX), dos pasadas.
-% Overleaf: Menú → Compilador → XeLaTeX. Las imágenes van en la carpeta img/.
-\documentclass[12pt,a4paper]{article}
-
-\usepackage{fontspec}
-\usepackage{polyglossia}
-\setdefaultlanguage{spanish}
-\IfFontExistsTF{Inter}{\setmainfont{Inter}[Scale=0.92]}{\IfFontExistsTF{Roboto}{\setmainfont{Roboto}}{}}
-\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=0.85]}{}
-\usepackage{amsmath,amssymb}
-\usepackage[margin=2.3cm,headheight=15pt]{geometry}
-\usepackage{graphicx,xcolor,booktabs,tabularx,array,float,enumitem,multicol,caption,fancyhdr,titlesec}
-\usepackage[most]{tcolorbox}
-\usepackage{ragged2e}
-\usepackage[hidelinks]{hyperref}
-
-\definecolor{acento}{HTML}{3E7C72}
-\definecolor{acento2}{HTML}{B4652A}
-\definecolor{naranja}{HTML}{F28C28}
-\definecolor{suave}{HTML}{E3EEEC}
-\definecolor{gris}{HTML}{55615B}
-\definecolor{aviso}{HTML}{9A6B12}
-\hypersetup{colorlinks=true,linkcolor=acento,urlcolor=acento,citecolor=acento}
-
-\setlength{\parindent}{0pt}
-\setlength{\parskip}{0.6em}
-\RaggedRight
-\setlist{itemsep=0.15em,topsep=0.3em}
-\newcolumntype{Y}{>{\RaggedRight\arraybackslash}X}
-\captionsetup{font=small,labelfont={bf,color=acento}}
-\titleformat{\section}{\Large\bfseries\color{acento}}{\thesection}{0.6em}{}
-\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
-\titleformat{\subsubsection}{\normalsize\bfseries\color{gris}}{\thesubsubsection}{0.6em}{}
-\pagestyle{fancy}\fancyhf{}
-\fancyhead[L]{\small\color{gris}Manual de TurbuLENS 1.4.1}
-\fancyhead[R]{\small\color{gris}\leftmark}
-\fancyfoot[C]{\small\thepage}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\sectionmark}[1]{\markboth{#1}{}}
-
-\newcommand{\codigo}[1]{\texttt{#1}}
-\newcommand{\boton}[1]{\textbf{#1}}
-\newtcolorbox{nota}[1]{colback=suave,colframe=acento,boxrule=0.6pt,arc=2mm,left=3mm,right=3mm,top=2mm,bottom=2mm,
-  fonttitle=\bfseries,coltitle=acento,colbacktitle=suave,title={#1},attach title to upper={\ \ }}
-\newtcolorbox{cuidado}[1]{colback=orange!6,colframe=acento2,boxrule=0.6pt,arc=2mm,left=3mm,right=3mm,top=2mm,bottom=2mm,
-  fonttitle=\bfseries,coltitle=acento2,title={#1},attach title to upper={\ \ }}
-\newcommand{\captura}[2]{\begin{figure}[H]\centering\includegraphics[width=\textwidth]{img/#1}\caption{#2}\end{figure}}
+% =====================================================================================================
+%  Manual de TurbuLENS 1.5.0
+%
+%  Compilar con XeLaTeX (o LuaLaTeX), dos pasadas:   xelatex TurbuLENS_manual.tex   (dos veces)
+%  En Overleaf: Menú → Compilador → XeLaTeX. Sube la carpeta completa: este archivo, estilo.tex y las carpetas
+%  capitulos/, img/ y codigo/.
+%
+%  Las capturas salen de scripts/capturas_manual.py y los fragmentos de código de scripts/manual_codigo.py:
+%  después de cambiar la aplicación, vuelve a correr esos dos scripts y compila otra vez.
+% =====================================================================================================
+\documentclass[11pt,a4paper,oneside]{report}
+\input{estilo.tex}
 
 \begin{document}
 
-% ===================================================================================== portada
+% ================================================================================================ portada
 \begin{titlepage}
-\centering
-\vspace*{2.2cm}
-\includegraphics[width=3.2cm]{img/logo.png}\par\vspace{1cm}
-{\fontsize{40}{44}\selectfont\color{acento} TurbuLENS}\par\vspace{0.4cm}
-{\Large Manual de usuario y fundamentos}\par\vspace{0.3cm}
-{\large\color{gris} Versión de la aplicación 1.4.1}\par\vspace{1.4cm}
-\begin{minipage}{0.82\textwidth}\centering\color{gris}
-Medición del \emph{seeing} con un DIMM · enseñanza de la estadística con una estrella ·
-calibración de imágenes con darks y flats · nubes sobre el sitio con el satélite GOES
-\end{minipage}\par\vfill
-{\large Diego Fernando Cagua Lozada\\ Fredy Esteban Cruz Ospina\\ Saray Juliana Pinto Sanabria}\par\vspace{0.4cm}
-{\small\color{gris} Estudiantes del pregrado de Física · Departamento de Física\\
-Universidad Nacional de Colombia, Bogotá D.C.\\[0.4em]
-Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía\\
-Observatorio Astronómico Nacional\\[0.4em]
-Interfaz y funcionalidades desarrolladas con ayuda de Claude (Anthropic)}\par\vspace{1cm}
-{\small Noviembre de 2026 · \url{https://github.com/DiegoCagua/TurbuLENS}}
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[acento] (current page.north west) rectangle ([yshift=-12.2cm]current page.north east);
+  \fill[acentoosc] ([yshift=-12.2cm]current page.north west) rectangle ([yshift=-12.9cm]current page.north east);
+  % los dos «spots» del DIMM, como en el logo
+  \begin{scope}[shift={([xshift=-4.3cm,yshift=-5.6cm]current page.north east)}]
+    \draw[white!35!acento,line width=2.2pt] (0,0) circle (2.6cm);
+    \fill[white] (-0.75,0.55) circle (0.42cm);
+    \fill[naranja] (0.8,-0.6) circle (0.42cm);
+    \draw[white,line width=0.8pt,dashed] (-0.75,0.55) -- (0.8,-0.6);
+    \fill[white!20!acento] (-0.75,0.55) circle (0.13cm);
+    \fill[white] (0.8,-0.6) circle (0.13cm);
+  \end{scope}
+  \node[anchor=north west,text=white,font=\fontsize{50}{54}\selectfont\bfseries]
+    at ([xshift=2.4cm,yshift=-3.3cm]current page.north west) {TurbuLENS};
+  \node[anchor=north west,text=white,font=\LARGE,text width=11cm,align=left]
+    at ([xshift=2.45cm,yshift=-5.6cm]current page.north west) {Manual de usuario y fundamentos};
+  \node[anchor=north west,text=white!85!acento,font=\large]
+    at ([xshift=2.45cm,yshift=-7.0cm]current page.north west) {Versión 1.5.0 · noviembre de 2026};
+  \node[anchor=north west,text=white!92!acento,font=\normalsize,text width=10.5cm,align=left]
+    at ([xshift=2.45cm,yshift=-8.4cm]current page.north west)
+    {Mide el \emph{seeing} con un DIMM, enseña estadística con una estrella, calibra imágenes astronómicas y
+     estima la turbulencia desde el satélite GOES.};
+  % captura de la aplicación
+  \node[anchor=north,inner sep=0pt] (cap) at ([yshift=-11.0cm]current page.north)
+    {\tcbox[colback=white,colframe=white,boxrule=0pt,arc=2mm,left=3pt,right=3pt,top=3pt,bottom=3pt,boxsep=0pt,
+      enhanced,drop fuzzy shadow=black!40]{\includegraphics[width=15.6cm]{img/resultados.png}}};
+  \node[anchor=south west,text width=9cm,align=left,font=\normalsize]
+    at ([xshift=2.4cm,yshift=2.6cm]current page.south west)
+    {\textbf{Diego Fernando Cagua Lozada}\\\textbf{Fredy Esteban Cruz Ospina}\\\textbf{Saray Juliana Pinto Sanabria}\\[0.35em]
+     {\small\color{gris}Departamento de Física · Universidad Nacional de Colombia, Bogotá D.C.\\
+     Técnicas Observacionales · Maestría en Astronomía · Observatorio Astronómico Nacional}};
+  \node[anchor=south east,text width=6.4cm,align=right,font=\small,text=gris]
+    at ([xshift=-2.4cm,yshift=2.6cm]current page.south east)
+    {\href{https://github.com/DiegoCagua/TurbuLENS}{github.com/DiegoCagua/TurbuLENS}\\[0.3em]
+     Interfaz y funcionalidades desarrolladas con ayuda de Claude (Anthropic)};
+\end{tikzpicture}
 \end{titlepage}
 
-\tableofcontents
-\newpage
-
-% ===================================================================================== 1
-\section{Qué es TurbuLENS}
-
-TurbuLENS es una aplicación de escritorio para Windows, macOS y Linux. Separa en imágenes los videos de un
-\textbf{DIMM} (\emph{Differential Image Motion Monitor}, monitor de movimiento diferencial de imagen), mide en cada
-cuadro la imagen doble de una estrella y calcula el \textbf{seeing}: qué tanto borronea la atmósfera las estrellas
-en el sitio de observación. Además trae herramientas para enseñar estadística, calibrar imágenes astronómicas y
-revisar si había nubes con el satélite GOES.
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l Y@{}}
-\toprule
-Modo & Para qué sirve\\
-\midrule
-\textbf{Análisis científico} & Medir el seeing con un video del DIMM: recorte, tramo, parámetros del equipo,
-procesamiento, resultados, informe PDF, historial y exportación de datos.\\
-\textbf{Educativo} & Aprender estadística (histogramas, media, desviación estándar, la campana de Gauss, errores,
-datos atípicos y correlación) con datos reales de una estrella, más tres pantallas de astronomía sencilla.\\
-\textbf{Imágenes} & Calibrar imágenes con bias, darks y flats (archivos sueltos o carpetas completas, emparejados
-según sus cabeceras) y leer el valor de cada píxel en un visor al estilo de SAOImage DS9.\\
-\textbf{Satélite} & Descargar las imágenes del satélite GOES-Este para una fecha, hora y lugar, y ver canal por
-canal si había nubes.\\
-\bottomrule
-\end{tabularx}
-\caption{Los cuatro modos de TurbuLENS.}
-\end{table}
-
-\subsection{Descarga y apertura}
-
-TurbuLENS no se instala. En la página de versiones del repositorio
-(\url{https://github.com/DiegoCagua/TurbuLENS/releases/latest}) se descarga el archivo del sistema:
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l l Y@{}}
-\toprule
-Sistema & Archivo & Cómo se abre\\
-\midrule
-Windows 10/11 & \codigo{TurbuLENS-v1.4.1-Windows-x64.zip} & Descomprimir y doble clic en \codigo{TurbuLENS.exe}.\\
-Mac con Apple Silicon & \codigo{TurbuLENS-v1.4.1-macOS-AppleSilicon.zip} & Arrastrar \codigo{TurbuLENS.app} a Aplicaciones.\\
-Mac con Intel & \codigo{TurbuLENS-v1.4.1-macOS-Intel.zip} & Igual que en Apple Silicon.\\
-Linux & \codigo{TurbuLENS-v1.4.1-Linux-x64.tar.gz} & \codigo{chmod +x TurbuLENS} y doble clic.\\
-\bottomrule
-\end{tabularx}
-\caption{Archivos de la versión 1.4.1.}
-\end{table}
-
-\begin{nota}{Primera apertura.}
-TurbuLENS no tiene firma digital. En Windows puede aparecer «Windows protegió su PC»: se pulsa \emph{Más
-información} y luego \emph{Ejecutar de todas formas}. En Mac, la primera vez se abre con clic derecho →
-\emph{Abrir}. La primera apertura tarda unos segundos.
-\end{nota}
-
-\subsection{Idioma, tema y tamaño de la interfaz}
-
-\begin{itemize}
-\item \textbf{Idioma:} español, inglés o portugués. Se cambia en la pantalla de inicio o en \emph{Acerca de}; los
-datos y las mediciones se conservan.
-\item \textbf{Tema:} oscuro (naranja, para la noche de observación) o claro (verde azulado, para el aula y la
-impresión). Se cambia con el sol o la luna de la barra superior.
-\item \textbf{Tamaño de la interfaz} (nuevo en la 1.4.0): por defecto TurbuLENS se dibuja al \textbf{100\,\%}, aunque
-Windows o Linux tengan la pantalla al 125\,\% o 150\,\%. Así las páginas caben completas en portátiles de
-1366~×~768. En \emph{Acerca de} se puede elegir 125\,\%, 150\,\% o «Como el sistema»; el cambio se aplica al volver a
-abrir la aplicación. En macOS siempre se respeta la pantalla Retina.
-\end{itemize}
-
-\captura{inicio.png}{Pantalla de inicio con los cuatro modos.}
-
-% ===================================================================================== 2
-\section{Fundamentos}
-
-\subsection{La turbulencia atmosférica y el seeing}
-
-La luz de una estrella llega a la Tierra como un frente de onda plano. Al cruzar la atmósfera atraviesa celdas de
-aire de distinta temperatura, y por lo tanto de distinto índice de refracción, que se mueven con el viento. Cada
-celda inclina un poco el frente de onda: la imagen de la estrella \textbf{tiembla}, cambia de brillo (titila) y, en
-una exposición larga, se ensancha.
-
-El tamaño de esas celdas se describe con el \textbf{parámetro de Fried}, $r_0$: el diámetro de una zona del frente de
-onda en la que la turbulencia casi no lo deforma. Un cielo bueno tiene $r_0$ grande (10~cm o más en el visible). El
-\textbf{seeing} $\varepsilon$ es el ancho a media altura (FWHM) de la imagen de una estrella en exposición larga:
-\begin{equation}
-\varepsilon = 0{,}98\,\frac{\lambda}{r_0}\qquad\text{(en radianes; $\times 206\,265$ para segundos de arco)}.
-\label{eq:seeing}
-\end{equation}
-
-\begin{table}[H]
-\centering\small
-\begin{tabular}{@{}l l@{}}
-\toprule
-Seeing & Calidad del cielo\\
-\midrule
-$\lesssim 1''$ & Excelente (los mejores observatorios)\\
-$2''$ a $3''$ & Aceptable\\
-$> 3''$ & Muy turbulento\\
-\bottomrule
-\end{tabular}
-\caption{Escala de calidad que usa TurbuLENS. $1''$ es el tamaño de una moneda de 1~cm vista a 2~km.}
-\end{table}
-
-\subsection{El DIMM}
-
-Medir el seeing con el tamaño de la imagen de una estrella no funciona bien con telescopios pequeños: el foco, las
-vibraciones y el seguimiento también la ensanchan. El DIMM evita esos problemas. Sobre la apertura del telescopio se
-pone una \textbf{máscara con dos orificios} de diámetro $D$ separados una distancia $B$ entre centros. La luz entra
-por dos caminos y la cámara, ligeramente desenfocada, ve \textbf{dos imágenes} de la misma estrella.
-
-\begin{itemize}
-\item Si el telescopio tiembla o el seguimiento falla, las dos imágenes se mueven \textbf{juntas}: la distancia entre
-ellas no cambia.
-\item La turbulencia, en cambio, inclina distinto el frente de onda en cada orificio: las imágenes se acercan y se
-alejan \textbf{entre sí}.
-\end{itemize}
-
-Por eso el DIMM no mide dónde está la estrella sino la \textbf{distancia entre las dos imágenes}, cuadro a cuadro. La
-varianza de esa distancia depende solo de la turbulencia.
-
-\captura{edu_dimm.png}{La pantalla «Los dos huequitos» del modo educativo: con el temblor los puntos se mueven juntos;
-con la turbulencia cambia la distancia.}
-
-\subsection{Del movimiento diferencial al seeing: el modelo de Tokovinin}
-
-Sea $\vec d$ el vector que une los dos centroides en un cuadro. Su movimiento se separa en dos componentes: la
-\textbf{longitudinal} $\ell$, a lo largo de la línea que une los orificios, y la \textbf{transversal} $t$,
-perpendicular. Tokovinin (2002) dedujo, para el centroide de cada imagen,
-\begin{align}
-\sigma_\ell^2 &= K_\ell\,\lambda^2\,r_0^{-5/3}\,D^{-1/3}, & K_\ell &= 0{,}364\left(1 - 0{,}532\,b^{-1/3} - 0{,}024\,b^{-7/3}\right),\\
-\sigma_t^2 &= K_t\,\lambda^2\,r_0^{-5/3}\,D^{-1/3}, & K_t &= 0{,}364\left(1 - 0{,}798\,b^{-1/3} + 0{,}018\,b^{-7/3}\right),
-\end{align}
-con $b = B/D$ y las varianzas en radianes cuadrados. Despejando,
-\begin{equation}
-r_0 = \left(\frac{K\,\lambda^2\,D^{-1/3}}{\sigma^2}\right)^{3/5},
-\end{equation}
-y con la ecuación~\eqref{eq:seeing} sale un seeing longitudinal $\varepsilon_\ell$ y uno transversal $\varepsilon_t$.
-TurbuLENS reporta su promedio. Las varianzas medidas en píxeles se pasan a radianes con la escala de placa $s$:
-\begin{equation}
-\sigma^2\,[\text{rad}^2] = \sigma^2\,[\text{px}^2]\left(\frac{s}{206\,264{,}8}\right)^2 .
-\end{equation}
-
-\subsubsection{Corrección al cenit}
-
-Cerca del horizonte la luz cruza más aire. Si se conoce la altura $h$ de la estrella, con $z = 90^\circ - h$,
-\begin{equation}
-\varepsilon_{\text{cenit}} = \varepsilon\,(\cos z)^{3/5},
-\end{equation}
-que permite comparar noches y estrellas distintas. La altura se obtiene, por ejemplo, en Stellarium con la fecha, la
-hora y el lugar de la grabación.
-
-\subsection{La escala de placa}\label{sec:escala}
-
-La escala de placa dice cuántos segundos de arco del cielo caben en un píxel:
-\begin{equation}
-s\,[''/\text{px}] = \frac{206{,}265 \times p\,[\text{µm}]}{f\,[\text{mm}]},
-\end{equation}
-donde $p$ es el tamaño del píxel y $f$ la focal del telescopio. Es el dato que más pesa en el resultado: como
-$\sigma^2 \propto s^2$ y $\varepsilon \propto r_0^{-1} \propto (\sigma^2)^{3/5}$,
-\begin{equation}
-\varepsilon \propto s^{6/5}.
-\end{equation}
-Un error de un factor 3 en la escala da un seeing casi 4 veces menor o mayor.
-
-\begin{cuidado}{El píxel efectivo del video.}
-Las cámaras de fotos (Nikon, Canon) y los celulares \textbf{reducen} la imagen completa del sensor para grabar
-video. Una Nikon D5600 tiene 6000 píxeles de ancho, pero su video de 1920 px usa todo el ancho del sensor: cada
-píxel del video abarca unos 3 píxeles del sensor. En video vale el \textbf{píxel efectivo}:
-\[
-p_{\text{efectivo}} = \frac{\text{ancho del sensor}}{\text{ancho del video}} = \frac{23{,}5\ \text{mm}}{1920\ \text{px}} = 12{,}24\ \text{µm}
-\quad(\text{no } 3{,}9\ \text{µm}).
-\]
-Con el Celestron NexStar 8SE ($f = 2032$~mm) la escala correcta es $1{,}242''/\text{px}$. Con el píxel del sensor
-saldría $0{,}398''/\text{px}$ y el seeing, unas 3,9 veces menor (por ejemplo $\approx 1''$ en vez de
-$\approx 3{,}8''$). Las cámaras astronómicas (QHY, ZWO) graban con los píxeles reales del sensor.
-\end{cuidado}
-
-Lo más exacto es medir la escala con una estrella doble de separación conocida, grabada con el mismo equipo.
-
-\subsection{Cómo se miden los centroides}\label{sec:centroides}
-
-Cada cuadro del tramo elegido se procesa así (en bloques vectorizados, sin recorrer los píxeles uno a uno):
-\begin{enumerate}
-\item \textbf{Fondo y ruido:} el fondo es la mediana del recorte y el ruido, $1{,}4826\times$ la desviación absoluta
-mediana (MAD). Si hay maestros de calibración, el cuadro se corrige antes como (cuadro $-$ dark) $\div$ flat.
-\item \textbf{Píxeles con luz:} se suaviza la imagen con una caja de $3\times3$ y se toman los píxeles que superan
-$\max(0{,}15\times\text{pico},\ 4\times\text{ruido}/3)$.
-\item \textbf{Dos grupos:} esos píxeles se separan en dos grupos con k-medias ponderado por la intensidad
-(8 iteraciones), empezando en el píxel más brillante y en el píxel con luz más alejado de él. Así se separan bien
-spots pequeños, grandes, en anillo (desenfocados) o partidos.
-\item \textbf{Centroides:} el centro de cada spot es el centroide ponderado por intensidad de su grupo, recortado a
-$3r + 3$ píxeles (con $r$ el radio de giro). Su precisión es de centésimas de píxel.
-\item \textbf{Validación:} el cuadro cuenta si los dos spots tienen suficiente señal sobre el ruido, el segundo tiene
-al menos el 12\,\% de la luz del primero, están separados más de $2{,}2$ veces su radio, hay una caída de luz entre
-ellos (menos del 60\,\% del pico menor en el punto medio) y ninguno toca el borde del recorte.
-\item \textbf{Atípicos:} se descartan los cuadros cuya separación está a más de 5 desviaciones robustas de la mediana.
-\end{enumerate}
-
-\textbf{Seguimiento:} antes de medir, TurbuLENS ubica la estrella aunque la región haya quedado lejos (la búsqueda se
-amplía hasta el cuadro completo) y, con \emph{Tamaño automático}, ajusta la región a la separación y al tamaño de los
-spots. Con \emph{Seguir a la estrella} la región se recentra en cada cuadro; si la estrella se pierde 5 cuadros
-seguidos, se vuelve a buscar en todo el cuadro.
-
-\subsection{Controles de calidad: las correlaciones}\label{sec:correlacion}
-
-El coeficiente de correlación de Pearson
-\begin{equation}
-r = \frac{\sum_i (x_i - \bar x)(y_i - \bar y)}{\sqrt{\sum_i (x_i - \bar x)^2\,\sum_i (y_i - \bar y)^2}}
-\end{equation}
-va de $-1$ a $1$. TurbuLENS calcula tres controles, que aparecen en Resultados y en el informe PDF:
-\begin{itemize}
-\item \textbf{$r$ longitudinal–transversal:} la turbulencia mueve las dos componentes de forma independiente, así que
-debe estar cerca de 0 ($|r| < 0{,}2$). Un $|r|$ grande delata vibración o viento en una sola dirección, cambios de
-foco, una línea de base mal estimada o spots confundidos.
-\item \textbf{$r$ entre los dos spots} (longitudinal y transversal, tras quitar la deriva lenta con una media móvil de
-1~s): cerca de 1 domina el movimiento común (vibración, seguimiento), que el DIMM cancela; entre 0 y 1 es lo normal;
-cerca de 0, cada orificio ve turbulencia independiente; negativo indica cambios de foco o de escala, o errores de
-detección.
-\item \textbf{$\sigma_t/\sigma_\ell$} medido frente al teórico $\sqrt{K_t/K_\ell}$: si se parecen, la turbulencia se
-comporta como predice el modelo.
-\end{itemize}
-
-\subsection{Calibración de imágenes: bias, darks y flats}\label{sec:calibracion}
-
-Una imagen cruda de una cámara astronómica o de una DSLR mezcla la luz del cielo con defectos del instrumento:
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l Y Y@{}}
-\toprule
-Imagen & Cómo se toma & Qué corrige\\
-\midrule
-\textbf{Bias} & La exposición más corta posible, con la tapa puesta. & El nivel de lectura de la cámara (offset).\\
-\textbf{Dark} & Con la tapa puesta, con la \textbf{misma exposición, ganancia (o ISO) y temperatura} que las luces. &
-El bias más la corriente oscura y los píxeles calientes. Se resta.\\
-\textbf{Flat} & De una superficie iluminada de forma pareja (cielo del atardecer, pantalla blanca), con el
-\textbf{mismo foco y filtro}. & El viñeteo y las sombras del polvo. Se divide.\\
-\textbf{Dark de flat} & Darks con la exposición de los flats. & Lo que se resta a cada flat antes de combinarlos.\\
-\bottomrule
-\end{tabularx}
-\caption{Imágenes de calibración.}
-\end{table}
-
-\textbf{Por qué hay que emparejarlas.} La corriente oscura crece con el tiempo de exposición (aproximadamente
-$\text{dark}(t) \approx \text{bias} + I_d\,t$) y con la temperatura del sensor (se duplica cada 5–7~°C en muchos
-sensores), y su escala cambia con la ganancia. Un dark de 30~s no sirve para una luz de 120~s. El flat, en cambio,
-depende del filtro, del foco y de la posición de la cámara. Por eso TurbuLENS empareja cada luz con los darks de su
-misma exposición, ganancia, temperatura, binning y tamaño, y con los flats de su mismo filtro.
-
-\textbf{Maestros.} Cada grupo se combina en una imagen maestra: la \textbf{mediana} (predeterminada) es robusta a los
-rayos cósmicos; la \textbf{media con recorte de 3\,σ} descarta en cada píxel los valores a más de 3 desviaciones
-robustas; la \textbf{media} reduce más el ruido si no hay valores raros. Cada flat se nivela a mediana 1 antes de
-combinarse, y el flat maestro se normaliza a mediana 1 (los píxeles muertos quedan en 1).
-
-\textbf{Corrección:}
-\begin{equation}
-\text{calibrada} = \frac{\text{luz} - \text{dark}}{\text{flat normalizado}} .
-\end{equation}
-
-\textbf{Dark escalado.} Si no hay darks de la exposición de una luz pero sí bias, TurbuLENS escala un dark de otra
-exposición (prefiere uno más largo, para no amplificar su ruido):
-\begin{equation}
-\text{dark}(t_{\text{luz}}) = \left(\text{dark}(t_{\text{dark}}) - \text{bias}\right)\frac{t_{\text{luz}}}{t_{\text{dark}}} + \text{bias}.
-\end{equation}
-Si no hay bias, se usa el dark sin escalar o solo el bias, y el plan lo advierte.
-
-\subsection{El satélite GOES}\label{sec:goes}
-
-Los satélites geoestacionarios GOES de la NOAA miran América desde 35\,786~km de altura. Su instrumento ABI toma una
-imagen de \textbf{disco completo} cada 10 minutos en 16 canales. TurbuLENS usa el producto
-\codigo{ABI-L2-CMIPF} (imágenes ya calibradas): en los canales 1 a 6 el valor es la reflectancia (útil solo de
-día); en los canales 7 a 16, la temperatura de brillo en kelvin, de día y de noche. Para nubes de noche el más usado
-es el \textbf{canal 13} (10,3~µm): entre más fría, más alta la nube.
-
-\begin{table}[H]
-\centering\small
-\begin{tabular}{@{}l l@{}}
-\toprule
-Temperatura en el canal 13 & Lectura\\
-\midrule
-$< -40$~°C & Topes de nubes altas y frías\\
-$-40$ a $-10$~°C & Nubes medias o altas\\
-$-10$ a $5$~°C & Posibles nubes bajas o neblina\\
-$> 5$~°C & Probablemente despejado (se ve la superficie)\\
-\bottomrule
-\end{tabular}
-\caption{Lectura sencilla de los canales infrarrojos limpios (13, 14 y 15).}
-\end{table}
-
-\textbf{Qué satélite.} GOES-16 fue el GOES-Este hasta el 4 de abril de 2025 a las 15:10~UTC; desde entonces lo es
-GOES-19. TurbuLENS elige solo según la fecha y, si el archivo no está en un repositorio, lo busca en el otro.
-
-\textbf{Del lugar al píxel.} La latitud y la longitud se convierten en los ángulos de barrido del instrumento con
-la proyección geoestacionaria de la guía de usuario de GOES-R (elipsoide GRS80, satélite en $-75^\circ$ de longitud
-para GOES-Este), y de ahí en la fila y la columna de la imagen. El píxel es de unos 2~km en los canales infrarrojos.
-
-% ===================================================================================== 3
-\section{Equipos del OAN}\label{sec:oan}
-
-El botón \boton{Dispositivos del OAN…} de Parámetros (sección~\ref{sec:parametros}) llena $D$, $B$ y la escala de
-placa con estos equipos:
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l r r Y@{}}
-\toprule
-Telescopio & Apertura & Focal & Notas\\
-\midrule
-Celestron NexStar 8SE & 203~mm & 2032~mm (f/10) & Schmidt-Cassegrain; el de las mediciones del grupo.\\
-Meade 10″ (LX200) & 254~mm & 2500~mm (f/10) & Comprobar la focal en la etiqueta: con reductor f/6,3 es de
-unos 1600~mm.\\
-\bottomrule
-\end{tabularx}
-\caption{Telescopios.}
-\end{table}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l l r Y@{}}
-\toprule
-Cámara & Sensor & Píxel & En video\\
-\midrule
-Nikon D5600 & APS-C 23,5~×~15,6~mm, 6000~×~4000 & 3,92~µm & Reduce el sensor a 1920~px: píxel efectivo 12,24~µm.\\
-Canon T5i (700D) & APS-C 22,3~×~14,9~mm, 5184~×~3456 & 4,30~µm & Reduce el sensor a 1920~px: píxel efectivo 11,61~µm.\\
-QHY174M-GPS & IMX174 11,25~×~7,03~mm, 1920~×~1200 & 5,86~µm & Graba con los píxeles reales.\\
-\bottomrule
-\end{tabularx}
-\caption{Cámaras.}
-\end{table}
-
-\begin{table}[H]
-\centering\small
-\begin{tabular}{@{}l c c c@{}}
-\toprule
- & Nikon D5600 (video 1920) & Canon T5i (video 1920) & QHY174M-GPS\\
-\midrule
-Celestron NexStar 8SE & 1,242 & 1,179 & 0,595\\
-Meade 10″ (2500~mm) & 1,010 & 0,958 & 0,483\\
-\bottomrule
-\end{tabular}
-\caption{Escalas de placa resultantes, en $''/\text{px}$.}
-\end{table}
-
-\textbf{Máscaras:} la del grupo para el 8SE tiene orificios de $D = 4{,}2$~cm separados $B = 14{,}4$~cm; la del
-protocolo de ANDEAN ROAD para 8 pulgadas, $D = 2{,}5$~cm y $B = 14$~cm. Para otra máscara se elige
-\emph{Conservar D y B} y se escriben a mano.
-
-\captura{oan.png}{Ventana «Dispositivos del OAN».}
-
-% ===================================================================================== 4
-\section{Uso: modo análisis}
-
-El menú de la izquierda muestra los pasos numerados. Se puede ir y volver entre ellos sin perder nada.
-
-\subsection{1. Video}
-
-Se arrastra el video a la ventana o se busca con el selector de archivos del sistema. TurbuLENS abre cientos de
-formatos (MOV, MP4, AVI, MKV, WMV, MTS, WebM, SER, FITS…) con FFmpeg incluido, también los de 16 bits de cámaras
-astronómicas. El video no se copia: se lee desde su carpeta. A la derecha aparece su información.
-
-\captura{video.png}{Video cargado.}
-
-\subsection{2. Recorte y tramo}
-
-\textbf{Región.} Se dibuja como en Paint alrededor de la estrella (arrastrar, mover, cambiar el tamaño con las
-manijas, rueda para el zoom) o con \boton{◎ Ajustar a la estrella}. A la derecha se ve el interior de la región y un
-estado: «Contiene los dos puntos ✓», muy ajustada o muy grande. Las flechas del teclado mueven la región un píxel y
-Mayús~+~flechas cambian su tamaño.
-
-\begin{itemize}
-\item \textbf{Seguir a la estrella:} recentra la región en cada cuadro (necesario si el telescopio no tiene motor de
-seguimiento). Al reproducir, la región sigue a la estrella en vivo.
-\item \textbf{Tamaño automático:} ajusta el tamaño de la región a los spots al procesar. Si la región quedó muy
-pequeña, se agranda sola.
-\end{itemize}
-
-\textbf{Tramo.} En la línea de tiempo se marcan la entrada y la salida con \boton{[ Entrada} y \boton{Salida ]}, o se
-arrastran sus marcas. Los botones \codigo{<<} y \codigo{>>} reproducen a velocidad constante (0,25× a 32× respecto al
-video real), \codigo{<} y \codigo{>} avanzan un cuadro, y \emph{Ir a} salta a un cuadro o a un tiempo
-\codigo{mm:ss.s}. Se recomiendan al menos 15 segundos.
-
-\captura{region.png}{Recorte y tramo.}
-
-\subsection{3. Parámetros}\label{sec:parametros}
-
-\begin{itemize}
-\item \boton{Dispositivos del OAN…} llena todo con los equipos del observatorio (sección~\ref{sec:oan}).
-\item \textbf{D}, \textbf{B} y \textbf{λ} con unidades a elegir (µm, mm, cm o m; la unidad se recuerda). Los números
-aceptan punto o coma decimal.
-\item \textbf{Escala de placa.} \boton{Calcular…} abre la calculadora: cámara (lista de cámaras frecuentes), casilla
-\emph{Grabé en video} (usa el píxel efectivo, con el ancho tomado del video cargado), focal y \boton{Usar}.
-\item \textbf{Altura de la estrella} (opcional): para el seeing en el cenit.
-\item \textbf{Perfil:} \boton{Guardar…} crea un perfil con los valores actuales; el botón \boton{⋯} los actualiza,
-renombra o elimina. Los perfiles son los mismos en los modos análisis y educativo.
-\item \textbf{Imágenes a guardar:} PNG (recomendado), TIFF de 16 bits, JPG, cubo NumPy o cubo FITS; 1 de cada $n$
-cuadros; carpeta de salida y estimación del espacio en disco.
-\item \textbf{Calibración con dark y flat:} al activarla aparecen los campos del dark, flat y bias maestros (se crean
-en el modo Imágenes).
-\end{itemize}
-
-Si ya hay resultados, los cambios de $D$, $B$, λ, escala y altura se aplican al instante: no hace falta procesar de
-nuevo.
-
-\captura{parametros.png}{Parámetros después de usar «Dispositivos del OAN».}
-
-\subsection{4. Procesar}
-
-Un resumen dice qué se va a hacer. \boton{▶ Iniciar} empieza; la barra muestra cuadros por segundo y el tiempo que
-falta, y \boton{Cancelar} detiene sin perder lo medido. \textbf{Sin escala de placa no se puede procesar}: un aviso
-lo explica y lleva a Parámetros.
-
-\captura{procesar_sin_escala.png}{Aviso cuando falta la escala de placa.}
-
-\subsection{5. Resultados}
-
-Arriba van los indicadores: seeing estimado (con su calidad en palabras y color), longitudinal y transversal, $r_0$,
-separación media, desviación estándar, cuadros usados y seeing en el cenit. Cada uno tiene su botón \boton{!}. Debajo:
-\begin{itemize}
-\item la \textbf{animación de los centroides}, que muestra cuadro a cuadro dónde ubicó TurbuLENS cada punto;
-\item el \textbf{histograma} de la separación con la curva normal y la media;
-\item la \textbf{σ en el tiempo} (una subida aislada suele ser un golpe o una ráfaga de viento);
-\item el \textbf{diagrama del movimiento diferencial} con las correlaciones $r$ (sección~\ref{sec:correlacion}).
-\end{itemize}
-Con \boton{Guardar en historial} (con una etiqueta opcional) el análisis pasa al historial.
-
-\captura{resultados.png}{Resultados.}
-
-\textbf{Exportar.} Solo se elige la carpeta; el nombre de los archivos es automático y nunca se sobrescribe nada:
-\begin{itemize}
-\item datos en CSV, Excel, JSON, NumPy y tabla FITS;
-\item gráficas en PDF, PNG y SVG;
-\item \textbf{informe PDF} con el resumen, las gráficas y la sección «Cómo leer la correlación $r$» con los valores
-del análisis y un diagnóstico.
-\end{itemize}
-
-\subsection{6. Historial}
-
-Una base de datos local guarda cada análisis para comparar noches y épocas del año, con etiquetas y notas. Es el
-mismo en los modos análisis y educativo (una columna dice en cuál se hizo). Se exporta igual que los resultados.
-
-\captura{historial.png}{Historial.}
-
-% ===================================================================================== 5
-\section{Uso: modo educativo}
-
-El modo educativo usa la estrella como pretexto para aprender estadística: cada cuadro del video es un dato.
-\begin{itemize}
-\item \textbf{La estrella} (va primero): «¿Por qué titilan?» (con la animación de la moneda en la piscina y la luz
-que cruza el aire), «Los dos huequitos» (la máscara y el telescopio que tiembla) y un simulador.
-\item \textbf{Estadística}: nueve lecciones (datos y mediciones, histograma, media y mediana, desviación estándar,
-campana de Gauss, muestras y error, datos atípicos, correlación y laboratorio libre) y una prueba final de 11
-preguntas.
-\item \textbf{Tu video}: el mismo flujo del modo análisis, con explicaciones adicionales.
-\end{itemize}
-Cada lección tiene una explicación corta, la fórmula, «Pruébalo», una gráfica que responde a los controles, una tabla
-de los datos mostrados (se guarda en CSV o Excel) y una pregunta que se responde una sola vez por sesión, con las
-opciones en orden al azar. Los datos pueden ser los de ejemplo (Altair) o los del video que procese la clase.
-
-\captura{edu_titilan.png}{«¿Por qué titilan las estrellas?» con su animación.}
-\captura{edu_l3.png}{Lección de media y mediana: los datos raros caen a un lado elegido al azar.}
-
-% ===================================================================================== 6
-\section{Uso: modo Imágenes}
-
-\subsection{Visor de píxeles}
-
-Abre imágenes FITS (también cubos), PNG, TIFF de 16 bits, JPG y NumPy, y funciona como SAOImage DS9:
-\begin{itemize}
-\item \textbf{Rueda:} acerca o aleja alrededor del cursor. \textbf{Arrastrar:} mueve la imagen.
-\item Bajo la imagen se lee la \textbf{posición} y el \textbf{valor} del píxel bajo el cursor (columna y fila desde 1;
-la fila 1 es la de arriba).
-\item \textbf{Escala:} lineal, logarítmica, raíz cuadrada, asinh o histograma ecualizado. \textbf{Límites:} mínimo–máximo,
-percentiles o ZScale (el de DS9). \textbf{Colores:} grises, invertidos, calor, viridis o frío–cálido. Los datos no
-cambian: solo cómo se ven.
-\item \textbf{Región:} Mayús~+~arrastrar (o clic derecho y arrastrar) calcula píxeles, media, mediana, σ, σ robusta,
-mínimo, máximo y suma. \boton{Exportar CSV…} guarda x, y y el valor de cada píxel de la región.
-\item La \textbf{cabecera FITS} se ve a la derecha; la imagen se guarda en FITS de 32 bits o en PNG de 16 bits.
-\end{itemize}
-
-\captura{visor.png}{Visor de píxeles con una región.}
-
-\subsection{Calibración con darks y flats}
-
-Funciona con \textbf{imágenes sueltas} o con \textbf{carpetas completas} (se recorren también las subcarpetas):
-\begin{enumerate}
-\item \boton{Agregar carpeta…} o \boton{Agregar imágenes…}. TurbuLENS lee la \textbf{cabecera} de cada archivo sin
-cargar la imagen: tipo (\codigo{IMAGETYP}, \codigo{FRAME}…), exposición (\codigo{EXPTIME}, \codigo{EXPOSURE}), ganancia
-o ISO, temperatura (\codigo{CCD-TEMP}), filtro, binning, tamaño y cámara. En TIFF y JPG de cámaras de fotos lee los
-datos EXIF (exposición e ISO).
-\item Cada archivo se \textbf{clasifica} en luz, dark, flat, dark de flat o bias: por la cabecera; si no la tiene, por el
-nombre del archivo («dark\_30s\_001») o de la carpeta («Darks/», «Flats/»). La columna \emph{Según} dice de dónde salió;
-lo que no se pudo saber se toma como luz y se marca en amarillo. Si alguna quedó mal, se selecciona y se cambia con
-\emph{márcala como}.
-\item \textbf{Qué se va a hacer:} un plan agrupa las luces por exposición, filtro, ganancia y tamaño, y dice para cada
-grupo qué se resta (dark de la misma exposición, dark escalado con bias, solo bias o nada) y qué se divide (flat del
-mismo filtro), con avisos en amarillo.
-\item \boton{Crear maestros y calibrar}: cada maestro se crea una sola vez y se guarda en \codigo{maestros/}; cada luz
-calibrada, en \codigo{calibradas/}, con su cabecera original más \codigo{CALSTAT}, \codigo{NDARK}, \codigo{NFLAT} y, si se
-escaló el dark, \codigo{DARKSCAL}. Las series grandes se combinan por franjas con un archivo temporal, sin llenar la
-memoria. Se puede cancelar.
-\item \boton{Usar en el análisis de video} pasa los maestros del grupo principal a la calibración del modo análisis.
-\end{enumerate}
-
-\captura{calibracion_plan.png}{Una noche con luces de 30 y 60~s en dos filtros: el plan escala el dark de 120~s para
-las luces de 60~s y usa el flat de cada filtro.}
-
-\begin{nota}{Si solo hay calibraciones.}
-Sin luces, TurbuLENS crea solo los maestros (bias, darks por exposición y flats por filtro), listos para otra noche.
-\end{nota}
-
-% ===================================================================================== 7
-\section{Uso: modo Satélite}
-
-\begin{enumerate}
-\item \textbf{Fecha, hora y lugar:} la hora puede ser de Colombia (UTC$-5$) o UTC; las coordenadas por defecto son
-las del OAN (4,6386° N, 74,0846° O). \emph{Satélite}: automático según la fecha, GOES-16 o GOES-19.
-\item \textbf{Canales:} del 1 al 16 (al pasar el ratón se ve para qué sirve cada uno y cuánto pesa su archivo).
-\emph{Solo el 13} basta para saber si había nubes.
-\item \textbf{Carpeta de descarga} y \boton{Buscar, descargar y leer}: se descarga la imagen de disco completo más
-cercana a la hora pedida (≈25~MB por canal infrarrojo; el canal 2 pesa ≈330~MB). Si ya está en la carpeta, no se
-descarga otra vez. \emph{Leer archivos ya descargados} abre archivos \codigo{.nc} que ya se tengan.
-\end{enumerate}
-
-La tabla muestra para cada canal el valor en el punto, el promedio de $3\times3$ píxeles, una lectura sencilla y la
-hora real del escaneo. Debajo se ve un recorte alrededor del punto (en infrarrojo las nubes frías se ven blancas),
-que se puede abrir en el visor de píxeles. En la carpeta quedan un CSV con los valores y los recortes en FITS y PNG.
-
-\captura{satelite.png}{Modo satélite con una lectura del canal 13.}
-
-\begin{nota}{Datos.}
-NOAA GOES-R Series, producto ABI L2 Cloud and Moisture Imagery (CMIPF), del repositorio abierto NOAA Open Data
-Dissemination en Amazon Web Services. Hace falta conexión a internet para descargar.
-\end{nota}
-
-% ===================================================================================== 8
-\section{Archivos que produce TurbuLENS}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l Y@{}}
-\toprule
-Archivo & Contenido\\
-\midrule
-\codigo{cuadro\_000000.png} … & Cada cuadro del tramo, recortado a la región (o TIFF, JPG, un cubo \codigo{.npy} o \codigo{.fits}).\\
-\codigo{mediciones.csv} & Por cuadro: tiempo, posiciones de los dos spots, flujos, separación y si es válido.\\
-\codigo{resumen.json} & Parámetros, opciones del procesamiento, seeing y estadísticas.\\
-Exportación de resultados & CSV, Excel (resumen y mediciones), JSON, NumPy (\codigo{.npz}) y tabla FITS; gráficas en PDF, PNG y SVG; informe PDF.\\
-Historial & Base SQLite local en la carpeta de datos del usuario; se exporta a CSV o Excel con gráficas.\\
-\codigo{maestros/maestro\_*.fits} & Bias, darks y flats maestros (FITS de 32 bits, con \codigo{IMAGETYP}, \codigo{NCOMBINE}, \codigo{EXPTIME}, \codigo{FILTER}).\\
-\codigo{calibradas/*\_calibrada.fits} & Luces calibradas con su cabecera original más los datos de la calibración.\\
-\codigo{turbulens\_goes\_*\_valores.csv} & Valores de cada canal en el punto.\\
-\codigo{turbulens\_goes\_*\_C13\_recorte.fits} & Recorte de cada canal (también en PNG).\\
-\bottomrule
-\end{tabularx}
-\caption{Archivos de salida.}
-\end{table}
-
-Cada archivo de datos, gráfica e informe lleva una línea de crédito con la cita de TurbuLENS.
-
-% ===================================================================================== 9
-\section{Solución de problemas}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}Y Y@{}}
-\toprule
-Problema & Qué hacer\\
-\midrule
-El seeing sale imposiblemente bajo (≈1″) con una Nikon o Canon. & La escala se calculó con el píxel del sensor. Marca
-\emph{Grabé en video} en la calculadora o usa \boton{Dispositivos del OAN…} (sección~\ref{sec:escala}).\\
-No deja procesar. & Falta la escala de placa: escríbela en Parámetros.\\
-«No se ven los dos puntos» o pocos cuadros válidos. & Agranda la región o activa \emph{Tamaño automático}; revisa que
-el video tenga las dos imágenes separadas (desenfoca un poco menos si se tocan).\\
-La región se pierde con el tiempo. & Activa \emph{Seguir a la estrella}.\\
-Una subida aislada de σ en el tiempo. & Un golpe o una ráfaga: ajusta el tramo para dejarla fuera.\\
-$|r|$ longitudinal–transversal mayor que 0,2. & Hay un efecto que no es turbulencia (vibración en una dirección,
-foco): revisa el montaje y el tramo.\\
-La interfaz se ve muy grande o no cabe. & En \emph{Acerca de} elige el tamaño 100\,\% y vuelve a abrir TurbuLENS.\\
-El plan de calibración dice «sin darks» para un grupo. & No hay darks de su tamaño, binning o ganancia; o falta el
-bias para escalar uno de otra exposición.\\
-Una imagen quedó como «supuesto». & No tiene \codigo{IMAGETYP} ni palabras clave en el nombre: márcala a mano.\\
-«No coincide con el video» en la calibración del análisis. & Los maestros deben medir lo mismo que el video
-(ancho y alto).\\
-El modo satélite no encuentra imágenes. & Revisa la conexión a internet, la fecha (GOES-16 desde diciembre de 2017) y
-la hora.\\
-Windows muestra «Windows protegió su PC». & \emph{Más información} → \emph{Ejecutar de todas formas}.\\
-\bottomrule
-\end{tabularx}
-\caption{Problemas frecuentes.}
-\end{table}
-
-% ===================================================================================== 10
-\section{Historial de versiones}
-
-\begin{table}[H]
-\centering\small
-\begin{tabularx}{\textwidth}{@{}l Y@{}}
-\toprule
-Versión & Cambios principales\\
-\midrule
-1.0.0 & Primera versión: extracción de cuadros, medición vectorizada, seeing con Tokovinin, modo educativo, historial.
-Licencia MIT.\\
-1.1.x & Animación de los centroides; arreglos en Linux; Fredy Esteban Cruz Ospina como coautor; licencia PolyForm
-Noncommercial.\\
-1.2.0–1.2.2 & Tres idiomas; los mismos controles de reproducción en toda la app; archivos para descomprimir y abrir;
-historial y perfiles compartidos entre modos; exportar con nombres automáticos.\\
-1.3.0 & Detector de dos grupos (spots grandes y en anillo); seguimiento cuadro a cuadro y tamaño automático; sin escala
-no se procesa; calculadora con píxel efectivo de video; unidades; perfiles editables; informe con la explicación de
-$r$; modos Imágenes y Satélite; animaciones del modo educativo; Saray Juliana Pinto Sanabria como coautora y tester.\\
-\textbf{1.4.0} & Calibración guiada por las cabeceras para imágenes sueltas y carpetas completas (empareja darks por
-exposición, ganancia, temperatura y binning, y flats por filtro; escala darks con el bias); botón \emph{Dispositivos
-del OAN}; interfaz al 100\,\% por defecto; Parámetros y Recorte más limpios; este manual.\\
-1.4.1 & Créditos: la interfaz y las funcionalidades se desarrollaron con ayuda de Claude (Anthropic).\\
-\bottomrule
-\end{tabularx}
-\caption{Versiones de TurbuLENS.}
-\end{table}
-
-% ===================================================================================== 11
-\section{Créditos, licencia y cómo citar}
-
-\textbf{Autores:} Diego Fernando Cagua Lozada, Fredy Esteban Cruz Ospina y Saray Juliana Pinto Sanabria (coautora y
-pruebas), estudiantes del pregrado de Física, Departamento de Física, Universidad Nacional de Colombia, Bogotá D.C.
-Desarrollado para la asignatura Técnicas Observacionales de la Maestría en Astronomía del Observatorio Astronómico
-Nacional.
-
-\textbf{Desarrollo con inteligencia artificial:} La interfaz y las funcionalidades se desarrollaron con ayuda de Claude (Anthropic), un asistente de inteligencia artificial, bajo la dirección y revisión de los autores.
-
-\textbf{Licencia:} PolyForm Noncommercial 1.0.0. Se puede usar, estudiar, modificar y compartir con fines no comerciales
-(estudio, investigación, enseñanza), conservando la licencia y el crédito a los autores. No se permite el uso
-comercial sin permiso escrito. Los componentes de terceros (Qt/PySide6, FFmpeg/PyAV, NumPy, Pillow, openpyxl, pyfive)
-conservan sus licencias.
-
-\textbf{Cómo citar:}
-\begin{quote}\small
-Cagua Lozada, D. F., Cruz Ospina, F. E., \& Pinto Sanabria, S. J. (2026). \emph{TurbuLENS} (versión 1.4.1)
-[Software]. Observatorio Astronómico Nacional, Universidad Nacional de Colombia.
-\url{https://github.com/DiegoCagua/TurbuLENS}
-\end{quote}
-
-\captura{acerca.png}{Acerca de: créditos, cita, idioma y tamaño de la interfaz.}
-
-\section*{Referencias}
-\addcontentsline{toc}{section}{Referencias}
-\begin{enumerate}[label={[\arabic*]},leftmargin=*]
-\item A. Tokovinin, «From differential image motion to seeing», \emph{Publications of the Astronomical Society of the
-Pacific} \textbf{114}, 1156 (2002). \url{https://arxiv.org/abs/astro-ph/0111022}
-\item M. Sarazin y F. Roddier, «The ESO differential image motion monitor», \emph{Astronomy \& Astrophysics}
-\textbf{227}, 294 (1990).
-\item D. L. Fried, «Optical resolution through a randomly inhomogeneous medium for very long and very short
-exposures», \emph{Journal of the Optical Society of America} \textbf{56}, 1372 (1966).
-\item ANDEAN ROAD, Oficina Regional Andina de la Astronomía para el Desarrollo, \emph{Determina la nitidez del cielo
-nocturno en tu lugar de observación} (protocolo, 2026).
-\item NOAA/NASA, \emph{GOES-R Series Product Definition and Users' Guide}, vol. 3 (Level 1b) y vol. 5 (Level 2+).
-\item NOAA, \emph{GOES-19 operational transition to GOES-East}, aviso del 4 de abril de 2025.
-\end{enumerate}
+% ================================================================================================ preliminares
+\pagenumbering{roman}
+\input{capitulos/00_como_leer.tex}
+{\setlength{\parskip}{0.15em}\tableofcontents}
+\clearpage
+\pagenumbering{arabic}
+
+\parte{I}{Primeros pasos}{Qué hace TurbuLENS, cómo se abre, cómo está organizada la ventana y tu primera medición
+de principio a fin.}
+\input{capitulos/01_primeros_pasos.tex}
+
+\parte{II}{Usar TurbuLENS}{Los cuatro modos, pantalla por pantalla: medir el seeing con tu video, aprender
+estadística con una estrella, calibrar imágenes y revisar la noche desde el satélite.}
+\input{capitulos/02_medicion.tex}
+\input{capitulos/03_propio_equipo.tex}
+\input{capitulos/04_educativo.tex}
+\input{capitulos/05_imagenes.tex}
+\input{capitulos/06_satelite.tex}
+\input{capitulos/07_archivos_problemas.tex}
+
+\parte{III}{Fundamentos}{La física y la estadística detrás de cada número que muestra TurbuLENS: turbulencia y
+seeing, el DIMM, la escala de placa, la estadística robusta, la calibración de imágenes y el satélite.}
+\input{capitulos/08_atmosfera.tex}
+\input{capitulos/09_dimm.tex}
+\input{capitulos/10_estadistica.tex}
+\input{capitulos/11_imagenes_teoria.tex}
+\input{capitulos/12_satelite_teoria.tex}
+
+\parte{IV}{Por dentro}{Cómo está escrito TurbuLENS: la organización del código y los fragmentos que hacen las
+mediciones, con sus números de línea reales y la explicación de cada uno.}
+\input{capitulos/13_codigo.tex}
+
+\appendix
+\input{capitulos/14_apendices.tex}
 
 \end{document}

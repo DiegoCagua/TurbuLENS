@@ -1,0 +1,181 @@
+% ================================================================================================ capítulo 8
+\chapter{La atmósfera y el seeing}\label{cap:atmosfera}
+
+\begin{resumen}
+\textbf{En este capítulo:} por qué el aire deforma la luz de las estrellas, cómo se describe la turbulencia con el
+modelo de Kolmogorov, qué son el parámetro de Fried $r_0$ y el seeing $\varepsilon$, y cómo dependen de la longitud de
+onda y de la altura de la estrella.
+\end{resumen}
+
+\section{Un frente de onda que se arruga}
+
+Una estrella está tan lejos que su luz llega a la Tierra como un \textbf{frente de onda plano}: todos los puntos de una
+superficie perpendicular a la dirección de la estrella vibran en fase. Si no hubiera aire, un telescopio de diámetro
+$D_\text{tel}$ formaría una imagen limitada solo por la difracción, de un tamaño angular cercano a $\lambda/D_\text{tel}$:
+para un telescopio de 20~cm en el visible, unas 0,6″.
+
+Pero el frente de onda cruza unos 20~km de aire en movimiento. El índice de refracción del aire depende de su presión y su
+temperatura,
+\begin{equation}
+n - 1 \approx 77{,}6\times10^{-6}\,\frac{P}{T}\qquad(P\ \text{en hPa},\ T\ \text{en K}),
+\end{equation}
+así que una burbuja un grado más caliente que su entorno tiene un índice un poco menor y retrasa un poco menos la luz. El
+viento y la convección mezclan sin parar aire de distintas temperaturas: el frente de onda que llega al telescopio está
+\textbf{arrugado}, con zonas adelantadas y atrasadas que cambian en milisegundos.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[font=\sffamily\small,>=Stealth]
+  % frentes planos arriba
+  \foreach \y in {5.6,5.2,4.8} \draw[acento,line width=0.9pt] (0,\y) -- (9,\y);
+  \node[anchor=west,text=gris] at (9.2,5.2) {frente plano};
+  \foreach \x in {1.5,4.5,7.5} \draw[->,acento] (\x,6.3) -- (\x,5.75);
+  % capa turbulenta
+  \fill[naranja!12,rounded corners=8pt] (-0.2,2.7) rectangle (9.2,4.3);
+  \foreach \cx/\cy/\r in {1/3.5/0.45,2.4/3.2/0.35,3.6/3.7/0.5,5.1/3.3/0.4,6.4/3.6/0.45,7.9/3.25/0.38,8.6/3.8/0.3}
+    {\draw[naranja!70,fill=naranja!25] (\cx,\cy) circle (\r);}
+  \node[anchor=west,text=cobre] at (9.2,3.5) {aire turbulento};
+  % frentes arrugados abajo
+  \foreach \y in {2.1,1.7,1.3}
+    \draw[acento,line width=0.9pt] (0,\y) .. controls (1,\y+0.18) and (1.8,\y-0.2) .. (3,\y+0.05)
+      .. controls (4.2,\y+0.25) and (5,\y-0.22) .. (6,\y) .. controls (7,\y+0.2) and (8,\y-0.12) .. (9,\y+0.06);
+  \node[anchor=west,text=gris] at (9.2,1.7) {frente arrugado};
+  % telescopio
+  \draw[tinta,line width=1pt] (3.2,0.9) -- (5.8,0.9);
+  \draw[tinta] (3.2,0.9) -- (4.5,-0.3) -- (5.8,0.9);
+  \fill[naranja] (4.5,-0.3) circle (0.07);
+  \node[anchor=west,text=gris] at (5.9,0.2) {imagen que tiembla y se ensancha};
+\end{tikzpicture}
+\caption{La turbulencia arruga el frente de onda antes de que llegue al telescopio.}
+\end{figure}
+
+El efecto sobre la imagen depende del tamaño del telescopio comparado con el de las arrugas:
+\begin{itemize}
+\item En un telescopio \textbf{pequeño} el frente de onda llega casi plano pero \textbf{inclinado}, y la inclinación
+cambia de un instante a otro: la imagen \textbf{tiembla} sin deformarse mucho. Es lo que ve un DIMM a través de cada
+orificio.
+\item En uno \textbf{grande} caben muchas arrugas: la imagen instantánea se rompe en manchas (\emph{speckles}) y, en una
+exposición larga, se convierte en un disco borroso mucho más grande que el de difracción.
+\item El \textbf{titilar} a simple vista es otro efecto de lo mismo: cambios de brillo porque las arrugas enfocan y
+desenfocan la luz como lentes débiles.
+\end{itemize}
+
+\section{El modelo de Kolmogorov}
+
+En 1941, Andréi Kolmogorov propuso que en un fluido turbulento la energía entra en remolinos grandes (la \textbf{escala
+externa} $L_0$, de decenas de metros en la atmósfera), se reparte en remolinos cada vez más pequeños y se disipa como calor
+en los más pequeños (la \textbf{escala interna} $\ell_0$, de milímetros). Entre las dos, la estadística de las
+fluctuaciones solo depende de la separación $r$. Para el índice de refracción, la \textbf{función de estructura} es
+\begin{equation}
+D_n(r) = \left\langle \left[n(\vec x + \vec r) - n(\vec x)\right]^2\right\rangle = C_n^2\, r^{2/3},
+\qquad \ell_0 \ll r \ll L_0 ,
+\end{equation}
+donde $C_n^2$, la \textbf{constante de estructura del índice}, mide la intensidad de la turbulencia en cada punto. Se
+mide en m$^{-2/3}$ y varía con la altura $h$: es grande cerca del suelo (calor del terreno, edificios, la cúpula), cae
+rápido en los primeros cientos de metros y tiene otro máximo cerca de la tropopausa, donde están las corrientes en chorro.
+Lo que llega al telescopio es la suma de todas las capas.
+
+\section{El parámetro de Fried}
+
+David Fried (1966) resumió el efecto de toda la atmósfera en una longitud, el \textbf{parámetro de Fried}:
+\begin{equation}
+r_0 = \left[\,0{,}423\,k^2 \sec z \int_0^\infty C_n^2(h)\,dh\,\right]^{-3/5},\qquad k = \frac{2\pi}{\lambda},
+\label{eq:r0}
+\end{equation}
+con $z$ la distancia cenital de la estrella. $r_0$ es el diámetro de un telescopio cuya resolución, limitada por la
+difracción, sería igual a la que impone la atmósfera. Dicho de otra forma: el tamaño de una zona del frente de onda en la
+que la turbulencia casi no lo deforma. Un telescopio más grande que $r_0$ no resuelve más detalle (sin óptica adaptativa);
+solo recoge más luz.
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l c c@{}}
+\toprule
+Sitio & $r_0$ a 500~nm & Seeing\\
+\midrule
+Ciudad, cerca del suelo & 3–6~cm & 1,7″–3,4″\\
+Buen sitio de aficionado & 8–12~cm & 0,8″–1,3″\\
+Gran observatorio (Paranal, Mauna Kea) & 15–25~cm & 0,4″–0,7″\\
+\bottomrule
+\end{tabular}
+\caption{Órdenes de magnitud de $r_0$ y del seeing.}
+\end{table}
+
+\section{El seeing}
+
+El \textbf{seeing} $\varepsilon$ es el ancho a media altura (FWHM) de la imagen de una estrella en una exposición larga,
+tomada con un telescopio mucho más grande que $r_0$. Para turbulencia de Kolmogorov,
+\begin{equation}
+\varepsilon = 0{,}98\,\frac{\lambda}{r_0}\qquad\text{(en radianes; por }206\,265\text{ para pasar a segundos de arco)}.
+\label{eq:seeing}
+\end{equation}
+Con $r_0 = 10$~cm a 500~nm, $\varepsilon = 0{,}98 \times 500\times10^{-9} / 0{,}10 = 4{,}9\times10^{-6}$~rad $= 1{,}01''$.
+
+TurbuLENS usa esta escala para describir la calidad del cielo:
+
+\begin{table}[H]
+\centering\small
+\begin{tabular}{@{}l l@{}}
+\toprule
+Seeing & Calidad\\
+\midrule
+hasta 1,5″ & \textcolor{acento}{\textbf{Excelente}}\\
+de 1,5″ a 3″ & \textcolor{cobre}{\textbf{Aceptable}}\\
+más de 3″ & \textcolor{red!70!black}{\textbf{Muy turbulento}}\\
+\bottomrule
+\end{tabular}
+\caption{Escala de calidad de TurbuLENS, pensada para sitios de aficionado y de enseñanza.}
+\end{table}
+
+\begin{nota}[La escala externa.]
+La fórmula~\eqref{eq:seeing} supone una escala externa infinita. En la atmósfera real $L_0$ es finita y el FWHM que mide un
+telescopio grande es algo menor, más cuanto más grande sea el telescopio. Los DIMM reportan el valor de Kolmogorov,
+que es la convención para comparar sitios; TurbuLENS hace lo mismo.
+\end{nota}
+
+\section{Cómo cambia con la longitud de onda y la altura}
+
+De la ecuación~\eqref{eq:r0}, $r_0 \propto \lambda^{6/5}$: el aire deforma menos la luz roja que la azul. Con la
+ecuación~\eqref{eq:seeing},
+\begin{equation}
+\varepsilon \propto \frac{\lambda}{\lambda^{6/5}} = \lambda^{-1/5} .
+\end{equation}
+El seeing mejora muy poco hacia el rojo: pasar de 500 a 700~nm lo reduce solo un 7\,\%.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.78\linewidth,height=5.2cm,xlabel={Longitud de onda (nm)},ylabel={Seeing ($''$)},
+  xmin=400,xmax=1000,ymin=0,ymax=2.4,grid=major,grid style={grisclaro},axis lines=left,
+  tick label style={font=\footnotesize},label style={font=\small},
+  legend style={font=\footnotesize,draw=none,fill=white,fill opacity=0.85,at={(0.98,0.97)},anchor=north east},
+  /pgf/number format/use comma]
+\addplot[acento,line width=1.2pt,domain=400:1000,samples=60] {0.98*500e-9/0.05*(x/500)^(-0.2)*206265};
+\addplot[naranja,line width=1.2pt,domain=400:1000,samples=60] {0.98*500e-9/0.10*(x/500)^(-0.2)*206265};
+\addplot[gris,line width=1.2pt,domain=400:1000,samples=60] {0.98*500e-9/0.20*(x/500)^(-0.2)*206265};
+\legend{$r_0=5$~cm,$r_0=10$~cm,$r_0=20$~cm (a 500~nm)}
+\end{axis}
+\end{tikzpicture}
+\caption{El seeing cambia poco con la longitud de onda: $\varepsilon \propto \lambda^{-1/5}$.}
+\end{figure}
+
+Por la misma ecuación~\eqref{eq:r0}, una estrella baja se ve a través de más aire: $r_0 \propto (\sec z)^{-3/5}$ y
+\begin{equation}
+\varepsilon(z) = \varepsilon_\text{cenit}\,(\sec z)^{3/5}
+\quad\Longrightarrow\quad
+\varepsilon_\text{cenit} = \varepsilon\,(\cos z)^{3/5} .
+\end{equation}
+Es la corrección que hace TurbuLENS cuando le das la altura $h$ de la estrella ($z = 90° - h$). A 60° de altura la
+corrección es del 8\,\%; a 30°, del 34\,\%. Para comparar noches y sitios conviene medir estrellas altas y reportar el
+seeing en el cenit.
+
+\section{Qué tan rápido cambia}
+
+Si el viento lleva las arrugas a una velocidad $\bar v$, el frente de onda se renueva en el \textbf{tiempo de
+coherencia}
+\begin{equation}
+\tau_0 \approx 0{,}314\,\frac{r_0}{\bar v} ,
+\end{equation}
+unos pocos milisegundos (con $r_0 = 6$~cm y $\bar v = 10$~m/s, $\tau_0 \approx 2$~ms). Por eso un cuadro de video
+«congela» la turbulencia solo si su exposición es corta, y por eso dos cuadros seguidos se parecen pero dos separados
+medio segundo ya no: es lo que muestra la lección 8 del modo educativo.

@@ -1,0 +1,156 @@
+% ================================================================================================ capítulo 6
+\chapter{Modo Satélite}\label{cap:satelite}
+
+\begin{resumen}
+\textbf{En este capítulo:} cómo pedir una noche al satélite GOES (fecha, horas, intervalo y lugar), qué canales elegir,
+cómo leer la serie del seeing, la tabla, los valores de cada canal y el recorte con el mapa, y qué queda guardado en la
+carpeta de cada evaluación.
+\end{resumen}
+
+Antes de salir a medir, o después, para entender una medición rara, sirve saber cómo estuvo el cielo. El satélite
+GOES-Este toma una imagen de todo el continente cada 10 minutos, de día y de noche, en 16 canales. El modo Satélite busca
+esas imágenes en el repositorio abierto de la NOAA, lee los valores en tu sitio y, con tres canales infrarrojos, estima el
+seeing de las capas medias de la atmósfera con el método de Cavazzani y colaboradores (capítulo~\ref{cap:satelite_teoria}).
+Hace falta conexión a internet.
+
+% ------------------------------------------------------------------------------------------------ formulario
+\section{Pedir una noche}
+
+\begin{capturam}{satelite}{El formulario del modo Satélite para la noche del 19 de octubre de 2026, de 18:00 a 23:00, cada
+hora, con el seeing activado.}
+\item \textbf{Fecha} de la noche.
+\item \textbf{Desde} y \textbf{Hasta}, en hora de Colombia (UTC$-5$) o en UTC.
+\item \textbf{Intervalo}: cada 30 minutos, cada 60 minutos o una sola imagen.
+\item \textbf{Latitud y longitud} del sitio (norte y este positivos). \boton{OAN, Bogotá} pone las del observatorio.
+\item \textbf{Recorte}: el lado del cuadro que se muestra alrededor del punto, de 10 a 1500~km.
+\item \campo{Calcular el seeing}: marca los canales 9, 13 y 16.
+\item \textbf{Parámetros del seeing}: longitud de onda, espesor de la capa y el cuadro en que se promedian los canales.
+\item \textbf{Criterio del Sol}: qué horas entran en el cálculo.
+\item \textbf{Cómo se leen los archivos}: solo la zona o los archivos completos.
+\item \botonp{Buscar, leer y calcular}.
+\end{capturam}
+
+\subsection{Fecha, horas y lugar}
+
+Con \campo{Desde} y \campo{Hasta} y un intervalo de 30 o 60 minutos se pide una serie: la línea de abajo dice cuántas
+imágenes por canal son («6 imágenes por canal: de 18:00 a 23:00»). Si \campo{Hasta} es menor que \campo{Desde}, la serie
+pasa la medianoche: de 22:00 a 02:00 son cinco horas. Con \campo{Una sola imagen} se lee solo la hora de \campo{Desde}.
+
+\textbf{Satélite.} GOES-16 fue el GOES-Este hasta el 4 de abril de 2025; desde entonces lo es GOES-19. Con
+\campo{Automático según la fecha}, TurbuLENS elige el que corresponde (al lado se lee cuál) y, si el archivo no está en
+un repositorio, lo busca en el otro. Las imágenes de GOES-16 existen desde diciembre de 2017.
+
+\textbf{Recorte.} Es solo para ver: el lado del cuadro que se dibuja alrededor del sitio. No puede ser menor de 10~km
+(cinco píxeles de 2~km): con menos no hay imagen útil.
+
+\subsection{Canales}
+
+Al pasar el cursor por un canal se ve para qué sirve; la página \menu{Cómo funciona} tiene la tabla completa. Los botones
+de abajo eligen grupos: \boton{Solo el 13 (nubes)}, \boton{Infrarrojos 7–16}, \boton{Todos} y \boton{Ninguno}. A la
+derecha se lee cuánto se va a descargar («3 canales × 6 horas · ≈36~MB leyendo solo la zona»).
+
+Para ver si había nubes de noche basta el canal 13, el infrarrojo limpio: las nubes altas y frías salen blancas. Con
+\campo{Calcular el seeing} se marcan los canales 9, 13 y 16, que el método necesita, y no se pueden desmarcar mientras
+la opción esté activa; puedes agregar otros.
+
+\subsection{Seeing desde el satélite}
+
+\begin{itemize}
+\item \textbf{Longitud de onda} $\lambda$ (500~nm por defecto, como en el artículo del método).
+\item \textbf{Espesor de la capa} $z$, en km (4~km: la capa de 4 a 8~km que mide el método).
+\item \textbf{Promedio en}: el cuadro alrededor del sitio en que se promedian las temperaturas. 1°~×~1° (unos 111~km) es
+el del artículo; también puedes usar 3~×~3 píxeles o solo el píxel del sitio.
+\item \textbf{Criterio del Sol}: \emph{Solo de noche} (Sol a más de 18° bajo el horizonte, el recomendado),
+\emph{Noche y crepúsculo} (Sol bajo el horizonte) o \emph{Todas las horas}. Las horas que no cumplen el criterio se leen
+y se muestran, pero no entran en la tendencia ni en el seeing.
+\end{itemize}
+Al lado del criterio se ve el ángulo cenital del satélite desde tu sitio, $\theta$, y el factor
+$\Lambda(\theta) = 10^{-12}/\cos\theta$. Desde Bogotá, $\theta = 5{,}62°$.
+
+\subsection{Cómo se leen los archivos}
+
+Cada imagen de disco completo pesa unos 25~MB por canal. Una noche de seis horas con tres canales serían 450~MB. Por eso
+la opción predeterminada es \textbf{Leer solo la zona}: TurbuLENS pide al servidor únicamente los pedazos del archivo que
+cubren tu recorte, unos 2~MB por canal, sin guardar nada en el disco (sección~\ref{sec:lectura_parcial}). Con
+\textbf{Descargar los archivos completos} se guardan en \ruta{descargas\_goes/} dentro de la carpeta de resultados, para
+volver a usarlos sin internet. Si el servidor no acepta lecturas parciales, TurbuLENS descarga el archivo completo solo.
+
+\boton{Leer archivos ya descargados…} abre archivos \ruta{.nc} que ya tengas (también se pueden soltar en la ventana).
+TurbuLENS los agrupa por la hora del barrido y arma la serie igual.
+
+% ------------------------------------------------------------------------------------------------ resultados
+\section{Los resultados}
+
+Mientras busca y lee, la barra y el texto de abajo muestran el avance. Al terminar aparecen tres tarjetas.
+
+\begin{capturam}{satelite_serie}{La serie de la noche: el seeing hora por hora, la función $F$ con su tendencia y la tabla.}
+\item \textbf{Seeing estimado por el satélite}, hora por hora, con su mediana.
+\item \textbf{$F$ y su tendencia}: la función de estabilidad de cada hora y la recta ajustada con las horas usadas. Las
+horas excluidas por el Sol salen con otro símbolo.
+\item \textbf{La tabla}: hora local, altura del Sol, estado (noche, crepúsculo o día), $F$, la tendencia, $|\Delta F|$,
+el seeing, $r_0$ y una nota (por ejemplo «excluido por la altura del Sol»).
+\item \textbf{El resumen}: cómo se calculó la tendencia y la mediana y el rango del seeing.
+\end{capturam}
+
+\textbf{Valores en tus coordenadas.} Una tabla con cada canal de la hora elegida: el valor en el píxel del sitio, el
+promedio en 3~×~3 píxeles y en el cuadro, la unidad, una lectura sencilla («nube alta y fría», «probablemente
+despejado»), la hora del barrido y el satélite. Al elegir una hora en la serie, esta tabla y el recorte cambian a esa hora;
+al elegir un canal en esta tabla, el recorte muestra ese canal.
+
+\begin{capturam}[0.9\linewidth]{satelite_mapa}{El recorte del canal 13 con el mapa.}
+\item \textbf{El recorte}, con el sitio marcado con un círculo rojo. Al pasar el cursor se leen la latitud, la longitud
+y el valor.
+\item \campo{Mapa}: costas (amarillo), países (blanco) y departamentos o estados (azul), de Natural Earth.
+\item \boton{Ver completo} lo abre en grande; \boton{Abrir en el visor de píxeles}, con todas las herramientas del
+visor.
+\item Qué se ve: canal, tamaño en píxeles y en km, y cómo leer los colores.
+\end{capturam}
+
+\begin{nota}[Con pocas horas de noche.]
+La tendencia es una recta ajustada con las horas que cumplen el criterio del Sol, y para una recta hacen falta al menos
+tres. Con una o dos, TurbuLENS usa su promedio y lo dice en el resumen; sin ninguna, no calcula el seeing. Si pediste una
+sola imagen o un intervalo corto, amplía las horas.
+\end{nota}
+
+\begin{cuidado}[Qué mide y qué no.]
+El seeing del satélite es el de la capa de 4 a 8~km. No incluye la turbulencia cerca del suelo, que en muchos sitios es
+la mayor parte: por eso suele salir menor que el del DIMM. Las nubes lo invalidan. Es un método empírico, comparado con
+el seeing medido en Paranal y en el Roque de los Muchachos: sirve para comparar horas y noches en un mismo sitio y para acompañar al DIMM, no para
+reemplazarlo.
+\end{cuidado}
+
+\section{La carpeta de cada evaluación}\label{sec:carpeta_eval}
+
+Para que nada se sobrescriba, cada evaluación se guarda en una subcarpeta nueva dentro de la carpeta de resultados, con
+un nombre que dice qué se evaluó y cuándo:
+\begin{center}
+\ruta{evaluadas\_dia\_}\textbf{\ruta{20261019}}\ruta{\_}\textbf{\ruta{18-23}}\ruta{\_}\textbf{\ruta{20261126\_100953}}\\[0.3em]
+{\small\color{gris}fecha de la noche \quad·\quad horas evaluadas \quad·\quad fecha y hora local en que se evaluó}
+\end{center}
+Con una sola imagen, las horas son solo la de inicio (\ruta{\_18\_}). Adentro van:
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l Y@{}}
+\toprule
+Archivo & Contenido\\
+\midrule
+\ruta{serie\_seeing.csv} & Una fila por hora: hora local y UTC, altura del Sol, estado, si se usó, $T_9$, $T_{13}$, $T_{16}$,
+$F$, la tendencia, $|\Delta F|$, $\int C_n^2\,dz$, el seeing, $r_0$ y la nota. Al final, los parámetros: sitio, $\theta$,
+$\Lambda(\theta)$, $z$, $\lambda$, cuadro, criterio del Sol y tipo de tendencia.\\
+\ruta{valores\_por\_canal.csv} & Cada canal y cada hora: valor en el punto, en 3~×~3 y en el cuadro.\\
+\ruta{grafica\_seeing.png}, \ruta{grafica\_F\_tendencia.png} & Las dos gráficas de la serie.\\
+\ruta{recortes/} & El recorte de cada canal y cada hora en FITS (con el sitio y el tamaño del píxel en la cabecera) y en PNG.\\
+\ruta{LEEME.txt} & Qué se evaluó, con qué parámetros y las fórmulas.\\
+\bottomrule
+\end{tabularx}
+\caption{Lo que queda en \ruta{evaluadas\_dia\_…/}.}
+\end{table}
+
+\section{Cómo funciona}
+
+La segunda página del modo, \menu{Cómo funciona}, explica en tres tarjetas qué es el satélite GOES, qué mide cada uno de
+sus 16 canales (con la tabla de longitudes de onda, resolución y usos) y cómo se calcula el seeing desde el espacio, con
+las fórmulas. El capítulo~\ref{cap:satelite_teoria} de este manual cuenta lo mismo con más detalle.
+
+\captura{satelite_info.png}{\menu{Cómo funciona}: el satélite, sus canales y el método.}

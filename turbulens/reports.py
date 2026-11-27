@@ -20,29 +20,46 @@ from .core.export import SUMMARY_LABELS
 from .i18n import num, tr
 
 
+MIN_FRAMES = 10  # con menos cuadros válidos no hay estadística que mostrar
+
+
+def has_data(dimm: DimmResult | None) -> bool:
+    """¿Hay suficientes cuadros con los dos puntos detectados para mostrar estadística?"""
+    return dimm is not None and int(dimm.n_used) >= MIN_FRAMES
+
+
 def analysis_charts(dimm: DimmResult, t: np.ndarray, fps: float = 30.0) -> list[ChartSpec]:
+    """Siempre tres gráficas (histograma, σ en el tiempo, movimiento diferencial); vacías si no hay detecciones."""
+    titles = (("Histograma de la separación entre los dos spots", "Separación (px)", "Cuadros"),
+              ("Dispersión (σ) de la separación, segundo a segundo", "Tiempo del video (s)", "σ (px)"),
+              ("Movimiento diferencial: longitudinal vs. transversal", "Δ longitudinal (px)", "Δ transversal (px)"))
+    if not has_data(dimm):
+        n = 0 if dimm is None else int(dimm.n_used)
+        msg = (tr("Sin datos: no se detectaron los dos puntos de la estrella en ningún cuadro.") if n == 0 else
+               tr("Sin datos suficientes: solo {} cuadros con los dos puntos (se necesitan al menos {}).").format(n, MIN_FRAMES))
+        return [ChartSpec(title=ti, xlabel=xl, ylabel=yl, legend=False, empty=msg) for ti, xl, yl in titles]
     a = dimm.arrays
     used = a["used"]
     sep = a["sep"][used]
-    specs = [histogram_spec(sep, title="Histograma de la separación entre los dos spots",
-                            xlabel="Separación (px)", ylabel="Cuadros", normal=True)]
+    specs = [histogram_spec(sep, title=titles[0][0], xlabel=titles[0][1], ylabel=titles[0][2], normal=True)]
     tt = np.asarray(t, dtype=float)
     sep_all = np.where(used, a["sep"], np.nan)
     ok = np.isfinite(sep_all)
     if ok.sum() > 4:
         mids, sd, _ = stats.running_std(tt[ok], sep_all[ok], 1.0)
-        specs.append(ChartSpec(title="Dispersión (σ) de la separación, segundo a segundo",
-                               xlabel="Tiempo del video (s)", ylabel="σ (px)",
+        specs.append(ChartSpec(title=titles[1][0], xlabel=titles[1][1], ylabel=titles[1][2],
                                series=[Series("line", x=mids, y=sd, color="accent", width=2, label="σ por segundo"),
                                        Series("hline", y=[float(np.nanmedian(sd))], color="muted", dash=True, width=1.5,
                                               label="Mediana")],
                                ymin_zero=True))
+    else:
+        specs.append(ChartSpec(title=titles[1][0], xlabel=titles[1][1], ylabel=titles[1][2], legend=False,
+                               empty=tr("Sin datos suficientes.")))
     lon = a["lon"][used] - np.nanmean(a["lon"][used])
     tra = a["tra"][used] - np.nanmean(a["tra"][used])
     step = max(1, lon.size // 3000)
     lim = float(np.nanmax(np.abs(np.concatenate([lon, tra])))) * 1.05 if lon.size else 1.0
-    specs.append(ChartSpec(title="Movimiento diferencial: longitudinal vs. transversal",
-                           xlabel="Δ longitudinal (px)", ylabel="Δ transversal (px)",
+    specs.append(ChartSpec(title=titles[2][0], xlabel=titles[2][1], ylabel=titles[2][2],
                            series=[Series("scatter", x=lon[::step], y=tra[::step], color="accent", alpha=0.35, size=1.8)],
                            xlim=(-lim, lim), ylim=(-lim, lim), legend=False,
                            note=tr("Correlación r = {}").format(num(dimm.corr_lt, 2))))
@@ -257,7 +274,7 @@ def export_analysis_charts(specs: list[ChartSpec], formats: Iterable[str], folde
         q = rec.get("calidad") or quality_label(rec.get("eps") or float("nan"))
         notes = tr("Seeing calculado con el modelo de Tokovinin (2002) a partir de la varianza del movimiento diferencial. "
                    "Calidad del cielo: {}.").format(tr(q))
-        write_report_pdf(pth, tr("Informe de seeing"), summary_rows(rec), specs, notes, sections=[correlation_explanation(rec)])
+        write_report_pdf(pth, tr("Informe de seeing"), summary_rows(rec), specs, notes)
         out.append(pth)
     return out
 

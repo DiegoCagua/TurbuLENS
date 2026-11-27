@@ -3,6 +3,7 @@
 """Pruebas de los modos «Imágenes» (calibración y visor) y «Satélite» (GOES), sin conexión a internet."""
 
 import datetime as dt
+import math
 import io
 import os
 import pathlib
@@ -271,25 +272,122 @@ def test_images_mode_calibrate_and_view(app, tmp_path, monkeypatch):
 
 
 def test_satellite_page_shows_readings(app, tmp_path):
+    from turbulens.core import satseeing as ss
+
     w = _window(tmp_path)
     w.set_mode("satelite")
     pg = w.page_by_key["goes"]
     assert w.current == "goes"
     pg.folder = str(tmp_path)
     r = goes.read_point(_FakeGoesFile(), goes.OAN_LAT, goes.OAN_LON, half_km=150)
-    pg.show_readings([r])
+    loc = r.start.astimezone(dt.timezone(dt.timedelta(hours=-5)))
+    pg.seeing_cb.setChecked(False)
+    pg.show_instants([ss.SatInstant(local=loc, utc=r.start, readings={13: r})])
     assert pg.table.rowCount() == 1 and pg.table.item(0, 2).text().startswith("230")
-    assert list(tmp_path.glob("turbulens_goes_*_valores.csv")) and list(tmp_path.glob("*_C13_recorte.fits"))
+    sub = [d for d in tmp_path.iterdir() if d.name.startswith("evaluadas_dia_")]
+    assert len(sub) == 1 and (sub[0] / "valores_por_canal.csv").exists()
+    assert list((sub[0] / "recortes").glob("*_C13.fits"))
+    assert pg.preview.overlays  # costas, países o departamentos sobre el recorte
     pg.open_viewer()
     assert w.current == "img_ver" and w.page_by_key["img_ver"].view.marker is not None
     # Fecha local de Colombia → UTC y satélite automático
     from PySide6.QtCore import QDate, QTime
 
     pg.zone.setCurrentIndex(0)
+    pg.step.setCurrentIndex(0)
     pg.date.setDate(QDate(2025, 4, 4))
-    pg.time.setTime(QTime(10, 0))
+    pg.t0.setTime(QTime(10, 0))
     assert pg.when_utc() == dt.datetime(2025, 4, 4, 15, 0, tzinfo=UTC)
     assert "GOES-16" in pg.sat_lbl.text()
-    pg.time.setTime(QTime(10, 30))
+    pg.t0.setTime(QTime(10, 30))
     assert "GOES-19" in pg.sat_lbl.text()
+    # Serie de una noche: 18 a 23 h cada hora → 6 imágenes por canal
+    pg.step.setCurrentIndex(2)
+    pg.t0.setTime(QTime(18, 0))
+    pg.t1.setTime(QTime(23, 0))
+    assert len(pg.times()) == 6
+    pg.seeing_cb.setChecked(True)
+    assert all(pg.checks[c].isChecked() and not pg.checks[c].isEnabled() for c in (9, 13, 16))
     w.close()
+
+
+def test_satellite_seeing_formulas_and_folder_name():
+    from turbulens.core import satseeing as ss
+
+    th = ss.satellite_zenith_deg(goes.OAN_LAT, goes.OAN_LON)
+    assert 5 < th < 6.5
+    # 0,58 λ^(−1/5) [4π² Λ ΔF / z]^(3/5): ΔF = 1 K, z = 4 km, λ = 500 nm, θ = 0 → ≈0,54″
+    s = ss.seeing_from_deviation(1.0, 0.0, 4.0, 500.0)
+    assert s["seeing"] == pytest.approx(0.58 * (500e-9) ** -0.2 * (4 * math.pi ** 2 * 1e-12 / 4) ** 0.6 * 206264.806, rel=1e-6)
+    assert 0.4 < s["seeing"] < 0.7 and s["cn2"] == pytest.approx(2.5e-13)
+    assert ss.f_stability(240.0, 270.0, 250.0) == pytest.approx(260.0)
+    # Sol: mediodía y medianoche en Bogotá (19 oct 2026)
+    noon = dt.datetime(2026, 10, 19, 17, 0, tzinfo=UTC)
+    night = dt.datetime(2026, 10, 20, 3, 0, tzinfo=UTC)
+    assert ss.sun_state(ss.sun_altitude_deg(noon, goes.OAN_LAT, goes.OAN_LON)) == "día"
+    assert ss.sun_state(ss.sun_altitude_deg(night, goes.OAN_LAT, goes.OAN_LON)) == "noche"
+    # Serie que pasa la medianoche y nombre de la carpeta
+    ts = ss.build_times(dt.date(2026, 10, 19), dt.time(22), dt.time(1), 30, -5)
+    assert len(ts) == 7 and ts[-1].day == 20
+    name = ss.eval_folder_name(dt.date(2026, 10, 19), dt.time(18), dt.time(23), dt.datetime(2026, 11, 26, 10, 9, 53))
+    assert name == "evaluadas_dia_20261019_18-23_20261126_100953"
+    # Tendencia lineal: una serie que sigue una recta da desviación 0 y seeing 0
+    hrs = np.arange(6.0)
+    tr_, method = ss.trend(hrs, 250 + 0.5 * hrs, np.ones(6, bool))
+    assert method == "recta" and np.allclose(tr_, 250 + 0.5 * hrs)
+
+
+def test_partial_http_reading_matches_local(tmp_path):
+    """Leer solo la zona por HTTP (cabecera Range) da lo mismo que el archivo completo y baja mucho menos."""
+    h5py = pytest.importorskip("h5py")
+    import http.server
+    import re as _re
+    import threading
+
+    n = 1356
+    p = tmp_path / "OR_ABI-L2-CMIPF-M6C13_G19_s20263040400210_e20263040409529_c20263040410000.nc"
+    scale = 0.151844 * 2 / (n - 1)
+    rng = np.random.default_rng(0)
+    with h5py.File(p, "w") as f:
+        xs = np.arange(n, dtype=np.int16)
+        x = f.create_dataset("x", data=xs)
+        x.attrs["scale_factor"], x.attrs["add_offset"] = np.float32(scale), np.float32(-0.151844)
+        y = f.create_dataset("y", data=xs)
+        y.attrs["scale_factor"], y.attrs["add_offset"] = np.float32(-scale), np.float32(0.151844)
+        pr = f.create_dataset("goes_imager_projection", data=np.int32(0))
+        for k, v in {"perspective_point_height": 35786023.0, "semi_major_axis": 6378137.0,
+                     "semi_minor_axis": 6356752.31414, "longitude_of_projection_origin": -75.0}.items():
+            pr.attrs[k] = np.float64(v)
+        c = f.create_dataset("CMI", data=(2000 + rng.normal(0, 30, (n, n))).astype(np.int16), chunks=(226, 226),
+                             compression="gzip")
+        c.attrs["scale_factor"], c.attrs["add_offset"] = np.float32(0.05), np.float32(180.0)
+        c.attrs["_FillValue"] = np.int16(-1)
+        c.attrs["_Unsigned"] = np.bytes_(b"true")
+        c.attrs["valid_range"] = np.array([0, 4095], np.int16)
+        f.create_dataset("band_id", data=np.array([13], np.int8))
+
+    data = p.read_bytes()
+
+    class H(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+
+        def do_GET(self):
+            m = _re.match(r"bytes=(\d+)-(\d+)", self.headers.get("Range", ""))
+            a, b = int(m.group(1)), min(int(m.group(2)), len(data) - 1)
+            self.send_response(206)
+            self.send_header("Content-Length", str(b - a + 1))
+            self.end_headers()
+            self.wfile.write(data[a:b + 1])
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), H)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        hf = goes.HttpRangeFile(f"http://127.0.0.1:{srv.server_address[1]}/{p.name}", len(data), name=p.name)
+        remote = goes.read_point(hf, goes.OAN_LAT, goes.OAN_LON, 100, box_km=111)
+        local = goes.read_point(str(p), goes.OAN_LAT, goes.OAN_LON, 100, box_km=111)
+        assert remote.value == local.value and remote.box_mean == pytest.approx(local.box_mean)
+        assert np.array_equal(remote.cutout, local.cutout, equal_nan=True)
+        assert hf.downloaded < len(data) / 2
+    finally:
+        srv.shutdown()

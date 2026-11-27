@@ -57,6 +57,7 @@ class ChartSpec:
     note: str = ""
     categorical: bool = False
     ymin_zero: bool = False
+    empty: str = ""  # si no está vacío, la gráfica se dibuja sin datos y con este mensaje en el centro
 
 
 def nice_ticks(lo: float, hi: float, n: int = 5) -> list[float]:
@@ -77,10 +78,18 @@ def nice_ticks(lo: float, hi: float, n: int = 5) -> list[float]:
     return ticks
 
 
-def _fmt(v: float) -> str:
+def _fmt(v: float, step: float = 0.0) -> str:
     if v == 0:
         return "0"
     a = abs(v)
+    if step > 0 and a < 1e6:
+        dec = max(0, -math.floor(math.log10(step) + 1e-9))
+        if abs(step * 10 ** dec - round(step * 10 ** dec)) > 1e-6:
+            dec += 1
+        s = f"{v:.{dec}f}"
+        if a >= 1000 and dec == 0:
+            return integer(round(v))
+        return localize_number_text(s)
     if a >= 1000:
         s = integer(round(v))
     elif a >= 100:
@@ -150,7 +159,8 @@ def _data_limits(spec: ChartSpec):
     return (spec.xlim or xl), (spec.ylim or yl)
 
 
-def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: float = 1.0) -> None:
+def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: float = 1.0) -> Optional[dict]:
+    """Dibuja la gráfica en ``rect``. Devuelve la geometría (área de datos y límites) para leer puntos con el ratón."""
     p.save()
     p.setRenderHint(QPainter.Antialiasing, True)
     base = QFont(p.font())
@@ -174,6 +184,18 @@ def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: flo
         p.drawText(QRectF(rect.left() + 4 * scale, rect.top(), rect.width(), lh * 1.5), Qt.AlignLeft | Qt.AlignVCenter, spec.title)
         p.setFont(base)
 
+    if spec.empty:
+        p.setPen(QPen(_col(pal, "border"), 1 * scale))
+        p.drawLine(plot.bottomLeft(), plot.bottomRight())
+        p.drawLine(plot.bottomLeft(), plot.topLeft())
+        p.setPen(_col(pal, "muted"))
+        if spec.xlabel:
+            p.drawText(QRectF(plot.left(), plot.bottom() + lh * 0.4, plot.width(), lh * 1.2), Qt.AlignHCenter | Qt.AlignVCenter,
+                       spec.xlabel)
+        p.drawText(plot.adjusted(lh, lh, -lh, -lh), Qt.AlignCenter | Qt.TextWordWrap, spec.empty)
+        p.restore()
+        return None
+
     (x0, x1), (y0, y1) = _data_limits(spec)
 
     def X(v):
@@ -186,6 +208,7 @@ def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: flo
     grid = QPen(_col(pal, "grid"), 1 * scale)
     p.setPen(grid)
     yt = nice_ticks(y0, y1, 5)
+    ystep = (yt[1] - yt[0]) if len(yt) > 1 else 0.0
     for v in yt:
         if y0 <= v <= y1:
             p.drawLine(QPointF(plot.left(), Y(v)), QPointF(plot.right(), Y(v)))
@@ -193,7 +216,7 @@ def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: flo
     for v in yt:
         if y0 <= v <= y1:
             p.drawText(QRectF(rect.left(), Y(v) - lh / 2, plot.left() - rect.left() - 6 * scale, lh),
-                       Qt.AlignRight | Qt.AlignVCenter, _fmt(v))
+                       Qt.AlignRight | Qt.AlignVCenter, _fmt(v, ystep))
     if spec.categorical:
         cats = next((s.labels for s in spec.series if s.kind == "hbars"), [])
         n = len(cats)
@@ -203,9 +226,12 @@ def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: flo
                 continue
             p.drawText(QRectF(X(i) - lh * 3, plot.bottom() + 3 * scale, lh * 6, lh), Qt.AlignHCenter | Qt.AlignTop, str(lab))
     else:
-        for v in nice_ticks(x0, x1, max(3, int(plot.width() / (lh * 5)))):
+        xt = nice_ticks(x0, x1, max(3, int(plot.width() / (lh * 5))))
+        xstep = (xt[1] - xt[0]) if len(xt) > 1 else 0.0
+        for v in xt:
             if x0 <= v <= x1:
-                p.drawText(QRectF(X(v) - lh * 3, plot.bottom() + 3 * scale, lh * 6, lh), Qt.AlignHCenter | Qt.AlignTop, _fmt(v))
+                p.drawText(QRectF(X(v) - lh * 3, plot.bottom() + 3 * scale, lh * 6, lh), Qt.AlignHCenter | Qt.AlignTop,
+                           _fmt(v, xstep))
     p.setPen(QPen(_col(pal, "border"), 1 * scale))
     p.drawLine(plot.bottomLeft(), plot.bottomRight())
     p.drawLine(plot.bottomLeft(), plot.topLeft())
@@ -345,18 +371,38 @@ def draw_chart(p: QPainter, rect: QRectF, spec: ChartSpec, pal: dict, scale: flo
             p.setPen(_col(pal, "text"))
             p.drawText(QRectF(xx + sw + pad, yy - lh / 2, bw, lh), Qt.AlignLeft | Qt.AlignVCenter, t)
     p.restore()
+    return {"plot": QRectF(plot), "x": (x0, x1), "y": (y0, y1)}
+
+
+def _tip_num(v: float) -> str:
+    """Número corto para la lectura bajo el cursor (4 cifras significativas)."""
+    if not np.isfinite(v):
+        return "—"
+    a = abs(v)
+    if a >= 10000:
+        return integer(round(v))
+    s = f"{v:.4g}"
+    if "e" in s:
+        s = f"{v:.3e}"
+    return localize_number_text(s)
 
 
 class ChartWidget(QWidget):
-    """Muestra una ``ChartSpec`` y se redibuja al cambiar el tema."""
+    """Muestra una ``ChartSpec``. Al pasar el ratón lee el punto más cercano; con clic derecho se guarda o se copia la
+    imagen; con doble clic (o desde el menú) se ve en grande."""
 
     def __init__(self, parent=None, min_h: int = 220):
         super().__init__(parent)
         self.spec = ChartSpec()
         self.pal = PRINT_PALETTE
+        self.geom: Optional[dict] = None
+        self._hover: Optional[tuple] = None  # (punto en pantalla, texto)
         self.setMinimumHeight(min_h)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.setAttribute(Qt.WA_OpaquePaintEvent, False)
+        self.setMouseTracking(True)
+        self.setContextMenuPolicy(Qt.DefaultContextMenu)
+        self.setToolTip("")
 
     def sizeHint(self):
         return QSize(520, 280)
@@ -367,13 +413,170 @@ class ChartWidget(QWidget):
 
     def set_spec(self, spec: ChartSpec) -> None:
         self.spec = spec
+        self._hover = None
         self.update()
 
+    # ------------------------------------------------------------ dibujo
     def paintEvent(self, ev):
         p = QPainter(self)
         p.fillRect(self.rect(), _col(self.pal, "panel"))
-        draw_chart(p, QRectF(self.rect()).adjusted(6, 4, -6, -4), self.spec, self.pal)
+        self.geom = draw_chart(p, QRectF(self.rect()).adjusted(6, 4, -6, -4), self.spec, self.pal)
+        if self._hover and self.geom:
+            pt, text = self._hover
+            plot = self.geom["plot"]
+            p.setRenderHint(QPainter.Antialiasing, True)
+            p.setPen(QPen(_col(self.pal, "muted", 0.6), 1, Qt.DotLine))
+            p.drawLine(QPointF(pt.x(), plot.top()), QPointF(pt.x(), plot.bottom()))
+            p.setPen(QPen(_col(self.pal, "text"), 1.6))
+            p.setBrush(QBrush(_col(self.pal, "panel")))
+            p.drawEllipse(pt, 4.5, 4.5)
+            f = QFont(p.font())
+            f.setPointSizeF(9)
+            p.setFont(f)
+            fm = QFontMetricsF(f)
+            lines = text.split("\n")
+            w = max(fm.horizontalAdvance(t) for t in lines) + 16
+            h = fm.height() * len(lines) + 10
+            x = pt.x() + 12 if pt.x() + 12 + w < plot.right() else pt.x() - 12 - w
+            y = max(plot.top(), min(pt.y() - h - 8, plot.bottom() - h))
+            box = QRectF(x, y, w, h)
+            p.setPen(QPen(_col(self.pal, "border"), 1))
+            p.setBrush(QBrush(_col(self.pal, "panel", 0.95)))
+            p.drawRoundedRect(box, 6, 6)
+            p.setPen(_col(self.pal, "text"))
+            for i, t in enumerate(lines):
+                p.drawText(QRectF(x + 8, y + 5 + i * fm.height(), w - 12, fm.height()), Qt.AlignLeft | Qt.AlignVCenter, t)
         p.end()
+
+    # ------------------------------------------------------------ lectura con el ratón
+    def _nearest(self, pos: QPointF) -> Optional[tuple]:
+        g = self.geom
+        if not g or not g["plot"].adjusted(-6, -6, 6, 6).contains(pos):
+            return None
+        plot = g["plot"]
+        (x0, x1), (y0, y1) = g["x"], g["y"]
+
+        def X(v):
+            return plot.left() + (v - x0) / (x1 - x0) * plot.width()
+
+        def Y(v):
+            return plot.bottom() - (v - y0) / (y1 - y0) * plot.height()
+
+        best = None
+        for s in self.spec.series:
+            if s.kind in ("line", "scatter"):
+                x = np.asarray(s.x, dtype=float)
+                y = np.asarray(s.y, dtype=float)
+                ok = np.isfinite(x) & np.isfinite(y)
+                if not ok.any():
+                    continue
+                xs, ys = X(x[ok]), Y(y[ok])
+                d = (xs - pos.x()) ** 2 + (ys - pos.y()) ** 2
+                i = int(np.argmin(d))
+                if best is None or d[i] < best[0]:
+                    lab = tr(s.label) if s.label else ""
+                    best = (float(d[i]), QPointF(float(xs[i]), float(ys[i])), float(x[ok][i]), float(y[ok][i]), lab, "xy")
+            elif s.kind == "bars":
+                e = np.asarray(s.x, dtype=float)
+                h = np.asarray(s.y, dtype=float)
+                if e.size < 2:
+                    continue
+                xv = x0 + (pos.x() - plot.left()) / plot.width() * (x1 - x0)
+                i = int(np.searchsorted(e, xv) - 1)
+                if 0 <= i < h.size and np.isfinite(h[i]):
+                    pt = QPointF((X(e[i]) + X(e[i + 1])) / 2, Y(h[i]))
+                    d = (pt.x() - pos.x()) ** 2 / 4
+                    if best is None or d < best[0]:
+                        best = (d, pt, (float(e[i]), float(e[i + 1])), float(h[i]), tr(s.label) if s.label else "", "bar")
+            elif s.kind == "hbars":
+                h = np.asarray(s.y, dtype=float)
+                i = int(round(x0 + (pos.x() - plot.left()) / plot.width() * (x1 - x0)))
+                if 0 <= i < h.size and np.isfinite(h[i]):
+                    lab = str(s.labels[i]) if len(s.labels) > i else str(i + 1)
+                    best = (0.0, QPointF(X(i), Y(h[i])), lab, float(h[i]), "", "cat")
+        if best is None:
+            return None
+        _, pt, xv, yv, lab, kind = best
+        xl = tr(self.spec.xlabel) or "x"
+        yl = tr(self.spec.ylabel) or "y"
+        if kind == "bar":
+            text = f"{xl}: {_tip_num(xv[0])} – {_tip_num(xv[1])}\n{yl}: {_tip_num(yv)}"
+        elif kind == "cat":
+            text = f"{xv}\n{yl}: {_tip_num(yv)}"
+        else:
+            text = f"{xl}: {_tip_num(xv)}\n{yl}: {_tip_num(yv)}"
+        if lab:
+            text = lab + "\n" + text
+        return pt, text
+
+    def mouseMoveEvent(self, ev):
+        h = self._nearest(ev.position())
+        if h != self._hover:
+            self._hover = h
+            self.update()
+
+    def leaveEvent(self, ev):
+        if self._hover is not None:
+            self._hover = None
+            self.update()
+        super().leaveEvent(ev)
+
+    def mouseDoubleClickEvent(self, ev):
+        if not getattr(self, "_large", False):
+            self.show_large()
+
+    def contextMenuEvent(self, ev):
+        from PySide6.QtWidgets import QMenu
+
+        m = QMenu(self)
+        if not getattr(self, "_large", False):
+            m.addAction(tr("Ver en grande"), self.show_large)
+        m.addAction(tr("Guardar imagen (PNG)…"), self.save_png)
+        m.addAction(tr("Copiar imagen"), self.copy_image)
+        m.exec(ev.globalPos())
+
+    def image(self, w: int = 1600, h: int = 900):
+        from PySide6.QtGui import QImage
+
+        img = QImage(w, h, QImage.Format_ARGB32)
+        img.fill(QColor(PRINT_PALETTE["bg"]))
+        p = QPainter(img)
+        draw_chart(p, QRectF(20, 20, w - 40, h - 60), self.spec, PRINT_PALETTE, scale=w / 800)
+        _credit(p, QRectF(20, h - 38, w - 40, 30), w / 800, PRINT_PALETTE)
+        p.end()
+        return img
+
+    def save_png(self):
+        from PySide6.QtWidgets import QFileDialog
+
+        name = (self.spec.title or "grafica").strip().replace(" ", "_").replace("/", "-")[:60] + ".png"
+        path, _ = QFileDialog.getSaveFileName(self, tr("Guardar imagen"), name, "PNG (*.png)")
+        if path:
+            if not path.lower().endswith(".png"):
+                path += ".png"
+            self.image().save(path)
+
+    def copy_image(self):
+        from PySide6.QtWidgets import QApplication
+
+        QApplication.clipboard().setImage(self.image())
+
+    def show_large(self):
+        from PySide6.QtWidgets import QDialog, QVBoxLayout
+
+        dlg = QDialog(self.window())
+        dlg.setWindowTitle(tr(self.spec.title) or "TurbuLENS")
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(10, 10, 10, 10)
+        big = ChartWidget(dlg, min_h=400)
+        big._large = True
+        big.set_palette(self.pal)
+        big.set_spec(self.spec)
+        lay.addWidget(big)
+        scr = self.screen().availableGeometry() if self.screen() else None
+        if scr is not None:
+            dlg.resize(int(scr.width() * 0.8), int(scr.height() * 0.75))
+        dlg.exec()
 
 
 # --------------------------------------------------------------- exportación

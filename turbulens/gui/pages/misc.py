@@ -84,14 +84,14 @@ class StartPage(QWidget):
         grid = QGridLayout()
         grid.setSpacing(20)
         for i, (title, text, cta, mode) in enumerate((
-            ("Análisis científico", "Para mediciones reales de tu sitio de observación: extracción de cuadros, seeing, "
-             "historial y exportación de datos.", "Entrar al modo análisis  →", "analisis"),
+            ("Medición del seeing", "Para mediciones reales de tu sitio de observación con un DIMM: extracción de cuadros, "
+             "seeing, historial y exportación de datos.", "Entrar al modo medición  →", "analisis"),
             ("Modo educativo", "Aprende estadística con un experimento astronómico real: histogramas, media, desviación "
              "estándar, la campana de Gauss y más. Para colegios y cursos.", "Entrar al modo educativo  →", "educativo"),
-            ("Imágenes", "Calibra tus imágenes con darks y flats y lee el valor de cada píxel, como en DS9. "
-             "Abre FITS, PNG, TIFF y JPG.", "Entrar al modo imágenes  →", "imagenes"),
-            ("Satélite", "Descarga imágenes del satélite GOES-Este para la fecha, hora y lugar de tu observación y "
-             "revisa si había nubes, canal por canal.", "Entrar al modo satélite  →", "satelite"),
+            ("Imágenes", "Calibra tus imágenes con darks y flats, lee el valor de cada píxel como en DS9 y mide el "
+             "FWHM y el seeing de una estrella. Abre FITS, PNG, TIFF y JPG.", "Entrar al modo imágenes  →", "imagenes"),
+            ("Satélite", "Revisa con el satélite GOES-Este si había nubes, hora por hora y sobre un mapa, y estima el seeing "
+             "de una noche con tres canales infrarrojos.", "Entrar al modo satélite  →", "satelite"),
         )):
             c = ModeCard(title, text, cta, lambda *_, m=mode: self.main.set_mode(m))
             grid.addWidget(c, i // 2, i % 2)
@@ -100,7 +100,7 @@ class StartPage(QWidget):
         cards.addLayout(grid, 4)
         cards.addStretch(1)
         lay.addLayout(cards)
-        n = label("Los modos de análisis y educativo comparten el historial y los perfiles de equipo: lo que guardes en uno lo "
+        n = label("Los modos de medición y educativo comparten el historial y los perfiles de equipo: lo que guardes en uno lo "
                   "ves en el otro.", "muted")
         n.setAlignment(Qt.AlignCenter)
         lay.addWidget(n)
@@ -165,17 +165,21 @@ class AboutPage(Page):
         c = Card()
         refs = ("<a href='https://arxiv.org/abs/astro-ph/0111022'>Tokovinin (2002), From differential image motion to seeing. "
                 "PASP 114, 1156</a><br>" + tr("Protocolo «Determina la nitidez del cielo nocturno», ANDEAN ROAD (2026)") + "<br>"
+                + "<a href='https://arxiv.org/abs/1112.3497'>Cavazzani, Ortolani y Zitelli (2012), Site testing at "
+                "astronomical sites: seeing evaluation from satellite based data</a><br>"
+                + tr("Datos del satélite: NOAA GOES-R Series (ABI L2 CMIPF) · Mapas: Natural Earth") + "<br>"
                 + "<br>".join(f"<a href='{u}'>{tr(t)}</a>" for u, t in SCALE_LINKS))
         rows = [
             ("", tr("{} separa videos de un DIMM (monitor de movimiento diferencial de imagen) en imágenes, mide la "
-                    "imagen doble de una estrella y estima el seeing del lugar de observación. Tiene un modo científico y un "
-                    "modo educativo para aprender estadística.").format(APP_NAME)),
+                    "imagen doble de una estrella y estima el seeing del lugar de observación. Tiene cuatro modos: medición "
+                    "del seeing, educativo (para aprender estadística), imágenes (calibración, visor de píxeles y FWHM de "
+                    "estrellas) y satélite (nubes y seeing con GOES).").format(APP_NAME)),
             ("Autores", "<br><br>".join(f"<b>{n}</b>" + (f"<br>{tr(r)}" if r else "") for n, r in AUTHORS)),
             ("Institución", INSTITUTION),
             ("Asignatura", tr(COURSE)),
             ("Licencia", f"<b>{LICENSE_NAME}</b>. {tr(LICENSE_SUMMARY)}<br><a href='{REPO_URL}'>{REPO_URL}</a>"),
             ("Referencias", refs),
-            ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl"),
+            ("Tecnología", "Python · NumPy · PySide6 (Qt) · PyAV (FFmpeg) · Pillow · openpyxl · pyfive"),
             ("Versión", __version__),
         ]
         g = QGridLayout()

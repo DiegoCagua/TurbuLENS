@@ -92,6 +92,18 @@ def num(v, d: int = 2) -> str:
     return s if _lang == "en" else s.replace(".", ",")
 
 
+def sci(v: float, d: int = 3) -> str:
+    """Notación científica legible: 1,005 × 10⁻¹² (con el separador decimal del idioma)."""
+    import math
+
+    if v == 0 or not math.isfinite(v):
+        return num(v, d)
+    e = int(math.floor(math.log10(abs(v))))
+    m = v / 10 ** e
+    sup = str(e).translate(str.maketrans("-0123456789", "⁻⁰¹²³⁴⁵⁶⁷⁸⁹"))
+    return f"{num(m, d)} × 10{sup}"
+
+
 def integer(n) -> str:
     """Entero con separador de miles: 8.484 (es, pt) o 8,484 (en)."""
     s = f"{int(n):,}"

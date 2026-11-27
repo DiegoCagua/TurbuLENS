@@ -159,12 +159,13 @@ class ChipGroup(QWidget):
 
     changed = Signal()
 
-    def __init__(self, options: Iterable[tuple[str, str]], multi: bool = False, parent=None):
+    def __init__(self, options: Iterable[tuple[str, str]], multi: bool = False, parent=None, wrap: bool = False):
         super().__init__(parent)
         self.setObjectName("transparent")
         self.multi = multi
         self.buttons: dict[str, QPushButton] = {}
-        lay = QHBoxLayout(self)
+        # Con ``wrap`` las fichas pasan a la línea siguiente cuando no caben (nombres largos, muchos equipos).
+        lay = FlowLayout(self, 6) if wrap else QHBoxLayout(self)
         lay.setContentsMargins(0, 0, 0, 0)
         lay.setSpacing(6)
         self.group = QButtonGroup(self)
@@ -175,7 +176,18 @@ class ChipGroup(QWidget):
             self.buttons[key] = b
             lay.addWidget(b)
             b.toggled.connect(lambda *_: self.changed.emit())
-        lay.addStretch(1)
+        self.wrap = wrap
+        if not wrap:
+            lay.addStretch(1)
+
+    def resizeEvent(self, ev):
+        super().resizeEvent(ev)
+        if self.wrap:
+            # Las rejillas de Qt no siempre preguntan el alto según el ancho: se fija aquí el alto mínimo
+            # para que la segunda fila de fichas no quede cortada.
+            h = self.layout().heightForWidth(self.width())
+            if h > 0 and h != self.minimumHeight():
+                self.setMinimumHeight(h)
 
     def value(self) -> Optional[str]:
         for k, b in self.buttons.items():
@@ -466,8 +478,8 @@ def free_base(folder: str, base: str) -> str:
     return cand
 
 
-AUTO_NAME_NOTE = ("Solo eliges la carpeta: el nombre de los archivos es automático (el nombre del video o del historial "
-                  "más el tipo de archivo) y nunca se sobrescribe un archivo que ya exista.")
+AUTO_NAME_NOTE = ("El nombre de los archivos es automático (el nombre del video o del historial más el tipo de archivo) "
+                  "y nunca se sobrescribe un archivo que ya exista.")
 
 
 def fullscreen_icon(color: str, exit_: bool = False, size: int = 20) -> QIcon:
@@ -611,6 +623,28 @@ def ask(parent, title: str, text: str) -> bool:
     return box.clickedButton() is yes
 
 
+def ask_save(parent, title: str, text: str) -> str:
+    """Guardar / Descartar / Cancelar. Devuelve «guardar», «descartar» o «cancelar»."""
+    from PySide6.QtWidgets import QMessageBox
+
+    from ..i18n import tr
+
+    box = QMessageBox(parent)
+    box.setIcon(QMessageBox.Question)
+    box.setWindowTitle(tr(title))
+    box.setText(tr(text))
+    save = box.addButton(tr("Guardar"), QMessageBox.AcceptRole)
+    discard = box.addButton(tr("Descartar"), QMessageBox.DestructiveRole)
+    box.addButton(tr("Cancelar"), QMessageBox.RejectRole)
+    box.setDefaultButton(save)
+    box.exec()
+    if box.clickedButton() is save:
+        return "guardar"
+    if box.clickedButton() is discard:
+        return "descartar"
+    return "cancelar"
+
+
 def notify(parent, title: str, text: str, kind: str = "info") -> None:
     """Aviso con el botón «Aceptar» en el idioma de la app."""
     from PySide6.QtWidgets import QMessageBox
@@ -651,8 +685,8 @@ from PySide6.QtWidgets import QComboBox, QDoubleSpinBox  # noqa: E402
 class DecSpin(QDoubleSpinBox):
     """Campo numérico que acepta el punto y la coma como separador decimal (en cualquier idioma).
 
-    En español el punto es el separador de miles y Qt rechazaba «2.5»: el campo se trababa.
-    Aquí ambos se convierten al separador del idioma activo y no se usan separadores de miles.
+    Con el idioma en español, Qt toma el punto como separador de miles y no acepta «2.5». Aquí el punto y la
+    coma se convierten al separador decimal del idioma activo, y no se usan separadores de miles.
     """
 
     def __init__(self, *a, **k):
@@ -709,6 +743,8 @@ class UnitSpin(QWidget):
         self.combo.setToolTip("Unidad")
         lay.addWidget(self.spin)
         lay.addWidget(self.combo)
+        self.range_lbl = label("", "small")
+        lay.addWidget(self.range_lbl)
         if settings_key:
             unit = QSettings("TurbuLENS", "TurbuLENS").value("unidad/" + settings_key, unit, type=str) or unit
         i = max(0, [u[0] for u in units].index(unit) if unit in [u[0] for u in units] else 0)
@@ -730,6 +766,15 @@ class UnitSpin(QWidget):
         self.spin.setSingleStep(10 ** -max(0, dec - 1) if dec else 1)
         self.spin.setValue(self._base / f)
         self.spin.blockSignals(False)
+        from ..i18n import num, tr
+
+        unit = self.units[self.combo.currentIndex()][0]
+        lo, hi = self.lo / f, self.hi / f
+        d = lambda v: num(v, dec if abs(v - round(v)) > 1e-9 else 0)  # noqa: E731
+        self.range_lbl.setText(f"{d(lo)}–{d(hi)}")
+        txt = tr("Valores permitidos: de {} a {} {}.").format(d(lo), d(hi), unit)
+        self.range_lbl.setToolTip(txt)
+        self.spin.setToolTip(txt)
 
     def _unit_changed(self, *_):
         from PySide6.QtCore import QSettings

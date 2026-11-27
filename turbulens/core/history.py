@@ -2,7 +2,7 @@
 # Copyright (c) 2026 Diego Fernando Cagua Lozada y Fredy Esteban Cruz Ospina — TurbuLENS (https://github.com/DiegoCagua/TurbuLENS)
 """Historial de análisis en SQLite, compartido por los dos modos.
 
-Los análisis del modo análisis y del modo educativo se guardan en la misma base
+Los análisis del modo medición y del modo educativo se guardan en la misma base
 (``historial.sqlite``); la columna ``modo`` dice en cuál se hizo cada uno. Las
 mediciones por cuadro van en ``datos_historial``. La primera vez se copian los
 análisis de las versiones anteriores, que tenían una base por modo.

@@ -125,6 +125,8 @@ class VideoPage(Page):
             self.open(path)
 
     def open(self, path: str):
+        if not self.main.keep_unsaved(self.s, "antes de abrir otro video"):
+            return
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             self.s.open_video(path)
@@ -249,7 +251,7 @@ class RegionPage(Page):
         self.auto_size.setChecked(True)
         self.auto_size.toggled.connect(self._auto_size)
         self.status = label("", "small")
-        # Dos filas cortas en vez de una larga: en pantallas de 1366 px la fila única no cabía.
+        # Dos filas cortas: una sola fila no cabe en pantallas de 1366 px de ancho.
         bar = hbox(label("Región", "h2"), HelpButton(REGION_HELP), 10,
                    button("◎ Ajustar a la estrella", slot=self.autofit, tip="Busca la imagen doble y ajusta la región"),
                    self.size_box, "stretch", label("Zoom", "small"), self.zoom_chips, spacing=8)
@@ -619,7 +621,9 @@ OAN_HELP = (
     "<b>Dispositivos del OAN</b><br>Llena D, B y la escala de placa con los equipos del Observatorio Astronómico "
     "Nacional: el telescopio (Celestron NexStar 8SE o Meade 10″), la cámara (Nikon D5600, Canon T5i o QHY174M-GPS) y "
     "la máscara.<br><br>Con las cámaras de fotos la escala se calcula con el <b>píxel efectivo del video</b> (ancho del "
-    "sensor ÷ ancho del video); el ancho se toma del video cargado. Después puedes guardarlo como perfil."
+    "sensor ÷ ancho del video); el ancho se toma del video cargado. Después puedes guardarlo como perfil.<br><br>"
+    "<b>Equipos propios</b>: con «+ Propio…» agregas tu telescopio (apertura y focal), tu cámara (ancho del sensor en mm "
+    "y en píxeles) o tu máscara (D y B). Quedan guardados y aparecen marcados con ★."
 )
 
 
@@ -659,11 +663,13 @@ VIDEO_PIXEL_HELP = (
 )
 PROFILE_HELP = (
     "<b>Perfiles de equipo</b><br>Guardan D, B, λ, la escala de placa, el tamaño de píxel y la focal de un montaje, para "
-    "no escribirlos cada vez. Son los mismos en el modo análisis y en el educativo.<ul style='margin-left:-16px'>"
+    "no escribirlos cada vez. Son los mismos en el modo medición y en el educativo.<ul style='margin-left:-16px'>"
     "<li><b>Elegir</b> un perfil de la lista carga sus valores (si ya procesaste, los resultados se recalculan solos).</li>"
-    "<li><b>Guardar como nuevo…</b> crea un perfil con los valores que ves.</li>"
-    "<li><b>Actualizar</b> reescribe el perfil elegido con los valores que ves: así se edita un perfil.</li>"
-    "<li><b>Renombrar…</b> y <b>Eliminar</b> cambian el nombre o lo borran.</li></ul>"
+    "<li><b>Guardar…</b> crea un perfil nuevo con los valores que ves.</li>"
+    "<li>En el botón <b>⋯</b>: <b>Actualizar con los valores actuales</b> reescribe el perfil elegido (así se edita), "
+    "<b>Renombrar…</b> le cambia el nombre y <b>Eliminar</b> lo borra.</li></ul>"
+    "Un perfil sirve para cualquier montaje, del OAN o propio: por ejemplo «Mi refractor 80 mm + ASI120» o "
+    "«8SE + Nikon, máscara del grupo»."
 )
 CAL_HELP = (
     "<b>Dark y flat</b><br>Corrigen defectos de la cámara y del telescopio antes de medir:<ul style='margin-left:-16px'>"
@@ -697,11 +703,13 @@ class ParamsPage(Page):
         grid.setVerticalSpacing(16)
 
         tel = Card("Telescopio y máscara", help_text=PARAMS_HELP)
-        self.oan_b = button("Dispositivos del OAN…", "primary", self._oan_devices,
-                            tip="Telescopios, cámaras y máscaras del Observatorio Astronómico Nacional")
+        self.oan_b = button("Dispositivos (OAN y propios)…", "primary", self._oan_devices,
+                            tip="Telescopios, cámaras y máscaras del Observatorio Astronómico Nacional o los tuyos")
         self.oan_msg = label("", "small", wrap=True)
         self.oan_msg.setVisible(False)
-        tel.add(hbox(self.oan_b, HelpButton(OAN_HELP), "stretch"), self.oan_msg)
+        own = label("¿Usas tu propio telescopio? En «Dispositivos» agrégalo con «+ Propio…», o escribe abajo D, B y la "
+                    "escala (con «Calcular…»). Después guárdalo como perfil para no escribirlo otra vez.", "small", wrap=True)
+        tel.add(hbox(self.oan_b, HelpButton(OAN_HELP), "stretch"), self.oan_msg, own)
         self.D = UnitSpin(LENGTH_CM, 0.1, 100, 2.5, "cm", settings_key="D")
         self.B = UnitSpin(LENGTH_CM, 0.2, 300, 14.0, "cm", settings_key="B")
         self.lam = UnitSpin(WAVE_NM, 300, 1100, 550, "nm", settings_key="lambda")
@@ -1313,6 +1321,8 @@ class ProcessPage(Page):
                    "Escríbela en Parámetros antes de procesar.", "warning")
             self.main.go("parametros")
             return
+        if not self.main.keep_unsaved(s, "antes de procesar de nuevo"):
+            return
         roi = s.roi
         if s.track and s.tin != s.roi_frame:
             try:
@@ -1408,13 +1418,24 @@ class ProcessPage(Page):
 
 
 # =============================================================================
-def export_panel(owner, on_export, include_report=True, title="Exportar"):
+def created_msg(n: int, base: str) -> str:
+    if n == 1:
+        return tr("Listo: se creó un archivo con el prefijo «{}».").format(base)
+    return tr("Listo: se crearon {} archivos con el prefijo «{}».").format(n, base)
+
+
+def export_panel(owner, on_export, include_report=True, title="Exportar", default_folder=None):
+    """Exportar en dos pasos: 1) elegir formatos y carpeta, 2) «Generar» crea los archivos.
+
+    ``on_export(formats, folder, msg)`` hace el trabajo y devuelve la lista de archivos creados.
+    """
     card = Card(title, help_text=(
         "<b>Formatos</b><ul style='margin-left:-16px'>"
         "<li><b>Datos</b>: CSV (hojas de cálculo), Excel, JSON (programación), NumPy (Python) y tabla FITS (astronomía).</li>"
         "<li><b>Gráficas</b>: «PDF solo gráficas» reúne las gráficas sin texto; PNG y SVG guardan cada gráfica por separado.</li>"
         "<li><b>Informe</b>: PDF con el resumen, los parámetros y las gráficas.</li></ul>"
-        "Elige uno o varios formatos y pulsa «Seleccionar carpeta»: los archivos se guardan ahí con un nombre automático."))
+        "<b>Pasos</b>: elige los formatos, revisa la carpeta de destino (o cámbiala con «Cambiar carpeta…») y pulsa "
+        "<b>Generar</b>. Los archivos se crean en ese momento, nunca antes."))
     groups = [("Datos", DATA_FORMATS), ("Gráficas", CHART_FORMATS)]
     if include_report:
         groups.append(("Informe", REPORT_FORMATS))
@@ -1433,26 +1454,81 @@ def export_panel(owner, on_export, include_report=True, title="Exportar"):
     chips["Datos"].set_values(["csv", "xlsx"])
     chips["Gráficas"].set_values(["pdfg"])
     card.add(grid)
+    card._folder = ""
+    folder_lbl = label("", "small")
+    folder_lbl.setTextInteractionFlags(Qt.TextSelectableByMouse)
     msg = label("", "small", wrap=True)
-    btn = button("Seleccionar carpeta…", "primary", lambda: on_export([k for c in chips.values() for k in c.values()], msg),
-                 tip="Elige la carpeta donde se guardan los archivos")
-    open_b = button("Abrir carpeta", slot=lambda: card._folder and open_folder(card._folder))
-    open_b.setVisible(False)
+
+    def formats():
+        return [k for c in chips.values() for k in c.values()]
+
+    def set_folder(path):
+        card._folder = path or ""
+        if card._folder:
+            folder_lbl.setText(tr("Carpeta de destino: {}").format(card._folder))
+        else:
+            folder_lbl.setText(tr("Carpeta de destino: aún no elegida"))
+        gen_b.setEnabled(bool(card._folder))
+
+    def pick():
+        start = card._folder or (default_folder() if callable(default_folder) else "")
+        f = choose_folder(owner, "Carpeta para exportar", start)
+        if f:
+            set_folder(f)
+            msg.setText(tr("Pulsa «Generar» para crear los archivos."))
+            view_b.setVisible(False)
+
+    def generate():
+        fm = formats()
+        if not fm:
+            msg.setText(tr("Elige al menos un formato."))
+            return
+        if not card._folder:
+            pick()
+            if not card._folder:
+                return
+        out = on_export(fm, card._folder, msg)
+        view_b.setVisible(bool(out))
+
+    pick_b = button("Cambiar carpeta…", slot=pick, tip="Elige la carpeta donde se crearán los archivos")
+    gen_b = button("Generar", "primary", generate, tip="Crea los archivos en la carpeta de destino")
+    view_b = button("Ver archivos", None, lambda: card._folder and open_folder(card._folder, owner),
+                    tip="Abre la carpeta de destino en el explorador de archivos")
+    view_b.setVisible(False)
     card.add(label(AUTO_NAME_NOTE, "small", wrap=True))
-    card.add(hbox(btn, msg, open_b, "stretch"))
+    card.add(hbox(folder_lbl, "stretch", pick_b))
+    card.add(hbox(gen_b, msg, "stretch", view_b))
     card.chips = chips
-    card._folder = None
-
-    def show_open(folder):
-        card._folder = folder
-        open_b.setVisible(True)
-
-    card.show_open = show_open
+    card.set_folder = set_folder
+    card.reset = lambda: (msg.setText(""), view_b.setVisible(False))
+    set_folder("")
     return card
 
 
-def open_folder(path):
-    QDesktopServices.openUrl(QUrl.fromLocalFile(path))
+def open_folder(path, parent=None):
+    """Abre una carpeta en el explorador del sistema; avisa si ya no existe."""
+    import subprocess
+    import sys
+
+    if not path or not os.path.isdir(path):
+        if parent is not None:
+            notify(parent, "Abrir carpeta", tr("La carpeta no existe:") + f"\n{path or '—'}", "warning")
+        return
+    try:
+        if sys.platform.startswith("win"):
+            os.startfile(os.path.normpath(path))  # noqa: S606
+            return
+        if sys.platform == "darwin":
+            subprocess.Popen(["open", path])
+            return
+    except OSError:
+        pass
+    if not QDesktopServices.openUrl(QUrl.fromLocalFile(path)):
+        try:
+            subprocess.Popen(["xdg-open", path])
+        except OSError:
+            if parent is not None:
+                notify(parent, "Abrir carpeta", tr("No se pudo abrir la carpeta:") + f"\n{path}", "warning")
 
 
 CORR_HELP = (
@@ -1466,7 +1542,7 @@ CORR_HELP = (
     "entre 0 y 1 es lo normal; cerca de 0, cada orificio ve turbulencia independiente; negativo, cambios de foco o errores "
     "de detección.</li>"
     "<li><b>σt/σl</b>: si se parece al teórico √(Kt/Kl), la turbulencia se comporta como predice el modelo.</li></ul>"
-    "El informe PDF incluye esta explicación con los valores de tu análisis.")
+    "En el modo educativo, la lección «Correlación» explica paso a paso cómo leer r con los valores de tu análisis.")
 
 
 class ResultsPage(Page):
@@ -1478,7 +1554,11 @@ class ResultsPage(Page):
         self.labelEdit = QLineEdit()
         self.labelEdit.setPlaceholderText("Etiqueta (opcional), ej. «Altair, noche 1»")
         self.labelEdit.setFixedWidth(260)
-        self.save_b = button("Guardar en historial", "primary", self.save)
+        self.save_b = button("Guardar en historial", "primary", self.save,
+                             tip="Guarda este análisis en el historial. Puedes guardarlo otra vez, por ejemplo con otra "
+                                 "etiqueta o después de cambiar los parámetros.")
+        self.saved_lbl = label("", "small")
+        self.head.addWidget(self.saved_lbl)
         self.head.addWidget(self.labelEdit)
         self.head.addWidget(self.save_b)
 
@@ -1556,9 +1636,9 @@ class ResultsPage(Page):
             "todas las medidas están cerca de la media y pocas lejos. Qué tan <b>ancha</b> es la campana (σ) dice cuánta "
             "turbulencia hay. En el menú <b>Estadística</b> puedes explorar estos mismos datos paso a paso.")
         b.addWidget(self.edu)
-        self.exp = export_panel(self, self.export)
+        self.exp = export_panel(self, self.export, default_folder=lambda: self._export_default())
         b.addWidget(self.exp)
-        b.addLayout(hbox(button("Abrir carpeta de cuadros", slot=lambda: self.s.result and open_folder(self.s.result.out_dir)),
+        b.addLayout(hbox(button("Abrir carpeta de cuadros", slot=lambda: self.s.result and open_folder(self.s.result.out_dir, self)),
                          "stretch", label("Seeing calculado con el modelo de Tokovinin (2002), a partir de la varianza del "
                                           "movimiento diferencial.", "small")))
         self.lay.addWidget(self.body)
@@ -1601,6 +1681,11 @@ class ResultsPage(Page):
             notes += [tr(n) for n in r.notes]
         if r.cancelled:
             notes.append("El procesamiento se canceló: estos resultados son parciales.")
+        if not reports.has_data(d):
+            notes.insert(0, tr("<b>No se detectaron los dos puntos de la estrella</b> ({} cuadros válidos de {}). Las gráficas "
+                               "quedan vacías. Revisa en «Recorte y tramo» que el recuadro contenga la imagen doble y que el "
+                               "tramo tenga la estrella, o ajusta el tamaño de los puntos en Parámetros.").format(
+                miles(d.n_used), miles(d.n_frames)))
         self.note.setVisible(bool(notes))
         self.note_lbl.setText("<br>".join(notes))
         self.specs = reports.analysis_charts(d, r.meas["t"], fps)
@@ -1611,12 +1696,19 @@ class ResultsPage(Page):
             self._player_src = r
             self.player.set_data(r.preview_frames, r.preview_rows, r.meas, d.arrays.get("used"), fps)
         self.c_hist.set_spec(self.specs[0])
-        if len(self.specs) > 2:
-            self.c_t.set_spec(self.specs[1])
-            self.c_sc.set_spec(self.specs[2])
+        self.c_t.set_spec(self.specs[1])
+        self.c_sc.set_spec(self.specs[2])
+        if not reports.has_data(d):
+            for kp in (self.k_eps, self.k_l, self.k_t, self.k_r0, self.k_sep, self.k_sd, self.k_z):
+                kp.set("—", "sin datos")
+            self.corr_lbl.setText("")
         self.on_theme(pal)
-        self.save_b.setText(tr("Guardado ✓ (#{})").format(s.saved_id) if s.saved_id else "Guardar en historial")
-        self.save_b.setEnabled(not s.saved_id)
+        self.saved_lbl.setText(tr("Guardado ✓ (#{})").format(s.saved_id) if s.saved_id else "")
+        if getattr(self, "_exp_src", None) is not r:
+            self._exp_src = r
+            self.exp.reset()
+            if not self.exp._folder:
+                self.exp.set_folder(self._export_default())
 
     def on_theme(self, pal):
         for c in (self.c_hist, self.c_sc, self.c_t):
@@ -1627,18 +1719,12 @@ class ResultsPage(Page):
         if s.result is None:
             return
         rid = s.save_to_history(self.labelEdit.text().strip())
-        self.save_b.setText(tr("Guardado ✓ (#{})").format(rid))
-        self.save_b.setEnabled(False)
+        self.saved_lbl.setText(tr("Guardado ✓ (#{})").format(rid))
 
-    def export(self, formats, msg):
+    def export(self, formats, folder, msg):
         s = self.s
-        if not formats:
-            msg.setText("Elige al menos un formato.")
-            return
-        start = s.result.out_dir or os.path.dirname(s.info.path) if s.info else ""
-        folder = choose_folder(self, "Carpeta para exportar", start)
-        if not folder:
-            return
+        if s.result is None:
+            return []
         base = free_base(folder, os.path.splitext(s.result.video.get("name", "turbulens"))[0][:40].replace(" ", "_"))
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
@@ -1647,11 +1733,20 @@ class ResultsPage(Page):
             out += reports.export_analysis_charts(self.specs, formats, folder, base, rec)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
+            msg.setText(tr("No se pudo exportar."))
             notify(self, "Exportar", tr("No se pudo exportar:") + f"\n{exc}", "warning")
-            return
+            return []
         QApplication.restoreOverrideCursor()
-        msg.setText(tr("Listo: {} archivo(s) en {}").format(len(out), folder))
-        self.exp.show_open(folder)
+        msg.setText(created_msg(len(out), base))
+        return out
+
+    def _export_default(self):
+        s = self.s
+        if s.result is not None and s.result.out_dir and os.path.isdir(s.result.out_dir):
+            return s.result.out_dir
+        if s.info is not None:
+            return os.path.dirname(s.info.path)
+        return ""
 
 
 # =============================================================================
@@ -1703,7 +1798,7 @@ class HistoryPage(Page):
     def refresh(self):
         s = self.s
         self.h1.setText("Mis mediciones" if self.is_edu else "Historial de estadísticas")
-        self.sub.setText("Compara noches y épocas del año (es el mismo en los modos análisis y educativo).")
+        self.sub.setText("Compara noches y épocas del año (es el mismo en los modos medición y educativo).")
         self.sub.setVisible(True)
         self._rows = s.history.list()
         has = bool(self._rows)
@@ -1717,7 +1812,7 @@ class HistoryPage(Page):
             chk.setCheckState(Qt.Checked)
             self.table.setItem(i, 0, chk)
             fps = r.get("fps") or 30
-            modo = {"analisis": tr("Análisis"), "educativo": tr("Educativo")}.get(r.get("modo") or "", "—")
+            modo = {"analisis": tr("Medición"), "educativo": tr("Educativo")}.get(r.get("modo") or "", "—")
             vals = [str(r["id"]), r.get("created") or "", modo, r.get("label") or "", r.get("video_name") or "",
                     f"{fmt_time((r.get('start') or 0) / fps)}–{fmt_time((r.get('stop') or 0) / fps)}",
                     miles(r.get("n_used") or 0), fnum(r.get("std_sep_px"), 3), fnum(r.get("eps"), 2),
@@ -1810,17 +1905,11 @@ class HistoryPage(Page):
             self.s.history.delete(r["id"])
         self.refresh()
 
-    def export(self, formats, msg):
+    def export(self, formats, folder, msg):
         sel = self._selected()
         if not sel:
-            msg.setText("Selecciona al menos un análisis.")
-            return
-        if not formats:
-            msg.setText("Elige al menos un formato.")
-            return
-        folder = choose_folder(self, "Carpeta para exportar")
-        if not folder:
-            return
+            msg.setText(tr("Selecciona al menos un análisis."))
+            return []
         QApplication.setOverrideCursor(Qt.WaitCursor)
         try:
             base = free_base(folder, "mis_mediciones" if self.is_edu else "historial")
@@ -1828,8 +1917,9 @@ class HistoryPage(Page):
             out += reports.export_history_charts(sel, formats, folder, base)
         except Exception as exc:
             QApplication.restoreOverrideCursor()
+            msg.setText(tr("No se pudo exportar."))
             notify(self, "Exportar", tr("No se pudo exportar:") + f"\n{exc}", "warning")
-            return
+            return []
         QApplication.restoreOverrideCursor()
-        msg.setText(tr("Listo: {} archivo(s) en {}").format(len(out), folder))
-        self.exp.show_open(folder)
+        msg.setText(created_msg(len(out), base))
+        return out

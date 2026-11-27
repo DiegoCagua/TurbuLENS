@@ -158,6 +158,11 @@ class Session(QObject):
 
         return summary_record(self.result, self.dimm, self.params)
 
+    def unsaved(self) -> bool:
+        """Hay un análisis con datos que todavía no está en el historial."""
+        return (self.result is not None and self.dimm is not None and self.saved_id is None
+                and int(self.dimm.n_used) >= 10)
+
     def save_to_history(self, label: str = "", notes: str = "") -> int:
         res, d, prm = self.result, self.dimm, self.params
         rec = {

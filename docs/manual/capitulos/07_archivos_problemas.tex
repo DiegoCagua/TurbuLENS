@@ -1,0 +1,154 @@
+% ================================================================================================ capítulo 7
+\chapter{Archivos, atajos y problemas frecuentes}\label{cap:archivos}
+
+\begin{resumen}
+\textbf{En este capítulo:} todos los archivos que produce TurbuLENS, dónde guarda el historial y la configuración, los
+atajos de teclado y ratón, y una tabla de problemas frecuentes con su solución.
+\end{resumen}
+
+\section{Los archivos que produce TurbuLENS}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight}p{5.4cm} Y@{}}
+\toprule
+Archivo & Contenido\\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{\color{acentoosc}Al procesar un video}}\\
+\ruta{cuadro\_000000.png}, … & Cada cuadro del tramo recortado a la región (o en TIFF, JPG, o un solo cubo \ruta{.npy} o
+\ruta{.fits}).\\
+\ruta{mediciones.csv} & Una fila por cuadro: tiempo, posiciones de los dos puntos, flujos, región, si se detectó,
+separación, componentes y si se usó.\\
+\ruta{resumen.json} & Los parámetros, las opciones del procesamiento, el seeing y las estadísticas.\\
+\multicolumn{2}{@{}l}{\textbf{\color{acentoosc}Al exportar (\menu{Resultados} o \menu{Historial})}}\\
+\ruta{<video>\_mediciones.csv}, \ruta{<video>\_resumen.csv} & Las mediciones y el resumen en CSV.\\
+\ruta{<video>.xlsx}, \ruta{.json}, \ruta{.npz}, \ruta{\_mediciones.fits} & Lo mismo en Excel, JSON, NumPy y tabla FITS.\\
+\ruta{<video>\_graficas.pdf}, \ruta{\_histograma.png}, … & Las gráficas, juntas en PDF o una por archivo en PNG y SVG.\\
+\ruta{<video>\_informe.pdf} & El informe completo.\\
+\multicolumn{2}{@{}l}{\textbf{\color{acentoosc}Al calibrar (modo Imágenes)}}\\
+\ruta{maestros/maestro\_*.fits} & Bias, darks y flats maestros (FITS de 32 bits, con \codigo{IMAGETYP},
+\codigo{NCOMBINE}, \codigo{EXPTIME} y \codigo{FILTER}).\\
+\ruta{calibradas/*\_calibrada.fits} & Cada luz calibrada, con su cabecera original más \codigo{CALSTAT}, \codigo{NDARK},
+\codigo{NFLAT} y \codigo{DARKSCAL}.\\
+\multicolumn{2}{@{}l}{\textbf{\color{acentoosc}Al evaluar una noche (modo Satélite)}}\\
+\ruta{evaluadas\_dia\_…/} & La serie, los valores por canal, las gráficas, los recortes y un \ruta{LEEME.txt}
+(sección~\ref{sec:carpeta_eval}).\\
+\ruta{descargas\_goes/} & Los archivos completos del satélite, si elegiste descargarlos.\\
+\bottomrule
+\end{tabularx}
+\caption{Archivos de salida. Ninguno sobrescribe a otro: si el nombre existe, el nuevo lleva \ruta{\_2}, \ruta{\_3}\ldots}
+\end{table}
+
+Todos los archivos de datos, gráficas e informes llevan una línea de crédito con la cita de TurbuLENS
+(apéndice~\ref{sec:citar}).
+
+\section{Dónde guarda TurbuLENS sus cosas}
+
+\textbf{El historial y los perfiles} van en una carpeta de datos del usuario: la base \ruta{historial.sqlite}, las
+mediciones de cada análisis en \ruta{datos\_historial/} y los perfiles en \ruta{perfiles.json}.
+
+\textbf{La configuración} (idioma, tema, tamaño de la interfaz, equipos propios, unidades elegidas, últimas carpetas y
+coordenadas del satélite) va en la configuración del usuario del sistema.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l Y Y@{}}
+\toprule
+Sistema & Historial y perfiles & Configuración\\
+\midrule
+Windows & \ruta{\%APPDATA\%\textbackslash TurbuLENS} & Registro: \ruta{HKEY\_CURRENT\_USER\textbackslash Software\textbackslash TurbuLENS}\\
+macOS & \ruta{\textasciitilde/Library/Application Support/TurbuLENS} & \ruta{\textasciitilde/Library/Preferences/com.turbulens.TurbuLENS.plist}\\
+Linux & \ruta{\textasciitilde/.local/share/TurbuLENS} & \ruta{\textasciitilde/.config/TurbuLENS/TurbuLENS.conf}\\
+\bottomrule
+\end{tabularx}
+\caption{Dónde quedan los datos del usuario.}
+\end{table}
+
+Para llevar tu historial a otro computador, copia esa carpeta de datos completa. Para empezar de cero, bórrala (con
+TurbuLENS cerrado).
+
+\section{Atajos de teclado y ratón}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l l Y@{}}
+\toprule
+Dónde & Atajo & Qué hace\\
+\midrule
+Toda la ventana & \tecla{F11} / \tecla{Esc} & Pantalla completa / salir de ella.\\
+Región (\menu{Recorte y tramo}) & Arrastrar & Dibujar, mover o cambiar el tamaño de la región.\\
+ & Clic & Centrar la región en ese punto.\\
+ & \tecla{←}\tecla{→}\tecla{↑}\tecla{↓} & Mover la región 1~px.\\
+ & \tecla{Mayús}\,+\,flechas & Cambiar su tamaño.\\
+ & Rueda / clic derecho y arrastrar & Zoom / mover la vista.\\
+Línea de tiempo & \tecla{←}\,\tecla{→} & Un cuadro.\\
+ & \tecla{Mayús}\,+\,\tecla{←}\,\tecla{→} & Un segundo.\\
+Visor de píxeles & Rueda / arrastrar & Zoom alrededor del cursor / mover la imagen.\\
+ & \tecla{Mayús}\,+\,arrastrar o clic derecho y arrastrar & Dibujar una región.\\
+Gráficas & Cursor encima & Valor del punto más cercano.\\
+ & Doble clic & Ver en grande.\\
+ & Clic derecho & Ver en grande, guardar PNG o copiar la imagen.\\
+Campos numéricos & \tecla{.} o \tecla{,} & Separador decimal (los dos sirven).\\
+\bottomrule
+\end{tabularx}
+\caption{Atajos.}
+\end{table}
+
+\section{Problemas frecuentes}
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}>{\RaggedRight}p{5.6cm} Y@{}}
+\toprule
+Lo que pasa & Qué hacer\\
+\midrule
+El seeing sale imposiblemente bajo (≈1″ o menos) con una cámara de fotos o un celular. & La escala se calculó con el
+píxel del sensor. Marca \campo{Grabé en video} en la calculadora o en \boton{Dispositivos}
+(sección~\ref{sec:escala_app}).\\
+\menu{Procesar} no deja empezar. & Falta la escala de placa: escríbela en \menu{Parámetros}.\\
+«No se ven los dos puntos» o muy pocos cuadros usados. & Pulsa \boton{◎ Ajustar a la estrella} y activa
+\campo{Tamaño automático}. Si los dos puntos se tocan, desenfoca un poco más al grabar; si se ve uno solo, revisa que
+los dos orificios estén destapados y dentro de la apertura.\\
+La región se pierde a mitad del video. & Activa \campo{Seguir a la estrella}.\\
+Las gráficas de \menu{Resultados} están vacías. & No se detectaron los dos puntos en al menos 10 cuadros: revisa la
+región y el tramo.\\
+Una subida aislada de σ en la gráfica del tiempo. & Un golpe o una ráfaga: ajusta el tramo para dejarla fuera.\\
+$|r|$ longitudinal–transversal mayor que 0,2. & Hay un movimiento que no es turbulencia (vibración en una dirección,
+cambios de foco): revisa el montaje y el tramo (sección~\ref{sec:controles}).\\
+El seeing longitudinal y el transversal son muy distintos. & Lo mismo: viento sobre el tubo, montura floja o un
+tramo con golpes.\\
+La interfaz se ve gigante o no cabe en la pantalla. & En \menu{Acerca de}, tamaño 100\,\%, y vuelve a abrir.\\
+El plan de calibración dice «sin darks» para un grupo. & No hay darks de su tamaño, binning o ganancia, o falta el bias
+para escalar uno de otra exposición.\\
+Una imagen quedó como «supuesto». & No tiene \codigo{IMAGETYP} ni palabras clave en el nombre: márcala a mano.\\
+«No coincide con el video» en la calibración de \menu{Parámetros}. & Los maestros deben medir lo mismo que el video.\\
+El flat «no cambia nada». & \boton{Comparar antes y después}. Si el diagnóstico dice que estaban saturados, tómalos con
+menos exposición.\\
+El modo Satélite no encuentra imágenes. & Revisa la conexión, la fecha (desde diciembre de 2017) y la zona horaria.\\
+El satélite no da seeing. & Faltan los canales 9, 13 o 16, o no hay horas que cumplan el criterio del Sol.\\
+Windows dice «Windows protegió su PC». & \boton{Más información} → \boton{Ejecutar de todas formas}.\\
+Un video no abre. & Prueba abrirlo en VLC: si VLC tampoco puede, el archivo está dañado. Si VLC sí, conviértelo a MP4 o
+MKV y escríbenos con el formato original.\\
+\bottomrule
+\end{tabularx}
+\caption{Problemas frecuentes.}
+\end{table}
+
+\subsection*{La autoprueba}
+
+Si TurbuLENS no abre o falla al procesar, la autoprueba revisa sin ventana que todo funcione: lee un video (uno sintético
+o el que le pases), procesa, calcula el seeing, exporta todos los formatos y dibuja las gráficas. Desde una terminal, en la
+carpeta del programa:
+
+\begin{center}\small
+\begin{tabular}{@{}l l@{}}
+Linux & \codigo{./TurbuLENS --autoprueba mi\_video.mp4 prueba}\\
+macOS & \codigo{TurbuLENS.app/Contents/MacOS/TurbuLENS --autoprueba mi\_video.mp4 prueba}\\
+Windows & \codigo{TurbuLENS.exe --autoprueba mi\_video.mp4 prueba}\\
+\end{tabular}
+\end{center}
+
+El video y la carpeta (\ruta{prueba}) son opcionales. En Linux y macOS la terminal termina con «AUTOPRUEBA OK» o con el
+paso que falló. En Windows el programa no escribe en la terminal: revisa la carpeta, que debe tener las mediciones, las
+gráficas y el informe. Si algo sale mal, cuéntanos qué viste en
+\href{https://github.com/DiegoCagua/TurbuLENS/issues}{github.com/DiegoCagua/TurbuLENS/issues}.

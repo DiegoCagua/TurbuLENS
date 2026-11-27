@@ -207,7 +207,7 @@ def test_history_migrates_old_per_mode_databases(tmp_path):
 
 @pytest.mark.parametrize("ring,sep", [(0.0, 13.0), (12.0, 43.0), (18.0, 60.0)])
 def test_large_and_ring_shaped_spots(ring, sep):
-    """Spots grandes o desenfocados en forma de anillo: la separación medida es la real (antes fallaba)."""
+    """Spots grandes o desenfocados en forma de anillo: la separación medida es la real."""
     rng = np.random.default_rng(7)
     size = int(sep + 4 * max(ring, 3) + 40)
     errs = []
@@ -273,3 +273,29 @@ def test_report_pdf_explains_correlation(tmp_path):
     assert "r" in title and "Pearson" in text and "Diagnóstico" in text
     out = reports.export_analysis_charts(reports.analysis_charts(d, meas["t"], 30), ["pdf"], str(tmp_path), "x", rec)
     assert os.path.getsize(out[0]) > 5000
+
+
+def test_star_fit_recovers_sigma_and_fwhm():
+    from turbulens.core.starfit import FWHM_FACTOR, fit_star
+
+    rng = np.random.default_rng(5)
+    yy, xx = np.mgrid[0:41, 0:41]
+    img = 100 + 900 * np.exp(-((xx - 20.4) ** 2 / (2 * 2.5 ** 2) + (yy - 19.6) ** 2 / (2 * 3.0 ** 2)))
+    img += rng.normal(0, 4, img.shape)
+    f = fit_star(img, 10, 20, mask=(xx - 20) ** 2 + (yy - 20) ** 2 <= 19 ** 2)
+    assert f.ok
+    assert f.x0 == pytest.approx(30.4, abs=0.05) and f.y0 == pytest.approx(39.6, abs=0.05)
+    assert f.sx == pytest.approx(2.5, rel=0.03) and f.sy == pytest.approx(3.0, rel=0.03)
+    assert f.fwhm == pytest.approx(FWHM_FACTOR * (2.5 * 3.0) ** 0.5, rel=0.03)
+    assert not fit_star(np.zeros((2, 2))).ok
+
+
+def test_charts_are_empty_without_detections():
+    from turbulens import reports
+    from turbulens.core.dimm import DimmParams, analyze
+
+    meas = np.zeros(50, dtype=[("t", "f8"), ("x1", "f8"), ("y1", "f8"), ("x2", "f8"), ("y2", "f8"), ("valid", "?")])
+    meas["t"] = np.arange(50) / 30
+    d = analyze(meas, DimmParams(D_cm=4.2, B_cm=14.4, lambda_nm=550, scale_arcsec_px=1.0))
+    specs = reports.analysis_charts(d, meas["t"])
+    assert len(specs) == 3 and all(s.empty and not s.series for s in specs)

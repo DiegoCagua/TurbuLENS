@@ -107,6 +107,13 @@ def main():
         v.open(fits)
         v.view.set_region(330, 230, 470, 370)
         shot(f"40_imagenes_visor_{tag}")
+        v.shape_c.setCurrentIndex(1)
+        bright = np.unravel_index(np.argmax(v.view.data), v.view.data.shape)
+        cy, cx = int(bright[0]), int(bright[1])
+        v.view.set_region(cx - 12, cy - 12, cx + 12, cy + 12)
+        v.scale_s.setValue(1.242)
+        v.measure_star()
+        shot(f"42_imagenes_estrella_{tag}")
         w.go("img_cal")
         shot(f"41_imagenes_calibracion_{tag}")
         # Modo Satélite con una lectura de prueba (sin conexión)
@@ -114,11 +121,20 @@ def main():
 
         from turbulens.core import goes
 
+        import datetime as dt
+
+        from turbulens.core import satseeing as ss
+
         w.set_mode("satelite")
         g = w.page_by_key["goes"]
         g.folder = tmp
-        g.show_readings([goes.read_point(test_modes._FakeGoesFile(), goes.OAN_LAT, goes.OAN_LON, 300)])
+        r = goes.read_point(test_modes._FakeGoesFile(), goes.OAN_LAT, goes.OAN_LON, 300)
+        g.seeing_cb.setChecked(False)
+        g.show_instants([ss.SatInstant(local=r.start.astimezone(dt.timezone(dt.timedelta(hours=-5))), utc=r.start,
+                                       readings={13: r})])
         shot(f"50_satelite_goes_{tag}")
+        w.go("goes_info")
+        shot(f"51_satelite_info_{tag}")
 
     # Exportaciones (sin diálogos)
     from turbulens import reports

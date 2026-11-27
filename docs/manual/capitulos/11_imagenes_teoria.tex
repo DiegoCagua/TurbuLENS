@@ -1,0 +1,148 @@
+% ================================================================================================ capítulo 11
+\chapter{Imágenes astronómicas}\label{cap:imagenes_teoria}
+
+\begin{resumen}
+\textbf{En este capítulo:} qué corrigen el bias, el dark y el flat, por qué hay que emparejarlos con cada imagen, cómo se
+escala un dark de otra exposición, cómo se combinan los maestros, cómo se modela una estrella para medir su FWHM y qué
+hacen las escalas de brillo y ZScale en el visor.
+\end{resumen}
+
+\section{Lo que la cámara agrega a la luz}
+
+Una imagen cruda de una cámara astronómica o de una cámara de fotos mezcla la luz del cielo con defectos del instrumento.
+Si $L$ es lo que registra cada píxel,
+\begin{equation}
+L = \underbrace{\text{bias}}_{\text{lectura}} + \underbrace{I_d\,t}_{\text{corriente oscura}}
+  + \underbrace{F \cdot S}_{\text{señal del cielo}} ,
+\end{equation}
+donde $t$ es la exposición, $I_d$ la corriente oscura de ese píxel y $F$ un factor de respuesta (viñeteo, polvo, sensibilidad
+de cada píxel) que multiplica la señal $S$. Calibrar es despejar $S$.
+
+\begin{table}[H]
+\centering\small
+\begin{tabularx}{\linewidth}{@{}l Y Y@{}}
+\toprule
+Imagen & Cómo se toma & Qué corrige\\
+\midrule
+\textbf{Bias} & La exposición más corta posible, con la tapa puesta. & El nivel de lectura de la cámara (offset).\\
+\textbf{Dark} & Con la tapa puesta, con la \textbf{misma exposición, ganancia (o ISO) y temperatura} que las luces. & El
+bias más la corriente oscura y los píxeles calientes. Se resta.\\
+\textbf{Flat} & De una superficie iluminada de forma pareja (el cielo del atardecer, una pantalla blanca), con el
+\textbf{mismo foco y filtro}. & El viñeteo y las sombras del polvo. Se divide.\\
+\textbf{Dark de flat} & Darks con la exposición de los flats. & Lo que se resta a cada flat antes de combinarlos.\\
+\bottomrule
+\end{tabularx}
+\caption{Imágenes de calibración.}
+\end{table}
+
+La imagen calibrada es
+\begin{equation}
+S = \frac{L - \text{dark}}{\text{flat normalizado}} ,
+\end{equation}
+donde el dark ya incluye el bias. Si no hay dark pero sí bias, se resta solo el bias.
+
+\section{Por qué hay que emparejarlas}
+
+La corriente oscura crece con el tiempo de exposición y con la temperatura del sensor (en muchos sensores se duplica cada
+5 a 7~°C), y su escala en cuentas cambia con la ganancia. Un dark de 30~s no sirve para una luz de 120~s. El flat, en
+cambio, no depende de la exposición sino del filtro, del foco y de la posición de la cámara: el polvo que se ve en un
+filtro no está en el otro. Por eso TurbuLENS empareja cada luz con los darks de su misma exposición, ganancia,
+temperatura (con hasta 5~°C de diferencia), binning y tamaño, y con los flats de su mismo filtro, tamaño y binning.
+
+\subsection{El dark escalado}\label{sec:dark_escalado}
+
+Si no hay darks de la exposición de una luz pero sí bias, se puede fabricar uno. La corriente oscura es proporcional al
+tiempo, así que, quitando el bias, un dark de $t_\text{dark}$ segundos se convierte en uno de $t_\text{luz}$:
+\begin{equation}
+\text{dark}(t_\text{luz}) = \left[\text{dark}(t_\text{dark}) - \text{bias}\right]\frac{t_\text{luz}}{t_\text{dark}}
++ \text{bias} .
+\end{equation}
+TurbuLENS prefiere escalar hacia abajo un dark \textbf{más largo}: al multiplicar por un factor menor que uno, su ruido
+también baja; al escalar hacia arriba uno corto, el ruido se amplifica. Sin bias no se puede escalar: se usa el dark
+más cercano tal cual, o solo el bias, y el plan lo avisa.
+
+\section{Los maestros}
+
+Cada grupo de imágenes de calibración se combina, píxel por píxel, en una imagen \textbf{maestra}. Hay tres formas:
+\begin{itemize}
+\item \textbf{Mediana} (la predeterminada). Ignora los valores raros de un píxel, como un rayo cósmico o un satélite que
+cruzó en una sola imagen. Para datos normales su ruido es $\sqrt{\pi/2} \approx 1{,}25$ veces el de la media.
+\item \textbf{Media con recorte a 3~σ}. En cada píxel descarta los valores a más de 3 desviaciones robustas de la
+mediana y promedia el resto: casi tan robusta como la mediana y casi tan silenciosa como la media.
+\item \textbf{Media}. El menor ruido si no hay valores raros.
+\end{itemize}
+El ruido de un maestro de $N$ imágenes es $\sqrt N$ veces menor que el de una sola, así que conviene tomar muchas (20 o más
+darks y flats). Con series grandes, TurbuLENS combina por franjas de filas en un archivo temporal, para no tener todas las
+imágenes en la memoria.
+
+\textbf{Flats.} Antes de combinarlos, a cada flat se le resta su dark (o el bias) y se divide entre su propia mediana, para
+que flats con brillos distintos pesen igual. El maestro se divide otra vez entre su mediana, de modo que valga 1 en
+promedio: dividir por él corrige la forma sin cambiar el nivel. Los píxeles con menos del 5\,\% de la mediana (muertos o
+tapados) se dejan en 1, para no dividir por casi cero.
+
+\textbf{Flats saturados.} Si al tomar un flat el sensor llega a su valor máximo, todos los píxeles quedan iguales y el
+flat sale plano: no corrige nada. El histograma de un buen flat está cerca de la mitad del rango de la cámara. TurbuLENS
+cuenta los píxeles en el valor máximo y avisa si son muchos.
+
+\section{El perfil de una estrella}\label{sec:psf}
+
+La imagen de una estrella, en una exposición larga, se parece a una campana: el \textbf{perfil de punto} (PSF). TurbuLENS
+lo modela con una gaussiana de dos dimensiones sobre un fondo constante:
+\begin{equation}
+I(x,y) = B + A\,\exp\!\left[-\frac{(x-x_0)^2}{2\sigma_x^2} - \frac{(y-y_0)^2}{2\sigma_y^2}\right] ,
+\end{equation}
+con seis parámetros: el fondo $B$, la amplitud $A$, el centro $(x_0, y_0)$ y los anchos $\sigma_x$ y $\sigma_y$. El ajuste
+busca los parámetros que hacen mínima la suma de los cuadrados de las diferencias entre el modelo y los píxeles de la región,
+con el método de \textbf{Levenberg–Marquardt}: arranca con los momentos de la imagen (centro de luz y anchos) y en cada paso
+combina un paso de Gauss–Newton con uno de descenso por el gradiente, más de uno o del otro según si el paso anterior
+mejoró el ajuste (sección~\ref{sec:codigo_gauss}).
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[width=0.8\linewidth,height=5.4cm,xlabel={Distancia al centro (en unidades de $\sigma$)},
+  ylabel={Brillo / pico},xmin=0,xmax=3.2,ymin=0,ymax=1.08,axis lines=left,grid=major,grid style={grisclaro},
+  tick label style={font=\footnotesize},label style={font=\small},/pgf/number format/use comma,
+  ytick={0,0.5,0.607,1},yticklabels={0;0,5;0,61;1},extra x ticks={1,1.1774},
+  extra x tick labels={},extra x tick style={grid=none}]
+\addplot[acento,line width=1.4pt,domain=0:3.2,samples=80] {exp(-x^2/2)};
+\addplot[acentoosc,dashed,line width=1pt] coordinates {(1,0) (1,0.6065)};
+\addplot[naranja,dashed,line width=1pt] coordinates {(1.1774,0) (1.1774,0.5)};
+\node[anchor=west,font=\footnotesize,text=acentoosc] at (axis cs:0.12,0.68) {$\sigma$: 61\,\% del pico};
+\node[anchor=west,font=\footnotesize,text=cobre] at (axis cs:1.25,0.5) {FWHM/2 $= 1{,}177\,\sigma$: 50\,\%};
+\end{axis}
+\end{tikzpicture}
+\caption{Perfil de una gaussiana. A un sigma del centro el brillo cae al $e^{-1/2} = 61\,\%$; a medio FWHM, al 50\,\%.}
+\end{figure}
+
+El \textbf{ancho a media altura} es la distancia entre los dos puntos donde el brillo cae a la mitad del pico:
+\begin{equation}
+e^{-\text{FWHM}^2/(8\sigma^2)} = \tfrac12 \quad\Longrightarrow\quad \text{FWHM} = 2\sqrt{2\ln 2}\;\sigma \approx 2{,}355\,\sigma .
+\end{equation}
+TurbuLENS reporta $\sigma = \sqrt{\sigma_x\sigma_y}$ (el «radio al primer sigma»), el FWHM correspondiente y la
+elipticidad $1 - \sigma_\text{menor}/\sigma_\text{mayor}$, que delata problemas de seguimiento o de óptica. Con la escala
+de placa, el FWHM en píxeles pasa a segundos de arco, y en una exposición larga y bien enfocada eso es el seeing.
+
+\begin{nota}[La gaussiana es una aproximación.]
+El perfil real de una estrella vista a través de la turbulencia tiene alas más extendidas que una gaussiana (se describe
+mejor con una función de Moffat). El núcleo, que es lo que define el FWHM, sí lo describe bien la gaussiana, y su ajuste
+es más estable con regiones pequeñas. Para medir el seeing con precisión, el DIMM sigue siendo la referencia.
+\end{nota}
+
+\section{Cómo se ve una imagen: escalas y límites}
+
+Una imagen astronómica tiene valores entre, digamos, 1\,000 y 60\,000 cuentas, pero lo interesante (el fondo y las
+estrellas débiles) ocupa unas pocas decenas de cuentas cerca del fondo. Para verla, el visor hace dos cosas, sin cambiar
+los datos:
+\begin{enumerate}
+\item \textbf{Límites} $[z_1, z_2]$: los valores por debajo de $z_1$ se ven negros y los de encima de $z_2$, blancos.
+\item \textbf{Escala}: cómo se reparte el gris entre los dos. Con $t = (v - z_1)/(z_2 - z_1)$ entre 0 y 1:
+lineal, $t$; logarítmica, $\log_{10}(1 + 1000\,t)/3$; raíz, $\sqrt t$; asinh, $\operatorname{asinh}(10\,t)/\operatorname{asinh}10$;
+e histograma ecualizado, que reparte los grises para que cada tono tenga la misma cantidad de píxeles.
+\end{enumerate}
+
+\textbf{ZScale} es el algoritmo de IRAF que usa DS9 para elegir los límites. Toma una muestra de unos mil píxeles, los
+ordena y ajusta una recta a los valores ordenados, rechazando iterativamente los que se alejan más de 2,5 desviaciones
+(las estrellas brillantes). La pendiente de esa recta, dividida entre un contraste de 0,25, da un rango centrado en la
+mediana: muestra bien el fondo y las estrellas débiles, aunque las brillantes salgan saturadas. Como se calcula imagen por
+imagen, dos imágenes casi iguales pueden quedar con límites distintos; para compararlas hay que fijar los mismos límites.

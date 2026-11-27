@@ -191,8 +191,12 @@ class CentroidPlayer(QWidget):
         self.slider.setValue(0)
         self.slider.blockSignals(False)
         self.step_frames = max(1, int(np.median(np.diff(meas["frame"][rows])))) if len(rows) > 1 else 1
-        self.info.setText(tr("Muestra de {} cuadros (uno de cada {}). Naranja: primer punto · segundo color: segundo punto · "
-                             "línea: la distancia que se mide en cada cuadro.").format(integer(len(rows)), self.step_frames))
+        legend = tr("Naranja: primer punto · segundo color: segundo punto · línea: la distancia que se mide en cada cuadro.")
+        if self.step_frames > 1:
+            head = tr("Muestra de {} cuadros (uno de cada {}).").format(integer(len(rows)), self.step_frames)
+        else:
+            head = tr("Todos los cuadros del tramo ({}).").format(integer(len(rows)))
+        self.info.setText(head + " " + legend)
         self.i = 0
         self._show()
 
